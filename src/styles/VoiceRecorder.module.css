@@ -247,3 +247,198 @@
     font-size: 0.95rem;
   }
 }
+
+/** 추가 **/
+
+/* 액션 버튼들 */
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.uploadButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.uploadButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45a049, #4caf50);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+}
+
+.uploadButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.newRecordingButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+.newRecordingButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1976d2, #2196f3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+}
+
+.newRecordingButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 업로드 진행률 */
+.uploadProgress {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progressText {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 에러 메시지 */
+.errorMessage {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #ffebee;
+  border: 1px solid #e57373;
+  border-radius: 8px;
+  color: #c62828;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* 성공 섹션 */
+.successSection {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.successHeader {
+  margin-bottom: 16px;
+}
+
+.successTitle {
+  margin: 0;
+  color: #2e7d32;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.successInfo {
+  margin-bottom: 20px;
+}
+
+.successText {
+  margin: 0 0 12px 0;
+  color: #388e3c;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.fileDetails {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.fileDetails p {
+  margin: 4px 0;
+  color: #2e7d32;
+  font-size: 14px;
+}
+
+.fileDetails strong {
+  font-weight: 600;
+}
+
+.successActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.viewFileLink {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+}
+
+.viewFileLink:hover {
+  background: linear-gradient(135deg, #f57c00, #ff9800);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 152, 0, 0.4);
+  text-decoration: none;
+  color: white;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .actionButtons,
+  .successActions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .uploadButton,
+  .newRecordingButton,
+  .viewFileLink {
+    width: 100%;
+    max-width: 280px;
+  }
+}

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import styles from "@/styles/VoiceRecorder.module.css";
+import { useAudioUpload } from "@/hooks/useAudioUpload";
+
 // Recorder를 동적으로 임포트 (SSR 방지)
 const RecorderComponent: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -8,11 +10,19 @@ const RecorderComponent: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0); // 녹음 시간
   const [audioDuration, setAudioDuration] = useState<number | null>(null); // 녹음된 파일 길이
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null); // 업로드용 Blob
+  const [uploadResult, setUploadResult] = useState<{
+    downloadURL: string;
+    fileId: string;
+  } | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const recorderRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 업로드 훅 사용
+  const { uploadState, uploadAudio, resetUploadState } = useAudioUpload();
 
   // 시간을 mm:ss 형식으로 변환
   const formatTime = (seconds: number): string => {
@@ -75,6 +85,13 @@ const RecorderComponent: React.FC = () => {
   const startRecording = async () => {
     try {
       console.log("🎤 녹음 시작 요청");
+
+      // 이전 녹음 결과 초기화
+      setAudioUrl(null);
+      setAudioBlob(null);
+      setUploadResult(null);
+      resetUploadState();
+
       console.log("📱 브라우저 정보:", {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
@@ -147,6 +164,7 @@ const RecorderComponent: React.FC = () => {
         const url = URL.createObjectURL(result.blob);
         console.log("🔗 Blob URL 생성:", url);
         setAudioUrl(url);
+        setAudioBlob(result.blob); // 업로드용 Blob 저장
 
         // 녹음된 시간을 파일 길이로 사용 (더 정확함)
         console.log("⏱️ 녹음 시간 설정:", recordingTime);
@@ -201,6 +219,44 @@ const RecorderComponent: React.FC = () => {
     }
   };
 
+  // 서버로 업로드
+  const handleUpload = async () => {
+    if (!audioBlob || !audioDuration) {
+      console.error("❌ 업로드할 오디오 파일이 없습니다.");
+      return;
+    }
+
+    try {
+      const fileName = `recording_${new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")}.wav`;
+      const userId = "user123"; // 실제 사용자 ID로 교체
+
+      const result = await uploadAudio(
+        audioBlob,
+        fileName,
+        audioDuration,
+        userId
+      );
+
+      if (result) {
+        setUploadResult(result);
+        console.log("🎉 업로드 성공:", result);
+      }
+    } catch (error) {
+      console.error("❌ 업로드 실패:", error);
+    }
+  };
+
+  // 새로 녹음하기
+  const handleNewRecording = () => {
+    setAudioUrl(null);
+    setAudioBlob(null);
+    setAudioDuration(null);
+    setUploadResult(null);
+    resetUploadState();
+  };
+
   if (!isClient) {
     return (
       <div className={styles.loading}>
@@ -228,11 +284,12 @@ const RecorderComponent: React.FC = () => {
           isRecording ? styles.recordingButton : ""
         }`}
         onClick={isRecording ? stopRecording : startRecording}
+        disabled={uploadState.isUploading}
       >
         {isRecording ? "🛑 녹음 종료" : "🎤 녹음 시작"}
       </button>
 
-      {audioUrl && (
+      {audioUrl && !uploadResult && (
         <div className={styles.audioSection}>
           <div className={styles.audioHeader}>
             <p className={styles.audioLabel}>🔉 녹음된 파일</p>
@@ -243,13 +300,96 @@ const RecorderComponent: React.FC = () => {
             )}
           </div>
           <audio className={styles.audioPlayer} src={audioUrl} controls />
-          <a
-            className={styles.downloadLink}
-            href={audioUrl}
-            download="recording.wav"
-          >
-            🔽 WAV 파일 다운로드
-          </a>
+
+          <div className={styles.actionButtons}>
+            <a
+              className={styles.downloadLink}
+              href={audioUrl}
+              download="recording.wav"
+            >
+              🔽 WAV 파일 다운로드
+            </a>
+
+            <button
+              className={styles.uploadButton}
+              onClick={handleUpload}
+              disabled={uploadState.isUploading}
+            >
+              {uploadState.isUploading ? "업로드 중..." : "✅ 서버로 전송"}
+            </button>
+
+            <button
+              className={styles.newRecordingButton}
+              onClick={handleNewRecording}
+              disabled={uploadState.isUploading}
+            >
+              🔄 새로 녹음하기
+            </button>
+          </div>
+
+          {/* 업로드 진행률 */}
+          {uploadState.isUploading && (
+            <div className={styles.uploadProgress}>
+              <div className={styles.progressBar}>
+                <div
+                  className={styles.progressFill}
+                  style={{ width: `${uploadState.progress}%` }}
+                ></div>
+              </div>
+              <span className={styles.progressText}>
+                업로드 중... {uploadState.progress}%
+              </span>
+            </div>
+          )}
+
+          {/* 업로드 에러 */}
+          {uploadState.error && (
+            <div className={styles.errorMessage}>
+              ❌ 업로드 실패: {uploadState.error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 업로드 성공 */}
+      {uploadResult && (
+        <div className={styles.successSection}>
+          <div className={styles.successHeader}>
+            <h3 className={styles.successTitle}>🎉 업로드 완료!</h3>
+          </div>
+
+          <div className={styles.successInfo}>
+            <p className={styles.successText}>
+              파일이 성공적으로 서버에 저장되었습니다.
+            </p>
+            <div className={styles.fileDetails}>
+              <p>
+                <strong>파일 ID:</strong> {uploadResult.fileId}
+              </p>
+              <p>
+                <strong>파일 길이:</strong>{" "}
+                {audioDuration ? formatTime(audioDuration) : "알 수 없음"}
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.successActions}>
+            <a
+              className={styles.viewFileLink}
+              href={uploadResult.downloadURL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🔗 업로드된 파일 보기
+            </a>
+
+            <button
+              className={styles.newRecordingButton}
+              onClick={handleNewRecording}
+            >
+              🔄 새로 녹음하기
+            </button>
+          </div>
         </div>
       )}
     </div>
