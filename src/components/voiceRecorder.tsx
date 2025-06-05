@@ -53,33 +53,14 @@ const RecorderComponent: React.FC = () => {
         const { default: Recorder } = await import("recorder-js");
         console.log("✅ Recorder 라이브러리 로딩 완료");
 
-        const AudioCtx =
-          window.AudioContext || (window as any).webkitAudioContext; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-        if (AudioCtx) {
-          console.log("🎵 AudioContext 생성 중...");
-          audioContextRef.current = new AudioCtx();
-          console.log("🎵 AudioContext 상태:", audioContextRef.current.state);
-
-          recorderRef.current = new Recorder(audioContextRef.current);
-          console.log("✅ Recorder 인스턴스 생성 완료");
-        } else {
-          console.error("❌ 이 브라우저는 AudioContext를 지원하지 않습니다.");
-        }
+        // Recorder 클래스만 저장 (인스턴스는 나중에 생성)
+        recorderRef.current = Recorder;
       } catch (error) {
-        console.error("❌ Recorder 초기화 실패:", error);
+        console.error("❌ Recorder 라이브러리 로딩 실패 실패:", error);
       }
     };
 
     initRecorder();
-
-    return () => {
-      console.log("🧹 VoiceRecorder 컴포넌트 언마운트 - 리소스 정리");
-      audioContextRef.current?.close();
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
   }, [isClient]);
 
   const startRecording = async () => {
@@ -99,23 +80,32 @@ const RecorderComponent: React.FC = () => {
         getUserMedia: !!navigator.mediaDevices?.getUserMedia,
       });
 
+      // 여기서 AudioContext와 Recorder 인스턴스 생성
+      const AudioCtx =
+        window.AudioContext || (window as any).webkitAudioContext; // eslint-disable-line @typescript-eslint/no-explicit-any
+      audioContextRef.current = new AudioCtx();
+
+      const RecorderClass = recorderRef.current;
+      const recorderInstance = new RecorderClass(audioContextRef.current);
+
+      // 마이크 접근 및 녹음 시작
+
       // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       // console.log("✅ 마이크 접근 성공, 스트림 획득:", {
       //   streamId: stream.id,
       //   tracks: stream.getAudioTracks().length,
       //   trackSettings: stream.getAudioTracks()[0]?.getSettings(),
       // });
-      // 마이크 접근
+
       const stream = await requestMicrophoneAccess();
-
-      streamRef.current = stream;
-
       console.log("🔧 Recorder 초기화 중...");
-      await recorderRef.current?.init(stream);
+      await recorderInstance.init(stream);
       console.log("✅ Recorder 초기화 완료");
-
       console.log("▶️ 녹음 시작...");
-      recorderRef.current?.start();
+      recorderInstance.start();
+
+      // 인스턴스를 ref에 저장
+      recorderRef.current = recorderInstance;
       setIsRecording(true);
       setRecordingTime(0);
 
