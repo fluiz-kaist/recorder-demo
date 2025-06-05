@@ -26,7 +26,8 @@ const Home: NextPage = () => {
       </main>
 
       {/* 개발 환경에서만 디버그 콘솔 표시 */}
-      {process.env.NODE_ENV === "development" && <MobileDebugConsole />}
+      {/* {process.env.NODE_ENV === "development" && <MobileDebugConsole />} */}
+      <MobileDebugConsole />
     </div>
   );
 };
