@@ -99,12 +99,14 @@ const RecorderComponent: React.FC = () => {
         getUserMedia: !!navigator.mediaDevices?.getUserMedia,
       });
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("✅ 마이크 접근 성공, 스트림 획득:", {
-        streamId: stream.id,
-        tracks: stream.getAudioTracks().length,
-        trackSettings: stream.getAudioTracks()[0]?.getSettings(),
-      });
+      // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // console.log("✅ 마이크 접근 성공, 스트림 획득:", {
+      //   streamId: stream.id,
+      //   tracks: stream.getAudioTracks().length,
+      //   trackSettings: stream.getAudioTracks()[0]?.getSettings(),
+      // });
+      // 마이크 접근
+      const stream = await requestMicrophoneAccess();
 
       streamRef.current = stream;
 
@@ -144,6 +146,66 @@ const RecorderComponent: React.FC = () => {
           message: err.message,
           name: err.name,
         });
+      }
+    }
+  };
+
+  // 마이크 접근을 별도 함수로 분리
+  const requestMicrophoneAccess = async (): Promise<MediaStream> => {
+    try {
+      console.log("🎤 마이크 접근 요청 중...");
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      console.log("✅ 마이크 접근 성공, 스트림 획득:", {
+        streamId: stream.id,
+        tracks: stream.getAudioTracks().length,
+        trackSettings: stream.getAudioTracks()[0]?.getSettings(),
+      });
+
+      return stream;
+    } catch (err: unknown) {
+      const error = err as DOMException;
+
+      console.error("❌ 마이크 접근 실패:", {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+      });
+
+      // 구체적인 에러 타입 확인
+      switch (error.name) {
+        case "NotAllowedError":
+          console.error("🚫 사용자가 마이크 권한을 거부함");
+          throw new Error(
+            "마이크 권한이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요."
+          );
+        case "NotFoundError":
+          console.error("🔍 마이크 장치를 찾을 수 없음");
+          throw new Error(
+            "마이크 장치를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요."
+          );
+        case "NotSupportedError":
+          console.error("🚫 브라우저에서 지원하지 않음");
+          throw new Error("현재 브라우저에서는 음성 녹음이 지원되지 않습니다.");
+        case "NotReadableError":
+          console.error("🔧 마이크가 다른 애플리케이션에서 사용 중");
+          throw new Error(
+            "마이크가 다른 애플리케이션에서 사용 중입니다. 다른 앱을 종료 후 다시 시도해주세요."
+          );
+        case "OverconstrainedError":
+          console.error("⚙️ 요청한 오디오 제약 조건을 만족할 수 없음");
+          throw new Error("오디오 설정에 문제가 있습니다. 다시 시도해주세요.");
+        case "SecurityError":
+          console.error("🔒 보안 정책으로 인한 접근 거부 (HTTPS 필요)");
+          throw new Error(
+            "보안상의 이유로 마이크에 접근할 수 없습니다. HTTPS 연결을 확인해주세요."
+          );
+        default:
+          console.error("❓ 알 수 없는 에러:", error.name);
+          throw new Error(
+            `마이크 접근 중 알 수 없는 오류가 발생했습니다: ${error.message}`
+          );
       }
     }
   };
