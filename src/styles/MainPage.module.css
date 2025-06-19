@@ -1,0 +1,112 @@
+/* styles/MainPage.module.css */
+
+.container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 24px 20px;
+  font-family: "Malgun Gothic", "맑은 고딕", Arial, sans-serif;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+  border-bottom: 3px solid #333;
+  padding-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 24px;
+  font-family: "Malgun Gothic", "맑은 고딕", Arial, sans-serif;
+  color: #333;
+}
+
+.welcomeSection {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.welcomeSection h2 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.userInfo {
+  background-color: #f8f9fa;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.userInfo p {
+  font-size: 20px;
+  margin: 8px 0;
+  color: #333;
+}
+
+.userInfo strong {
+  color: #007bff;
+}
+
+.welcomeMessage {
+  font-size: 22px;
+  color: #333;
+  font-weight: bold;
+}
+
+.contentSection {
+  padding: 24px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+}
+
+.contentSection h3 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.contentSection p {
+  font-size: 18px;
+  color: #333;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+  }
+
+  .welcomeSection h2 {
+    font-size: 24px;
+  }
+
+  .contentSection h3 {
+    font-size: 22px;
+  }
+
+  .loading {
+    font-size: 20px;
+  }
+}

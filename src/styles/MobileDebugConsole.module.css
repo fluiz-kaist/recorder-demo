@@ -202,3 +202,46 @@
     font-size: 12px;
   }
 }
+
+.authContainer {
+  padding: 16px;
+  text-align: center;
+}
+
+.authMessage {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.authInputContainer {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.authInput {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.authButton {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.authButton:hover {
+  background: #0056b3;
+}
+
+.authError {
+  color: #dc3545;
+  font-size: 12px;
+}

@@ -27,7 +27,7 @@ export const useAudioUpload = () => {
 
   const uploadAudio = async (
     audioBlob: Blob,
-    fileName: string = `recording_${Date.now()}.wav`,
+    fileName: string = `recording_${Date.now()}.webm`,
     duration: number = 0,
     userId?: string
   ): Promise<{ downloadURL: string; fileId: string } | null> => {
@@ -56,7 +56,7 @@ export const useAudioUpload = () => {
       const { downloadURL } = await uploadBlob(
         audioBlob,
         filePath,
-        "audio/wav"
+        "audio/webm"
       );
 
       console.log("✅ Storage 업로드 완료:", downloadURL);

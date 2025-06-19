@@ -1,3 +1,4 @@
+/* 기존 스타일 유지 */
 .container {
   width: 100%;
   max-width: 400px;
@@ -57,42 +58,58 @@
   color: #856404;
 }
 
+/* 고령자 친화적 녹음 버튼 */
 .recordButton {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  border: 2px solid #1e7e34;
-  border-radius: 12px;
-  padding: 1.2rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+  min-width: 200px;
+  min-height: 80px;
+  padding: 2rem 3rem;
+  font-size: 2rem;
+  font-weight: 700;
+  background: #2d5a3d;
   color: white;
+  border: 3px solid #1a4a2a;
+  border-radius: 8px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.5s ease;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
-  min-width: 160px;
-  min-height: 56px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .recordButton:hover {
-  background: linear-gradient(135deg, #218838 0%, #1c7d6a 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+  background: #4a7c59;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 .recordButton:active {
+  background: #1a4a2a;
   transform: translateY(0);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.recordButton:focus {
+  outline: 4px solid #ffd700;
+  outline-offset: 2px;
 }
 
 .recordingButton {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-  border-color: #bd2130;
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  background: #8b1538;
+  border-color: #6d1028;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  min-width: 200px;
+  min-height: 80px;
 }
 
 .recordingButton:hover {
-  background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
-  box-shadow: 0 6px 12px rgba(220, 53, 69, 0.4);
+  background: #a81e42;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 .audioSection {
@@ -175,6 +192,325 @@
   margin: 1rem;
 }
 
+/* 🎯 고령자 친화적 액션 버튼들 - 세로 배치, 큰 글자, 심플한 색상 */
+.actionButtons {
+  display: flex;
+  flex-direction: column; /* 세로 배치 */
+  gap: 16px; /* 버튼 간격 늘림 */
+  margin-top: 24px;
+  align-items: center;
+  width: 100%;
+}
+
+/* 공통 버튼 스타일 - 고령자 친화적 */
+.uploadButton,
+.newRecordingButton,
+.copyButton {
+  /* 큰 크기 */
+  width: 100%;
+  max-width: 280px;
+  min-height: 70px;
+  padding: 20px 24px;
+
+  /* 큰 글자 */
+  font-size: 1.3rem;
+  font-weight: 700;
+
+  /* 심플한 디자인 */
+  background: white;
+  border: 3px solid;
+  border-radius: 12px;
+  cursor: pointer;
+
+  /* 부드러운 전환 효과 */
+  transition: all 0.3s ease;
+
+  /* 터치 최적화 */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+
+  /* 텍스트 가운데 정렬 */
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* 제출하기 버튼 - 초록색 테두리 */
+.uploadButton {
+  color: #28a745;
+  border-color: #28a745;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.uploadButton:hover:not(:disabled) {
+  background: #28a745;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.uploadButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+}
+
+/* 새로 녹음하기 버튼 - 파란색 테두리 */
+.newRecordingButton {
+  color: #007bff;
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.newRecordingButton:hover:not(:disabled) {
+  background: #007bff;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.newRecordingButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+}
+
+/* 텍스트 복사 버튼 - 회색 테두리 */
+.copyButton {
+  color: #6c757d;
+  border-color: #6c757d;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+}
+
+.copyButton:hover:not(:disabled) {
+  background: #6c757d;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.copyButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+}
+
+/* 비활성화 상태 */
+.uploadButton:disabled,
+.newRecordingButton:disabled,
+.copyButton:disabled {
+  background: #f8f9fa;
+  color: #adb5bd;
+  border-color: #dee2e6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 포커스 상태 (키보드 접근성) */
+.uploadButton:focus,
+.newRecordingButton:focus,
+.copyButton:focus {
+  outline: 4px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* 업로드 진행률 */
+.uploadProgress {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px; /* 조금 더 두껍게 */
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid #dee2e6;
+}
+
+.progressFill {
+  height: 100%;
+  background: #28a745; /* 심플한 초록색 */
+  transition: width 0.3s ease;
+  border-radius: 6px;
+}
+
+.progressText {
+  font-size: 1.1rem; /* 글자 크게 */
+  color: #495057;
+  font-weight: 600;
+}
+
+/* 에러 메시지 */
+.errorMessage {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: white;
+  border: 3px solid #dc3545;
+  border-radius: 12px;
+  color: #dc3545;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* 성공 섹션도 심플하게 */
+.successSection {
+  margin-top: 24px;
+  padding: 24px;
+  background: white;
+  border: 3px solid #28a745;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.successHeader {
+  margin-bottom: 20px;
+}
+
+.successTitle {
+  margin: 0;
+  color: #28a745;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.successInfo {
+  margin-bottom: 24px;
+}
+
+.successText {
+  margin: 0 0 16px 0;
+  color: #495057;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.fileDetails {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+  border: 1px solid #dee2e6;
+}
+
+.fileDetails p {
+  margin: 8px 0;
+  color: #495057;
+  font-size: 1rem;
+}
+
+.fileDetails strong {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.successActions {
+  display: flex;
+  flex-direction: column; /* 세로 배치 */
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.viewFileLink {
+  /* 버튼과 동일한 스타일 */
+  width: 100%;
+  max-width: 280px;
+  min-height: 70px;
+  padding: 20px 24px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: white;
+  color: #ff6b35;
+  border: 3px solid #ff6b35;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  touch-action: manipulation;
+  text-align: center;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+}
+
+.viewFileLink:hover {
+  background: #ff6b35;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  text-decoration: none;
+}
+
+.viewFileLink:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
+}
+
+/* 변환 결과 스타일도 심플하게 */
+.transcriptionResult {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+  margin-bottom: 20px;
+}
+
+.transcriptionText {
+  margin-bottom: 15px;
+}
+
+.transcriptContent {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  font-size: 1.1rem; /* 글자 크게 */
+  line-height: 1.6;
+  margin: 15px 0;
+  color: #495057;
+}
+
+.confidenceScore {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.confidence {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.highConfidence {
+  background-color: white;
+  color: #28a745;
+  border: 2px solid #28a745;
+}
+
+.mediumConfidence {
+  background-color: white;
+  color: #ffc107;
+  border: 2px solid #ffc107;
+}
+
+.lowConfidence {
+  background-color: white;
+  color: #dc3545;
+  border: 2px solid #dc3545;
+}
+
+.audioDurationInfo {
+  color: #6c757d;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
 /* 모바일 최적화 */
 @media (max-width: 480px) {
   .container {
@@ -198,10 +534,10 @@
   }
 
   .recordButton {
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-    min-width: 140px;
-    min-height: 52px;
+    padding: 1.5rem 2rem;
+    font-size: 1.8rem;
+    min-width: 180px;
+    min-height: 70px;
   }
 
   .audioSection {
@@ -215,9 +551,13 @@
     gap: 0.5rem;
   }
 
-  .downloadLink {
-    padding: 0.9rem 1.2rem;
-    font-size: 0.95rem;
+  .uploadButton,
+  .newRecordingButton,
+  .copyButton,
+  .viewFileLink {
+    font-size: 1.2rem;
+    min-height: 65px;
+    padding: 18px 20px;
   }
 
   .audioDuration {
@@ -238,207 +578,305 @@
   }
 
   .recordButton {
-    padding: 0.9rem 1.2rem;
-    font-size: 0.95rem;
-    min-width: 130px;
+    padding: 1.2rem 1.5rem;
+    font-size: 1.6rem;
+    min-width: 160px;
+    min-height: 65px;
   }
 
   .recordingTime {
     font-size: 0.95rem;
   }
-}
-
-/** 추가 **/
-
-/* 액션 버튼들 */
-.actionButtons {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.uploadButton {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #4caf50, #45a049);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-}
-
-.uploadButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #45a049, #4caf50);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
-}
-
-.uploadButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.newRecordingButton {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #2196f3, #1976d2);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
-}
-
-.newRecordingButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1976d2, #2196f3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
-}
-
-.newRecordingButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 업로드 진행률 */
-.uploadProgress {
-  margin-top: 16px;
-  text-align: center;
-}
-
-.progressBar {
-  width: 100%;
-  height: 8px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, #4caf50, #81c784);
-  transition: width 0.3s ease;
-  border-radius: 4px;
-}
-
-.progressText {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}
-
-/* 에러 메시지 */
-.errorMessage {
-  margin-top: 16px;
-  padding: 12px;
-  background-color: #ffebee;
-  border: 1px solid #e57373;
-  border-radius: 8px;
-  color: #c62828;
-  text-align: center;
-  font-weight: 500;
-}
-
-/* 성공 섹션 */
-.successSection {
-  margin-top: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
-  border: 2px solid #4caf50;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.successHeader {
-  margin-bottom: 16px;
-}
-
-.successTitle {
-  margin: 0;
-  color: #2e7d32;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.successInfo {
-  margin-bottom: 20px;
-}
-
-.successText {
-  margin: 0 0 12px 0;
-  color: #388e3c;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.fileDetails {
-  background: rgba(255, 255, 255, 0.8);
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 12px;
-}
-
-.fileDetails p {
-  margin: 4px 0;
-  color: #2e7d32;
-  font-size: 14px;
-}
-
-.fileDetails strong {
-  font-weight: 600;
-}
-
-.successActions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.viewFileLink {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
-}
-
-.viewFileLink:hover {
-  background: linear-gradient(135deg, #f57c00, #ff9800);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(255, 152, 0, 0.4);
-  text-decoration: none;
-  color: white;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .actionButtons,
-  .successActions {
-    flex-direction: column;
-    align-items: center;
-  }
 
   .uploadButton,
   .newRecordingButton,
+  .copyButton,
   .viewFileLink {
-    width: 100%;
-    max-width: 280px;
+    font-size: 1.1rem;
+    min-height: 60px;
+    padding: 16px 18px;
+  }
+}
+/* 🎯 고령자용 녹음 안내 */
+.recordingGuide {
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.recordingGuide h4 {
+  margin: 0 0 16px 0;
+  color: #495057;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.recordingGuide ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.recordingGuide li {
+  margin-bottom: 8px;
+  font-size: 1rem;
+  color: #495057;
+  line-height: 1.5;
+  position: relative;
+}
+
+.recordingGuide li:before {
+  content: "✓";
+  color: #28a745;
+  font-weight: bold;
+  position: absolute;
+  left: -20px;
+}
+
+/* 🎯 품질 검사 중 */
+.qualityChecking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  padding: 16px;
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  gap: 12px;
+}
+
+.qualityChecking span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+/* 🎯 품질 경고 */
+.qualityWarning {
+  background: white;
+  border: 3px solid #ff9800;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.qualityWarning h4 {
+  margin: 0 0 16px 0;
+  color: #ff9800;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.qualityScore {
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 16px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e65100;
+}
+
+.qualityIssues,
+.qualityRecommendations {
+  text-align: left;
+  margin: 16px 0;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.qualityIssues strong,
+.qualityRecommendations strong {
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.qualityIssues ul,
+.qualityRecommendations ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.qualityIssues li,
+.qualityRecommendations li {
+  margin-bottom: 4px;
+  color: #495057;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.qualityActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  align-items: center;
+}
+
+/* 🎯 품질 점수 배지 */
+.qualityBadge {
+  background: #e8f5e8;
+  color: #28a745;
+  border: 2px solid #28a745;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+/* 🎯 재녹음 버튼 (권장) */
+.retryRecordingButton {
+  width: 100%;
+  max-width: 280px;
+  min-height: 70px;
+  padding: 20px 24px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: white;
+  color: #ff9800;
+  border: 3px solid #ff9800;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  touch-action: manipulation;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+}
+
+.retryRecordingButton:hover {
+  background: #ff9800;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.retryRecordingButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3);
+}
+
+.retryRecordingButton:focus {
+  outline: 4px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* 🎯 그대로 진행 버튼 */
+.proceedButton {
+  width: 100%;
+  max-width: 280px;
+  min-height: 60px;
+  padding: 16px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: white;
+  color: #6c757d;
+  border: 2px solid #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  touch-action: manipulation;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.proceedButton:hover {
+  background: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.proceedButton:active {
+  transform: translateY(0);
+}
+
+.proceedButton:focus {
+  outline: 4px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* 녹음 팁 텍스트 */
+.recordingTip {
+  margin: 8px 0 0 0;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* 결과 세부 정보 */
+.resultDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.qualityInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+
+.qualityInfo .qualityScore {
+  background: #e8f5e8;
+  color: #28a745;
+  border: 2px solid #28a745;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .recordingGuide {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .recordingGuide h4 {
+    font-size: 1.1rem;
+  }
+
+  .recordingGuide li {
+    font-size: 0.95rem;
+  }
+
+  .qualityWarning {
+    padding: 20px 16px;
+  }
+
+  .qualityWarning h4 {
+    font-size: 1.2rem;
+  }
+
+  .retryRecordingButton,
+  .proceedButton {
+    font-size: 1.2rem;
+    min-height: 65px;
+  }
+
+  .proceedButton {
+    font-size: 1rem;
+    min-height: 55px;
+  }
+
+  .resultDetails {
+    flex-direction: column;
+    gap: 12px;
   }
 }

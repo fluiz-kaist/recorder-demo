@@ -1,0 +1,239 @@
+/* 에러 팝업 스타일 - VoiceRecorder.module.css에 추가 */
+
+/* 오버레이 배경 */
+.errorOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 팝업 컨테이너 */
+.errorPopup {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 팝업 헤더 */
+.errorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 32px 20px;
+  border-bottom: 2px solid #f0f0f0;
+  background: #fef7f7;
+}
+
+.errorHeader h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #d73527;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.errorCloseButton {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.errorCloseButton:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* 팝업 본문 */
+.errorBody {
+  padding: 32px;
+}
+
+.errorBody p {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.6;
+  color: #333;
+  word-break: keep-all;
+  font-weight: 500;
+}
+
+/* 팝업 푸터 */
+.errorFooter {
+  padding: 20px 32px 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.errorOkButton {
+  background-color: #d73527;
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.errorOkButton:hover {
+  background-color: #c12e20;
+  transform: translateY(-1px);
+}
+
+.errorOkButton:active {
+  transform: translateY(0);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 480px) {
+  .errorPopup {
+    margin: 20px;
+    width: calc(100% - 40px);
+  }
+
+  .errorHeader {
+    padding: 16px 20px 12px;
+  }
+
+  .errorHeader h3 {
+    font-size: 16px;
+  }
+
+  .errorBody {
+    padding: 20px;
+  }
+
+  .errorBody p {
+    font-size: 15px;
+  }
+
+  .errorFooter {
+    padding: 12px 20px 20px;
+  }
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .errorPopup {
+    background: #2d2d2d;
+    color: #e0e0e0;
+  }
+
+  .errorHeader {
+    background: #3d2626;
+    border-bottom-color: #404040;
+  }
+
+  .errorHeader h3 {
+    color: #ff6b5b;
+  }
+
+  .errorCloseButton {
+    color: #b0b0b0;
+  }
+
+  .errorCloseButton:hover {
+    background-color: #404040;
+    color: #e0e0e0;
+  }
+
+  .errorBody p {
+    color: #e0e0e0;
+  }
+
+  .errorOkButton {
+    background-color: #ff6b5b;
+  }
+
+  .errorOkButton:hover {
+    background-color: #ff5a4a;
+  }
+}
+
+/* 시각적 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  .errorOverlay {
+    animation: none;
+  }
+
+  .errorPopup {
+    animation: none;
+  }
+
+  .errorOkButton {
+    transition: none;
+  }
+
+  .errorCloseButton {
+    transition: none;
+  }
+}
+
+/* 큰 화면에서 더 큰 폰트 */
+@media (min-width: 1200px) {
+  .errorHeader h3 {
+    font-size: 26px;
+  }
+
+  .errorBody p {
+    font-size: 22px;
+  }
+
+  .errorOkButton {
+    font-size: 20px;
+    padding: 18px 36px;
+  }
+
+  .errorCloseButton {
+    font-size: 30px;
+    width: 44px;
+    height: 44px;
+  }
+}

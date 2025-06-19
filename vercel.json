@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "pages/api/speech-to-text.js": {
+      "maxDuration": 30
+    }
+  }
+}
