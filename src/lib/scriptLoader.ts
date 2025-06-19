@@ -1,26 +1,52 @@
 // lib/scriptLoader.ts
-import { SituationalScript, FormalScript, QAScenarioScript } from "@/types/firebase"
-import fs from 'fs';
-import path from 'path';
+import {
+  SituationalScript,
+  FormalScript,
+  QAScenarioScript,
+} from "@/types/firebase";
+import fs from "fs";
+import path from "path";
 
 // 서버 메모리 캐시
 let situationalScriptsCache: SituationalScript[] | null = null;
 let formalScriptsCache: FormalScript[] | null = null;
 let qaScenarioScriptsCache: QAScenarioScript[] | null = null;
 
+function getDataFilePath(filename: string): string {
+  // 여러 가능한 경로를 시도
+  const possiblePaths = [
+    path.join(process.cwd(), "public", "data", filename),
+    path.join(__dirname, "..", "..", "public", "data", filename),
+    path.join(process.cwd(), "data", filename), // Vercel에서 때때로 다른 경로
+  ];
+
+  for (const filePath of possiblePaths) {
+    if (fs.existsSync(filePath)) {
+      return filePath;
+    }
+  }
+
+  throw new Error(
+    `Data file not found: ${filename}. Tried paths: ${possiblePaths.join(", ")}`
+  );
+}
 export async function loadSituationalScripts(): Promise<SituationalScript[]> {
   if (situationalScriptsCache) {
     return situationalScriptsCache;
   }
 
   try {
-    const filePath = path.join(process.cwd(), 'public', 'data', 'situationalScripts.json');
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    situationalScriptsCache = JSON.parse(fileContent);
-    return situationalScriptsCache!;
+    const filePath = getDataFilePath("situationalScripts.json");
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    const parsedData = JSON.parse(fileContent) as SituationalScript[];
+    situationalScriptsCache = parsedData;
+    console.log(
+      `✅ Loaded ${parsedData.length} situational scripts from: ${filePath}`
+    );
+    return parsedData; // 캐시 변수 대신 파싱된 데이터 직접 반환
   } catch (error) {
-    console.error('Error loading situational scripts:', error);
-    throw new Error('Failed to load situational scripts');
+    console.error("❌ Error loading situational scripts:", error);
+    throw new Error("Failed to load situational scripts");
   }
 }
 
@@ -30,13 +56,17 @@ export async function loadFormalScripts(): Promise<FormalScript[]> {
   }
 
   try {
-    const filePath = path.join(process.cwd(), 'public', 'data', 'formalScripts.json');
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    formalScriptsCache = JSON.parse(fileContent);
-    return formalScriptsCache!;
+    const filePath = getDataFilePath("formalScripts.json");
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    const parsedData = JSON.parse(fileContent) as FormalScript[];
+    formalScriptsCache = parsedData;
+    console.log(
+      `✅ Loaded ${parsedData.length} formal scripts from: ${filePath}`
+    );
+    return parsedData;
   } catch (error) {
-    console.error('Error loading formal scripts:', error);
-    throw new Error('Failed to load formal scripts');
+    console.error("❌ Error loading formal scripts:", error);
+    throw new Error("Failed to load formal scripts");
   }
 }
 
@@ -46,27 +76,30 @@ export async function loadQAScenarioScripts(): Promise<QAScenarioScript[]> {
   }
 
   try {
-    const filePath = path.join(process.cwd(), 'public', 'data', 'qaScenarioScripts.json');
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    qaScenarioScriptsCache = JSON.parse(fileContent);
-    return qaScenarioScriptsCache!;
+    const filePath = getDataFilePath("qaScenarioScripts.json");
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    const parsedData = JSON.parse(fileContent) as QAScenarioScript[];
+    qaScenarioScriptsCache = parsedData;
+    console.log(
+      `✅ Loaded ${parsedData.length} QA scenario scripts from: ${filePath}`
+    );
+    return parsedData;
   } catch (error) {
-    console.error('Error loading QA scenario scripts:', error);
-    throw new Error('Failed to load QA scenario scripts');
+    console.error("❌ Error loading QA scenario scripts:", error);
+    throw new Error("Failed to load QA scenario scripts");
   }
 }
-
 export async function loadAllScripts() {
   const [situational, formal, qaScenario] = await Promise.all([
     loadSituationalScripts(),
     loadFormalScripts(),
-    loadQAScenarioScripts()
+    loadQAScenarioScripts(),
   ]);
 
   return {
     situational,
     formal,
-    qaScenario
+    qaScenario,
   };
 }
 
@@ -81,5 +114,5 @@ export function findScriptById(
   scripts: (SituationalScript | FormalScript | QAScenarioScript)[],
   id: string
 ) {
-  return scripts.find(script => script.id === id);
+  return scripts.find((script) => script.id === id);
 }

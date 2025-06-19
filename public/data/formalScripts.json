@@ -68,5 +68,61 @@
     "intent": "병원·약국 실시간 검색 및 정보 제공",
     "title": "주말 진료 치과 찾기",
     "formalSentence": "주말에도 하는 치과 찾아줘2"
+  },
+  {
+    "id": 10,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "재활치료 가능한 의원 찾기",
+    "formalSentence": "재활치료 가능한 의원 찾아줘3"
+  },
+  {
+    "id": 11,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "문 연 신경외과 찾기",
+    "formalSentence": "지금 문 연 신경외과 찾아줘3"
+  },
+  {
+    "id": 12,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "리뷰 좋은 정형외과 찾기",
+    "formalSentence": "리뷰 좋은 정형외과 찾아줘3"
+  },
+  {
+    "id": 13,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "문 연 이비인후과 찾기",
+    "formalSentence": "지금 문 연 이비인후과 찾아줘3"
+  },
+  {
+    "id": 14,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "재활치료 가능한 의원 찾기",
+    "formalSentence": "재활치료 가능한 의원 찾아줘4"
+  },
+  {
+    "id": 15,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "문 연 신경외과 찾기",
+    "formalSentence": "지금 문 연 신경외과 찾아줘4"
+  },
+  {
+    "id": 16,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "리뷰 좋은 정형외과 찾기",
+    "formalSentence": "리뷰 좋은 정형외과 찾아줘4"
+  },
+  {
+    "id": 17,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "문 연 이비인후과 찾기",
+    "formalSentence": "지금 문 연 이비인후과 찾아줘4"
   }
 ]

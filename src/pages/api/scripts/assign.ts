@@ -96,8 +96,8 @@ export default async function handler(
 
     // 5. 충분한 스크립트가 있는지 확인
     if (
-      availableSituational.length < 8 ||
-      availableFormal.length < 8 ||
+      availableSituational.length < 1 ||
+      availableFormal.length < 1 ||
       availableQAScenario.length < 1
     ) {
       return res.status(400).json({
@@ -108,8 +108,8 @@ export default async function handler(
     }
 
     // 6. 랜덤 선택
-    const selectedSituational = getRandomItems(availableSituational, 8);
-    const selectedFormal = getRandomItems(availableFormal, 8);
+    const selectedSituational = getRandomItems(availableSituational, 2);
+    const selectedFormal = getRandomItems(availableFormal, 2);
     const selectedQAScenario = getRandomItems(availableQAScenario, 1);
 
     // 7. DB 업데이트 (배치 처리)
