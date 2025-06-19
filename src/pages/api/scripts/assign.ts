@@ -348,8 +348,13 @@ async function getAssignedScriptsContent(
       .filter(Boolean) || [];
 
   return {
-    situational,
-    formal,
-    qaScenario,
+    // TypeScript가 filter(Boolean) 후에도 undefined 가능성을 제거하지 못해서 any로 우회
+    // 실제로는 filter(Boolean)에 의해 undefined가 제거된 상태
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    situational: situational as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    formal: formal as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    qaScenario: qaScenario as any,
   };
 }

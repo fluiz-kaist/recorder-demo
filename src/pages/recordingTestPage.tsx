@@ -1,6 +1,6 @@
 import { NextPage } from "next";
 import dynamic from "next/dynamic";
-import styles from "@/styles/Home.module.css";
+import styles from "@/styles/VoiceRecorder.module.css";
 // VoiceRecorder 컴포넌트를 동적 임포트 (SSR 비활성화)
 const VoiceRecorder = dynamic(() => import("@/components/voiceRecorder"), {
   ssr: false,

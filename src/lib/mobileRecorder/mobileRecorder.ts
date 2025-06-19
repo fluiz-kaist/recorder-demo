@@ -2,15 +2,15 @@ import { useRef, useState } from "react";
 // 모바일 최적화된 순수 Web Audio API 녹음기
 export const MobileOptimizedRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
 
-  const audioContextRef = useRef(null);
-  const sourceNodeRef = useRef(null);
-  const processorNodeRef = useRef(null);
-  const streamRef = useRef(null);
-  const recordedBuffersRef = useRef([]);
-  const timerRef = useRef(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recordedBuffersRef = useRef<Float32Array[]>([]);
 
   // 모바일 최적화 마이크 접근
   const getMicrophoneStream = async () => {
@@ -56,7 +56,11 @@ export const MobileOptimizedRecorder = () => {
         console.log("✅ 마이크 접근 성공:", settings);
         return stream;
       } catch (error) {
-        console.warn("⚠️ 설정 실패, 다음 설정 시도:", error.message);
+        if (error instanceof Error) {
+          console.warn("⚠️ 설정 실패, 다음 설정 시도:", error.message);
+        } else {
+          console.warn("⚠️ 설정 실패, 다음 설정 시도:", error);
+        }
         continue;
       }
     }
@@ -65,7 +69,7 @@ export const MobileOptimizedRecorder = () => {
   };
 
   // 강제 모노 변환을 위한 AudioContext 설정
-  const createMonoAudioContext = async (stream) => {
+  const createMonoAudioContext = async (stream: MediaStream) => {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     const audioContext = new AudioContextClass({
       sampleRate: 16000, // STT 최적화
@@ -142,7 +146,9 @@ export const MobileOptimizedRecorder = () => {
       console.log("✅ 녹음 시작 완료");
     } catch (error) {
       console.error("❌ 녹음 시작 실패:", error);
-      alert(`녹음 시작 실패: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : "알 수 없는 오류";
+      alert(`녹음 시작 실패: ${errorMessage}`);
     }
   };
 
@@ -190,7 +196,10 @@ export const MobileOptimizedRecorder = () => {
   };
 
   // 모노 WAV 파일 생성 (16000Hz, 16-bit, 모노)
-  const createMonoWavBlob = (buffers, sampleRate) => {
+  const createMonoWavBlob = (
+    buffers: Float32Array[],
+    sampleRate: number
+  ): Blob => {
     // 전체 길이 계산
     const totalLength = buffers.reduce((acc, buffer) => acc + buffer.length, 0);
 
@@ -212,7 +221,12 @@ export const MobileOptimizedRecorder = () => {
   };
 
   // WAV 헤더 생성
-  const createWavBuffer = (pcmData, sampleRate, numChannels) => {
+
+  const createWavBuffer = (
+    pcmData: Int16Array,
+    sampleRate: number,
+    numChannels: number
+  ): ArrayBuffer => {
     const bytesPerSample = 2; // 16-bit
     const dataLength = pcmData.length * bytesPerSample;
     const headerLength = 44;
@@ -222,7 +236,7 @@ export const MobileOptimizedRecorder = () => {
     const view = new DataView(buffer);
 
     // WAV 헤더 작성
-    const writeString = (offset, string) => {
+    const writeString = (offset: number, string: string) => {
       for (let i = 0; i < string.length; i++) {
         view.setUint8(offset + i, string.charCodeAt(i));
       }
@@ -250,7 +264,7 @@ export const MobileOptimizedRecorder = () => {
   };
 
   // WAV 파일 검증
-  const validateWavFile = async (blob) => {
+  const validateWavFile = async (blob: Blob) => {
     const arrayBuffer = await blob.arrayBuffer();
     const view = new DataView(arrayBuffer);
 

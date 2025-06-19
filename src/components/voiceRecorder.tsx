@@ -584,7 +584,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
             <div className={styles.resultDetails}>
               <p>🔉 녹음된 음성 확인하기:</p>
-              <audio className={styles.audioPlayer} src={audioUrl} controls />
+              {audioUrl && (
+                <audio className={styles.audioPlayer} src={audioUrl} controls />
+              )}
               {audioDuration && (
                 <div className={styles.audioDurationInfo}>
                   <strong>녹음 길이:</strong> {formatTime(audioDuration)}

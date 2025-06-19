@@ -16,8 +16,10 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "types": [],
+
+    "typeRoots": ["types", "node_modules/@types"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "../갈래길원본.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }
