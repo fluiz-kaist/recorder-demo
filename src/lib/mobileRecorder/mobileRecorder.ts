@@ -14,10 +14,10 @@ export const MobileOptimizedRecorder = () => {
 
   // 모바일 최적화 마이크 접근
   const getMicrophoneStream = async () => {
-    const isMobile =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      );
+    // const isMobile =
+    //   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    //     navigator.userAgent
+    //   );
 
     // 모바일에서 가장 호환성 좋은 설정들을 순서대로 시도
     const constraintsList = [

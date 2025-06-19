@@ -3,7 +3,6 @@ import { NextApiRequest, NextApiResponse } from "next";
 import {
   doc,
   updateDoc,
-  getDoc,
   arrayUnion,
   serverTimestamp,
   increment,

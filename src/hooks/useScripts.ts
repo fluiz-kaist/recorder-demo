@@ -141,6 +141,7 @@ export const useScripts = () => {
         return false;
       }
     } catch (err) {
+      console.log("err", err);
       setError("네트워크 오류가 발생했습니다.");
       return false;
     }

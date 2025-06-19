@@ -16,14 +16,12 @@ export interface STTResponse {
 // STT 컴포넌트
 const STTComponent: React.FC<{
   audioBlob: Blob | null;
-  audioDuration: number | null;
   onTranscriptionComplete: (result: TranscriptionResult | null) => void;
   onError: (error: string) => void;
   autoTranscribe?: boolean; // 자동 변환 여부 추가
   onTranscribingStateChange?: (isTranscribing: boolean) => void; // 새로 추가
 }> = ({
   audioBlob,
-  audioDuration,
   onTranscriptionComplete,
   onError,
   autoTranscribe = false,

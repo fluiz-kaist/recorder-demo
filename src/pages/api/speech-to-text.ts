@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { SpeechClient } from "@google-cloud/speech";
 import formidable, { IncomingForm } from "formidable";
 import fs from "fs";
+import os from "os";
 
 // API 설정: multipart/form-data를 처리하기 위해 body parser 비활성화
 export const config = {
@@ -51,7 +52,7 @@ const parseForm = (
 ): Promise<{ fields: formidable.Fields; files: formidable.Files }> => {
   return new Promise((resolve, reject) => {
     // 운영체제에 따른 임시 디렉토리 설정
-    const tmpDir = process.env.VERCEL ? "/tmp" : require("os").tmpdir();
+    const tmpDir = process.env.VERCEL ? "/tmp" : os.tmpdir();
 
     const form = new IncomingForm({
       uploadDir: tmpDir,

@@ -63,10 +63,10 @@ const SituationRecordingPage = () => {
     }
   };
 
-  const handleStartRecording = () => {
-    triggerHapticFeedback();
-    setShowRecorder(true);
-  };
+  // const handleStartRecording = () => {
+  //   triggerHapticFeedback();
+  //   setShowRecorder(true);
+  // };
 
   const handleRecordingComplete = () => {
     setRecordedCount((prev) => prev + 1);

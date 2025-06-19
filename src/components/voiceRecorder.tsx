@@ -502,7 +502,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           {showSTT && (
             <STTComponent
               audioBlob={audioBlob}
-              audioDuration={audioDuration}
               onTranscriptionComplete={handleTranscriptionComplete}
               onError={handleTranscriptionError}
               onTranscribingStateChange={handleSTTStateChange} // 새로 추가
