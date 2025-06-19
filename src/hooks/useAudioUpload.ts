@@ -29,7 +29,9 @@ export const useAudioUpload = () => {
     audioBlob: Blob,
     fileName: string = `recording_${Date.now()}.webm`,
     duration: number = 0,
-    userId?: string
+    userId?: string,
+    scriptFileId?: string, // 상황 스크립트 ID
+    fileCategory?: string // 파일 카테고리
   ): Promise<{ downloadURL: string; fileId: string } | null> => {
     try {
       setUploadState({
@@ -44,6 +46,8 @@ export const useAudioUpload = () => {
         size: audioBlob.size,
         type: audioBlob.type,
         duration,
+        scriptFileId,
+        fileCategory,
       });
 
       // 진행률 업데이트 (Storage 업로드)
@@ -64,12 +68,17 @@ export const useAudioUpload = () => {
       // 진행률 업데이트 (Firestore 저장)
       setUploadState((prev) => ({ ...prev, progress: 75 }));
 
-      // Firestore에 메타데이터 저장
-      const audioMetadata: AudioMetadata = {
+      // Firestore에 메타데이터 저장 (상황 스크립트 정보 포함)
+      const audioMetadata: AudioMetadata & {
+        scriptFileId?: string;
+        fileCategory?: string;
+      } = {
         fileName,
         duration,
         uploadedAt: new Date().toISOString(),
         fileSize: audioBlob.size,
+        scriptFileId, // 상황 스크립트 ID 추가
+        fileCategory, // 파일 카테고리 추가
       };
 
       const audioDoc = {
@@ -80,14 +89,14 @@ export const useAudioUpload = () => {
         createdAt: new Date().toISOString(),
       };
 
-      // 문서 ID 생성 (타임스탬프 기반)
-      const fileId = `audio_${Date.now()}_${Math.random()
-        .toString(36)
-        .substr(2, 9)}`;
+      // 문서 ID 생성 (상황 스크립트 ID 기반 또는 타임스탬프 기반)
+      const finalFileId =
+        scriptFileId ||
+        `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      await saveDoc("audio_files", fileId, audioDoc);
+      await saveDoc("audio_files", finalFileId, audioDoc);
 
-      console.log("✅ Firestore 메타데이터 저장 완료:", fileId);
+      console.log("✅ Firestore 메타데이터 저장 완료:", finalFileId);
 
       // 완료
       setUploadState({
@@ -97,7 +106,7 @@ export const useAudioUpload = () => {
         success: true,
       });
 
-      return { downloadURL, fileId };
+      return { downloadURL, fileId: finalFileId };
     } catch (error) {
       console.error("❌ 오디오 업로드 실패:", error);
 
@@ -116,7 +125,6 @@ export const useAudioUpload = () => {
       return null;
     }
   };
-
   const resetUploadState = () => {
     setUploadState({
       isUploading: false,

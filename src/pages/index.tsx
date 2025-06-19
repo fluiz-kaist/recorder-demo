@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
 import { v4 as uuidv4 } from "uuid";
+import { useScripts } from "@/hooks/useScripts";
 
 const ageGroups = [
   "60-64세",
@@ -36,6 +37,12 @@ export default function ConsentPage({
   serviceDescription,
 }: ConsentPageProps) {
   const router = useRouter();
+  const {
+    assignScripts,
+    loading: scriptLoading,
+    error: scriptError,
+  } = useScripts();
+
   const [userInfo, setUserInfo] = useState<UserInfo>({
     id: "",
     gender: "",
@@ -43,6 +50,8 @@ export default function ConsentPage({
     hasConsented: false,
     createdAt: "",
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const generateNewUserId = () => {
@@ -55,6 +64,7 @@ export default function ConsentPage({
         createdAt: createdAt,
       }));
     };
+
     const existingUserInfo = localStorage.getItem("userInfo");
 
     if (existingUserInfo) {
@@ -79,7 +89,8 @@ export default function ConsentPage({
       // 새로운 사용자 ID 생성
       generateNewUserId();
     }
-  }, []);
+  }, [router]);
+
   const getKoreanTime = () => {
     const now = new Date();
     const koreanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
@@ -93,33 +104,54 @@ export default function ConsentPage({
   const handleAgeGroupSelect = (ageGroup: (typeof ageGroups)[number]) => {
     setUserInfo((prev) => ({ ...prev, ageGroup }));
   };
+
   const handleConsentChange = (checked: boolean) => {
     setUserInfo((prev) => ({ ...prev, hasConsented: checked }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!userInfo.gender || !userInfo.ageGroup || !userInfo.hasConsented) {
       alert("모든 항목을 선택하고 동의해주세요.");
       return;
     }
 
-    // 완료된 시간 추가
-    const completedUserInfo = {
-      ...userInfo,
-      completedAt: getKoreanTime(),
-    };
+    setIsSubmitting(true);
 
-    // 사용자 정보를 localStorage에 저장 (sessionStorage 대신)
-    localStorage.setItem("userInfo", JSON.stringify(completedUserInfo));
+    try {
+      // 완료된 시간 추가
+      const completedUserInfo = {
+        ...userInfo,
+        completedAt: getKoreanTime(),
+      };
 
-    // sessionStorage에도 저장 (기존 로직 유지)
-    sessionStorage.setItem("userInfo", JSON.stringify(completedUserInfo));
-    // 다음 페이지로 이동
-    router.push("/main");
+      // 사용자 정보를 localStorage에 저장
+      localStorage.setItem("userInfo", JSON.stringify(completedUserInfo));
+
+      // useScripts 훅에서 사용할 userId도 동일하게 설정
+      localStorage.setItem("userId", userInfo.id);
+
+      // sessionStorage에도 저장 (기존 로직 유지)
+      sessionStorage.setItem("userInfo", JSON.stringify(completedUserInfo));
+
+      // 스크립트 할당 요청
+      // userInfo.id를 직접 전달해서 스크립트 할당
+      console.log("여기서 userinfo", userInfo)
+      await assignScripts(userInfo.id);
+
+      // 성공하면 다음 페이지로 이동
+      router.push("/main");
+    } catch (error) {
+      console.error("동의 처리 중 오류:", error);
+      alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isSubmitEnabled =
     userInfo.gender && userInfo.ageGroup && userInfo.hasConsented;
+
+  const isLoading = isSubmitting || scriptLoading;
 
   return (
     <>
@@ -191,6 +223,7 @@ export default function ConsentPage({
                     userInfo.gender === gender ? styles.selected : ""
                   }`}
                   onClick={() => handleGenderSelect(gender)}
+                  disabled={isLoading}
                 >
                   {gender}
                 </button>
@@ -210,6 +243,7 @@ export default function ConsentPage({
                     userInfo.ageGroup === age ? styles.selected : ""
                   }`}
                   onClick={() => handleAgeGroupSelect(age)}
+                  disabled={isLoading}
                 >
                   {age}
                 </button>
@@ -218,17 +252,22 @@ export default function ConsentPage({
           </div>
         </div>
 
+        {/* 오류 메시지 표시 */}
+        {scriptError && (
+          <div className={styles.errorMessage}>{scriptError}</div>
+        )}
+
         {/* 제출 버튼 */}
         <div className={styles.submitSection}>
           <button
             type="button"
             className={`${styles.submitButton} ${
-              isSubmitEnabled ? styles.enabled : styles.disabled
+              isSubmitEnabled && !isLoading ? styles.enabled : styles.disabled
             }`}
             onClick={handleSubmit}
-            disabled={!isSubmitEnabled}
+            disabled={!isSubmitEnabled || isLoading}
           >
-            동의하고 시작하기
+            {isLoading ? "처리 중..." : "동의하고 시작하기"}
           </button>
         </div>
       </div>

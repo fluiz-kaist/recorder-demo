@@ -1,0 +1,72 @@
+[
+  {
+    "id": 0,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "예약 가능한 재활의학과 찾기",
+    "formalSentence": "예약 가능한 재활의학과 찾아줘"
+  },
+  {
+    "id": 1,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "야간 진료 건강검진센터 찾기",
+    "formalSentence": "야간 진료하는 건강검진센터 찾아줘"
+  },
+  {
+    "id": 2,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "재활치료 가능한 병원 찾기",
+    "formalSentence": "재활치료 가능한 병원 찾아줘"
+  },
+  {
+    "id": 3,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "자주 가던 한의원 찾기",
+    "formalSentence": "내가 자주 가던 한의원 찾아줘"
+  },
+  {
+    "id": 4,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "주말 진료 치과 찾기",
+    "formalSentence": "주말에도 하는 치과 찾아줘"
+  },
+  {
+    "id": 5,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "예약 가능한 재활의학과 찾기",
+    "formalSentence": "예약 가능한 재활의학과 찾아줘2"
+  },
+  {
+    "id": 6,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "야간 진료 건강검진센터 찾기",
+    "formalSentence": "야간 진료하는 건강검진센터 찾아줘2"
+  },
+  {
+    "id": 7,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "재활치료 가능한 병원 찾기",
+    "formalSentence": "재활치료 가능한 병원 찾아줘2"
+  },
+  {
+    "id": 8,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "자주 가던 한의원 찾기",
+    "formalSentence": "내가 자주 가던 한의원 찾아줘2"
+  },
+  {
+    "id": 9,
+    "category": "병원",
+    "intent": "병원·약국 실시간 검색 및 정보 제공",
+    "title": "주말 진료 치과 찾기",
+    "formalSentence": "주말에도 하는 치과 찾아줘2"
+  }
+]

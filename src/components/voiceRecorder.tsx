@@ -16,7 +16,21 @@ interface SimpleQualityResult {
   fileSizeKB: number;
 }
 
-const RecorderComponent: React.FC = () => {
+// Props 인터페이스 추가
+interface VoiceRecorderProps {
+  currentSituation?: {
+    category: string;
+    intent: string;
+    title: string;
+    description: string;
+  };
+  situationIndex?: number;
+}
+
+const RecorderComponent: React.FC<VoiceRecorderProps> = ({
+  currentSituation,
+  situationIndex,
+}) => {
   const [isClient, setIsClient] = useState(false);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -275,7 +289,7 @@ const RecorderComponent: React.FC = () => {
     console.log("⚠️ 사용자가 품질 경고를 무시하고 STT 진행");
   };
 
-  // 서버로 업로드
+  // 서버로 업로드 함수 수정
   const handleUpload = async () => {
     if (!audioBlob || !audioDuration) {
       console.error("❌ 업로드할 오디오 파일이 없습니다.");
@@ -286,15 +300,34 @@ const RecorderComponent: React.FC = () => {
       const fileName = `recording_${new Date()
         .toISOString()
         .replace(/[:.]/g, "-")}.webm`;
+
       // localStorage에서 userId 가져오기
-      const userId = localStorage.getItem("userInfo") || "anonymous";
+      const userId = localStorage.getItem("userId") || "anonymous";
       console.log("📋 사용자 ID:", userId);
+
+      // 현재 상황 스크립트 정보로 fileId와 category 생성
+      const fileId = currentSituation
+        ? `situation_${situationIndex}_${currentSituation.category}_${currentSituation.intent}`
+        : `recording_${Date.now()}`;
+
+      const fileCategory = currentSituation
+        ? `situational_${currentSituation.category}`
+        : "general";
+
+      console.log("📝 업로드 정보:", {
+        fileId,
+        fileCategory,
+        situationTitle: currentSituation?.title,
+        situationIndex,
+      });
 
       const result = await uploadAudio(
         audioBlob,
         fileName,
         audioDuration,
-        userId
+        userId,
+        fileId,
+        fileCategory
       );
 
       if (result) {
@@ -305,7 +338,6 @@ const RecorderComponent: React.FC = () => {
       console.error("❌ 업로드 실패:", error);
     }
   };
-
   // STT 결과 처리
   const handleTranscriptionComplete = (result: TranscriptionResult | null) => {
     setTranscription(result);

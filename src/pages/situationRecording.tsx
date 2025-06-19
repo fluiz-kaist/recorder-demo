@@ -20,17 +20,29 @@ const SituationRecordingPage = () => {
   const [showRecorder, setShowRecorder] = useState(false);
 
   // JSON 파일에서 상황 스크립트 불러오기
+
+  // localStorage에서 상황 스크립트 불러오기
   useEffect(() => {
-    const fetchSituations = async () => {
+    const fetchSituations = () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/situationScripts.json");
-        if (!response.ok) {
-          throw new Error("스크립트를 불러오는데 실패했습니다.");
+
+        // localStorage에서 데이터 가져오기
+        const storedData = localStorage.getItem("assignedScripts");
+
+        if (!storedData) {
+          throw new Error("저장된 스크립트 데이터가 없습니다.");
         }
-        const data: SituationScript[] = await response.json();
-        setSituations(data);
-        setError(null);
+
+        const parsedData = JSON.parse(storedData);
+
+        // situational 배열만 추출
+        if (parsedData.situational && Array.isArray(parsedData.situational)) {
+          setSituations(parsedData.situational);
+          setError(null);
+        } else {
+          throw new Error("situational 데이터를 찾을 수 없습니다.");
+        }
       } catch (err) {
         console.error("Error fetching situations:", err);
         setError(
@@ -186,7 +198,11 @@ const SituationRecordingPage = () => {
                   </div>
 
                   {/* 녹음 시작 버튼 */}
-                  <VoiceRecorder key={`voice-recorder-${situationIndex}`} />
+                  <VoiceRecorder
+                    key={`voice-recorder-${situationIndex}`}
+                    currentSituation={currentSituation}
+                    situationIndex={situationIndex}
+                  />
                 </div>
               ) : (
                 /* VoiceRecorder 컴포넌트 */
