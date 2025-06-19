@@ -38,7 +38,7 @@ export function debugEnvironmentVariables() {
     } else if (value.includes(",")) {
       console.error(`❌ ${key}에 쉼표 포함됨:`, value);
     } else {
-      console.log(`✅ ${key}:`, value.substring(0, 10) + "...");
+      console.log(`✅ ${key}:`, value.substring(0, 2) + "...");
     }
   });
 
