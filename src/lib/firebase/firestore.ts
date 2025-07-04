@@ -20,6 +20,13 @@ export async function saveDoc(
   data: DocumentData
 ): Promise<void> {
   try {
+    console.log("saveDoc 호출:", { colName, id, data });
+    console.log("Types:", {
+      colName: typeof colName,
+      id: typeof id,
+      data: typeof data,
+    });
+
     await setDoc(doc(db, colName, id), data);
     console.log(`✅ 문서 저장됨: ${colName}/${id}`);
   } catch (err) {
@@ -27,7 +34,6 @@ export async function saveDoc(
     throw err;
   }
 }
-
 // 🔹 Create (auto-generated id)
 export async function addDocAutoId(
   colName: string,

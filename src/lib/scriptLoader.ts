@@ -112,7 +112,7 @@ export function getRandomItems<T>(items: T[], count: number): T[] {
 // 스크립트 ID로 특정 스크립트 찾기
 export function findScriptById(
   scripts: (SituationalScript | FormalScript | QAScenarioScript)[],
-  id: string
+  id: number
 ) {
   return scripts.find((script) => script.id === id);
 }

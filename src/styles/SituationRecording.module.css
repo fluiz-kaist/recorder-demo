@@ -587,3 +587,52 @@
     border: 2px solid #000;
   }
 }
+
+/* SituationRecording.module.css에 추가 */
+.titleHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.completedBadge {
+  background: #4caf50;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.completedSection {
+  text-align: center;
+  padding: 24px;
+  background: #f8fff8;
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.completedIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.completedMessage {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2e7d32;
+  margin-bottom: 8px;
+}
+
+.reRecordPrompt {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.navCompletedIcon {
+  margin-left: 4px;
+  font-size: 12px;
+}

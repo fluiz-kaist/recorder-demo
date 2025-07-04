@@ -1,13 +1,22 @@
-// pages/index.tsx
-import { useState, useEffect } from "react";
+// pages/index.tsx - 인증 확인 중 UI 숨김 처리 추가
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { GetStaticProps } from "next";
 import fs from "fs";
 import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
-import { v4 as uuidv4 } from "uuid";
-import { useScripts } from "@/hooks/useScripts";
+import {
+  useAuthStatusQuery,
+  useUserQuery,
+  useIsAuthenticated,
+  useVerifyAuthorizedUserMutation,
+} from "@/hooks/queries/useUserQueries";
+import {
+  useRegisterUserMutation,
+  useUpdateScriptAssignmentsMutation,
+} from "@/hooks/mutations/useUserMutations";
+import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 
 const ageGroups = [
   "60-64세",
@@ -17,15 +26,8 @@ const ageGroups = [
   "80-84세",
   "85세 이상",
 ] as const;
-const genders = ["남성", "여성"] as const;
 
-interface UserInfo {
-  id: string;
-  gender: "남성" | "여성" | "";
-  ageGroup: (typeof ageGroups)[number] | "";
-  hasConsented: boolean;
-  createdAt: string;
-}
+const genders = ["남성", "여성"] as const;
 
 interface ConsentPageProps {
   consentText: string;
@@ -37,122 +39,290 @@ export default function ConsentPage({
   serviceDescription,
 }: ConsentPageProps) {
   const router = useRouter();
-  const {
-    assignScripts,
-    loading: scriptLoading,
-    error: scriptError,
-  } = useScripts();
+  const [userName, setUserName] = useState<string>("");
+  
+  // 인증 상태 확인
+  const { data: authToken, isLoading: authLoading } = useAuthStatusQuery();
+  const { data: user, isLoading: userLoading } = useUserQuery();
+  const isAuthenticated = useIsAuthenticated();
 
-  const [userInfo, setUserInfo] = useState<UserInfo>({
-    id: "",
-    gender: "",
+  // 뮤테이션 훅들
+  const verifyUserMutation = useVerifyAuthorizedUserMutation();
+  const registerUserMutation = useRegisterUserMutation();
+  const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
+  const assignScriptsMutation = useAssignScriptsMutation();
+
+  // 로컬 상태
+  const [userInput, setUserInput] = useState<{
+    name: string;
+    socialNumber: string;
+    gender: "남성" | "여성";
+    ageGroup: string;
+    hasConsented: boolean;
+  }>({
+    name: "",
+    socialNumber: "",
+    gender: "남성",
     ageGroup: "",
     hasConsented: false,
-    createdAt: "",
   });
+  
+  const [error, setError] = useState<string>("");
+  
+  // 🔥 리다이렉트 상태 추가
+  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  // 인증된 사용자의 이름 설정
   useEffect(() => {
-    const generateNewUserId = () => {
-      const newId = uuidv4();
-      const createdAt = getKoreanTime();
-
-      setUserInfo((prev) => ({
-        ...prev,
-        id: newId,
-        createdAt: createdAt,
-      }));
-    };
-
-    const existingUserInfo = localStorage.getItem("userInfo");
-
-    if (existingUserInfo) {
-      try {
-        const parsedInfo = JSON.parse(existingUserInfo);
-
-        // completedAt이 있으면 이미 완료된 사용자
-        if (parsedInfo.completedAt) {
-          // 바로 메인 페이지로 리다이렉트
-          router.push("/main");
-          return;
-        }
-
-        // completedAt이 없으면 미완료 사용자, 기존 정보 복원
-        setUserInfo(parsedInfo);
-      } catch (error) {
-        console.error("기존 사용자 정보 파싱 오류:", error);
-        // 파싱 오류 시 새로운 ID 생성
-        generateNewUserId();
+    if (typeof window !== "undefined") {
+      const storedUserName = localStorage.getItem("userName");
+      if (storedUserName) {
+        setUserName(storedUserName);
       }
-    } else {
-      // 새로운 사용자 ID 생성
-      generateNewUserId();
     }
-  }, [router]);
+  }, []);
 
-  const getKoreanTime = () => {
-    const now = new Date();
-    const koreanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-    return koreanTime.toISOString().replace("T", " ").slice(0, 19) + " KST";
+  // 이미 인증된 사용자는 메인 페이지로 리다이렉트
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      console.log("이미 인증된 사용자, 메인 페이지로 이동");
+      setIsRedirecting(true); // 🔥 리다이렉트 상태 설정
+      router.push("/main");
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
+  // 🔥 인증 상태 확인 중이거나 리다이렉트 중일 때는 로딩 표시
+  if (authLoading || userLoading || isRedirecting) {
+    return (
+      <>
+        <Head>
+          <title>서비스 이용 동의</title>
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=yes"
+          />
+        </Head>
+        <div className={styles.container}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingSpinner}></div>
+            <p>인증 상태를 확인하고 있습니다...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 입력 핸들러들
+  const handleNameChange = (name: string) => {
+    setUserInput((prev) => ({ ...prev, name }));
+    setError("");
   };
 
-  const handleGenderSelect = (gender: "남성" | "여성") => {
-    setUserInfo((prev) => ({ ...prev, gender }));
+  const handleSocialNumberChange = (socialNumber: string) => {
+    setUserInput((prev) => ({ ...prev, socialNumber }));
+    setError("");
   };
 
-  const handleAgeGroupSelect = (ageGroup: (typeof ageGroups)[number]) => {
-    setUserInfo((prev) => ({ ...prev, ageGroup }));
+  const handleGenderSelect = (gender: (typeof genders)[number]) => {
+    setUserInput((prev) => ({ ...prev, gender }));
+    setError("");
+  };
+
+  const handleAgeGroupSelect = (ageGroup: string) => {
+    setUserInput((prev) => ({ ...prev, ageGroup }));
+    setError("");
   };
 
   const handleConsentChange = (checked: boolean) => {
-    setUserInfo((prev) => ({ ...prev, hasConsented: checked }));
+    setUserInput((prev) => ({ ...prev, hasConsented: checked }));
+    setError("");
   };
 
-  const handleSubmit = async () => {
-    if (!userInfo.gender || !userInfo.ageGroup || !userInfo.hasConsented) {
-      alert("모든 항목을 선택하고 동의해주세요.");
+  // 사용자 인증 함수
+  const handleVerifyUser = async () => {
+    if (!userInput.name || !userInput.socialNumber) {
+      setError("이름과 주민번호를 입력해주세요.");
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      // 완료된 시간 추가
-      const completedUserInfo = {
-        ...userInfo,
-        completedAt: getKoreanTime(),
-      };
-
-      // 사용자 정보를 localStorage에 저장
-      localStorage.setItem("userInfo", JSON.stringify(completedUserInfo));
-
-      // useScripts 훅에서 사용할 userId도 동일하게 설정
-      localStorage.setItem("userId", userInfo.id);
-
-      // sessionStorage에도 저장 (기존 로직 유지)
-      sessionStorage.setItem("userInfo", JSON.stringify(completedUserInfo));
-
-      // 스크립트 할당 요청
-      // userInfo.id를 직접 전달해서 스크립트 할당
-      console.log("여기서 userinfo", userInfo)
-      await assignScripts(userInfo.id);
-
-      // 성공하면 다음 페이지로 이동
-      router.push("/main");
+      await verifyUserMutation.mutateAsync({
+        name: userInput.name,
+        socialNumber: userInput.socialNumber,
+      });
     } catch (error) {
-      console.error("동의 처리 중 오류:", error);
-      alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
-    } finally {
-      setIsSubmitting(false);
+      setError(error instanceof Error ? error.message : "인증에 실패했습니다.");
     }
   };
 
-  const isSubmitEnabled =
-    userInfo.gender && userInfo.ageGroup && userInfo.hasConsented;
+  // 사용자 등록 및 스크립트 할당 통합 함수
+  const handleCompleteRegistration = async () => {
+    if (!authToken?.userId) {
+      setError("인증이 필요합니다.");
+      return;
+    }
 
-  const isLoading = isSubmitting || scriptLoading;
+    if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
+      setError("모든 항목을 선택하고 동의해주세요.");
+      return;
+    }
 
+    try {
+      console.log("사용자 등록 시작");
+
+      const registeredUser = await registerUserMutation.mutateAsync({
+        userId: authToken.userId,
+        gender: userInput.gender,
+        ageGroup: userInput.ageGroup,
+        hasConsented: userInput.hasConsented,
+      });
+
+      console.log("사용자 등록 완료:", registeredUser);
+
+      await assignScriptsMutation.mutateAsync({
+        userId: authToken.userId,
+      });
+
+      console.log("스크립트 할당 완료");
+
+      setIsRedirecting(true); // 🔥 리다이렉트 상태 설정
+      router.push("/main");
+    } catch (error) {
+      console.error("등록 처리 중 오류:", error);
+      setError(
+        error instanceof Error ? error.message : "등록 중 오류가 발생했습니다."
+      );
+    }
+  };
+
+  // 제출 가능 여부 확인
+  const isSubmitEnabled = (): boolean => {
+    if (isAuthenticated) {
+      return (
+        !!userInput.gender &&
+        !!userInput.ageGroup &&
+        userInput.hasConsented &&
+        !registerUserMutation.isPending &&
+        !assignScriptsMutation.isPending
+      );
+    } else {
+      return (
+        !!userInput.name &&
+        !!userInput.socialNumber &&
+        !!userInput.gender &&
+        !!userInput.ageGroup &&
+        userInput.hasConsented &&
+        !registerUserMutation.isPending &&
+        !assignScriptsMutation.isPending
+      );
+    }
+  };
+
+  // 로딩 상태 통합
+  const isLoading =
+    verifyUserMutation.isPending ||
+    registerUserMutation.isPending ||
+    assignScriptsMutation.isPending;
+
+  // 에러 메시지 통합
+  const displayError =
+    error ||
+    verifyUserMutation.error?.message ||
+    registerUserMutation.error?.message ||
+    updateScriptsMutation.error?.message;
+
+  // 인증되지 않은 사용자를 위한 인증 폼
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Head>
+          <title>서비스 이용 동의</title>
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=yes"
+          />
+        </Head>
+
+        <div className={styles.container}>
+          <div className={styles.header}>
+            <h1>서비스 이용 동의</h1>
+          </div>
+
+          {/* 서비스 설명 */}
+          <div className={styles.serviceSection}>
+            <h2>서비스 소개</h2>
+            <div className={styles.serviceDescription}>
+              {serviceDescription.split("\n").map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* 인증 정보 입력 */}
+          <div className={styles.infoSection}>
+            <h2>본인 확인</h2>
+
+            <div className={styles.inputGroup}>
+              <h3>이름</h3>
+              <input
+                type="text"
+                value={userInput.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="이름을 입력하세요"
+                className={styles.textInput}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className={styles.inputGroup}>
+              <h3>주민등록번호</h3>
+              <input
+                type="text"
+                value={userInput.socialNumber}
+                onChange={(e) => handleSocialNumberChange(e.target.value)}
+                placeholder="주민등록번호를 입력하세요"
+                className={styles.textInput}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className={styles.submitSection}>
+              <button
+                type="button"
+                className={`${styles.submitButton} ${
+                  userInput.name && userInput.socialNumber
+                    ? styles.enabled
+                    : styles.disabled
+                }`}
+                onClick={handleVerifyUser}
+                disabled={
+                  !userInput.name || !userInput.socialNumber || isLoading
+                }
+              >
+                {verifyUserMutation.isPending ? "인증 확인 중..." : "본인 확인"}
+              </button>
+            </div>
+          </div>
+
+          {/* 에러 메시지 */}
+          {displayError && (
+            <div className={styles.errorMessage}>❌ {displayError}</div>
+          )}
+
+          {/* 개발용 정보 */}
+          {process.env.NODE_ENV === "development" && (
+            <div className={styles.debugInfo}>
+              <h4>🐛 개발 정보</h4>
+              <p>실제 서버 인증이 적용되었습니다.</p>
+              <p>승인된 이름과 주민번호를 입력하세요.</p>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // 인증된 사용자를 위한 동의 및 정보 입력 폼
   return (
     <>
       <Head>
@@ -166,16 +336,9 @@ export default function ConsentPage({
       <div className={styles.container}>
         <div className={styles.header}>
           <h1>서비스 이용 동의</h1>
-        </div>
-
-        {/* 서비스 설명 */}
-        <div className={styles.serviceSection}>
-          <h2>서비스 소개</h2>
-          <div className={styles.serviceDescription}>
-            {serviceDescription.split("\n").map((line, index) => (
-              <p key={index}>{line}</p>
-            ))}
-          </div>
+          {(userName || userInput.name) && (
+            <p>안녕하세요, {userName || userInput.name}님!</p>
+          )}
         </div>
 
         {/* 동의서 내용 */}
@@ -196,9 +359,10 @@ export default function ConsentPage({
             <label className={styles.checkboxLabel}>
               <input
                 type="checkbox"
-                checked={userInfo.hasConsented}
+                checked={userInput.hasConsented}
                 onChange={(e) => handleConsentChange(e.target.checked)}
                 className={styles.checkboxInput}
+                disabled={isLoading}
               />
               <span className={styles.checkboxText}>
                 위 내용을 모두 읽었으며 동의합니다
@@ -220,7 +384,7 @@ export default function ConsentPage({
                   key={gender}
                   type="button"
                   className={`${styles.selectButton} ${
-                    userInfo.gender === gender ? styles.selected : ""
+                    userInput.gender === gender ? styles.selected : ""
                   }`}
                   onClick={() => handleGenderSelect(gender)}
                   disabled={isLoading}
@@ -240,7 +404,7 @@ export default function ConsentPage({
                   key={age}
                   type="button"
                   className={`${styles.selectButton} ${
-                    userInfo.ageGroup === age ? styles.selected : ""
+                    userInput.ageGroup === age ? styles.selected : ""
                   }`}
                   onClick={() => handleAgeGroupSelect(age)}
                   disabled={isLoading}
@@ -252,9 +416,19 @@ export default function ConsentPage({
           </div>
         </div>
 
-        {/* 오류 메시지 표시 */}
-        {scriptError && (
-          <div className={styles.errorMessage}>{scriptError}</div>
+        {/* 디버깅 정보 */}
+        {process.env.NODE_ENV === "development" && (
+          <div className={styles.debugInfo}>
+            <h4>🐛 디버그 정보</h4>
+            <p>인증 토큰: {authToken?.userId}</p>
+            <p>사용자 정보: {user ? "로드됨" : "없음"}</p>
+            <p>입력 정보: {JSON.stringify(userInput)}</p>
+          </div>
+        )}
+
+        {/* 오류 메시지 */}
+        {displayError && (
+          <div className={styles.errorMessage}>❌ {displayError}</div>
         )}
 
         {/* 제출 버튼 */}
@@ -262,12 +436,18 @@ export default function ConsentPage({
           <button
             type="button"
             className={`${styles.submitButton} ${
-              isSubmitEnabled && !isLoading ? styles.enabled : styles.disabled
+              isSubmitEnabled() ? styles.enabled : styles.disabled
             }`}
-            onClick={handleSubmit}
-            disabled={!isSubmitEnabled || isLoading}
+            onClick={handleCompleteRegistration}
+            disabled={!isSubmitEnabled() || isLoading}
           >
-            {isLoading ? "처리 중..." : "동의하고 시작하기"}
+            {isLoading
+              ? registerUserMutation.isPending
+                ? "사용자 등록 중..."
+                : updateScriptsMutation.isPending
+                ? "스크립트 할당 중..."
+                : "처리 중..."
+              : "동의하고 시작하기"}
           </button>
         </div>
       </div>
@@ -275,7 +455,6 @@ export default function ConsentPage({
   );
 }
 
-// getStaticProps를 사용하여 빌드 시점에 파일들을 읽어옴
 export const getStaticProps: GetStaticProps = async () => {
   try {
     const consentPath = path.join(process.cwd(), "public", "consent.txt");
