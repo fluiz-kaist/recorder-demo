@@ -192,10 +192,14 @@ export const useScriptProgressByType = (
 
     if (!typeAssignment) return null;
 
-    const total = typeAssignment.assignedScriptIds.length;
+    // console.log("typeAssignment?", typeAssignment);
+
+    const total =
+      typeAssignment.assignedScriptIds.length +
+      typeAssignment.completedScriptIds.length;
     const completed = typeAssignment.completedScriptIds.length;
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-
+    // console.log(" total, completed, progress?", total, completed, progress);
     return { total, completed, progress };
   }, [assignments, scriptType]);
 };

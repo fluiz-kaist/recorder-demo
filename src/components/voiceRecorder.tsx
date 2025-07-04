@@ -559,7 +559,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             <div className={styles.transcriptionResult}>
               <div className={styles.transcriptionText}>
                 <p className={styles.transcriptContent}>
-                  "{transcription.transcript}"
+                  {transcription.transcript}
                 </p>
               </div>
             </div>

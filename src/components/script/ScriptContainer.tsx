@@ -1,8 +1,14 @@
+// components/script/ScriptContainer.tsx - 메인 컨테이너 컴포넌트
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import styles from "@/styles/SituationRecording.module.css";
+import styles from "@/styles/ScriptRecording.module.css";
 import VoiceRecorder from "@/components/voiceRecorder";
-import { SituationalScript, ScriptType } from "@/types/firebase";
+import {
+  ScriptType,
+  SituationalScript,
+  FormalScript,
+  QAScenarioScript,
+} from "@/types/firebase";
 import {
   useLocalScriptsByTypeQuery,
   useScriptProgressByType,
@@ -12,29 +18,36 @@ import {
   useUserScriptAssignmentsQuery,
 } from "@/hooks/queries/useUserQueries";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
+import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 
-const SituationRecordingPage = () => {
+// 유니온 타입 정의
+type AnyScript = SituationalScript | FormalScript | QAScenarioScript;
+
+interface ScriptContainerProps {
+  scriptType: ScriptType;
+}
+
+export const ScriptContainer: React.FC<ScriptContainerProps> = ({
+  scriptType,
+}) => {
   const router = useRouter();
-  const [situations, setSituations] = useState<SituationalScript[]>([]);
-  const [situationIndex, setSituationIndex] = useState(0);
+  const [scripts, setScripts] = useState<AnyScript[]>([]);
+  const [scriptIndex, setScriptIndex] = useState(0);
   const [showRecorder, setShowRecorder] = useState(false);
 
-  // React Query로 상황 스크립트 데이터 가져오기
+  // React Query로 스크립트 데이터 가져오기
   const {
-    data: situationalScripts,
+    data: scriptData,
     isLoading,
     error: queryError,
     refetch,
-  } = useLocalScriptsByTypeQuery(ScriptType.SITUATIONAL);
+  } = useLocalScriptsByTypeQuery(scriptType);
 
   // 인증 정보 가져오기
   const { data: authToken } = useAuthStatusQuery();
 
   // 진행률 정보 가져오기
-  const scriptProgress = useScriptProgressByType(
-    ScriptType.SITUATIONAL,
-    authToken?.userId
-  );
+  const scriptProgress = useScriptProgressByType(scriptType, authToken?.userId);
 
   // 사용자 스크립트 할당 정보 가져오기
   const { data: userAssignments } = useUserScriptAssignmentsQuery(
@@ -43,10 +56,10 @@ const SituationRecordingPage = () => {
 
   // 스크립트 데이터 설정
   useEffect(() => {
-    if (situationalScripts && Array.isArray(situationalScripts)) {
-      setSituations(situationalScripts as SituationalScript[]);
+    if (scriptData && Array.isArray(scriptData)) {
+      setScripts(scriptData as AnyScript[]);
     }
-  }, [situationalScripts]);
+  }, [scriptData]);
 
   const assignScriptsMutation = useAssignScriptsMutation();
 
@@ -56,14 +69,6 @@ const SituationRecordingPage = () => {
 
     try {
       await assignScriptsMutation.mutateAsync({ userId: authToken.userId });
-
-      // localStorage 확인
-      console.log(
-        "localStorage 확인:",
-        localStorage.getItem("scriptContents_situational")
-      );
-
-      // 약간의 지연 후 refetch
       setTimeout(() => {
         refetch();
       }, 1000);
@@ -71,25 +76,6 @@ const SituationRecordingPage = () => {
       console.error("스크립트 할당 실패:", error);
     }
   };
-
-  // 상황이 없을 때 표시할 UI 수정
-  if (situations.length === 0) {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingText}>아직 녹음할 상황이 없습니다.</div>
-        <button
-          onClick={handleAssignScripts}
-          disabled={assignScriptsMutation.isPending}
-          className={styles.assignButton}
-        >
-          {assignScriptsMutation.isPending ? "할당 중..." : "스크립트 할당받기"}
-        </button>
-      </div>
-    );
-  }
-
-  // 에러 처리
-  const error = queryError?.message || null;
 
   // 햅틱 피드백 (모바일)
   const triggerHapticFeedback = () => {
@@ -100,21 +86,20 @@ const SituationRecordingPage = () => {
 
   const handleRecordingComplete = () => {
     setShowRecorder(false);
-    // 녹음 완료 후 필요한 추가 처리가 있다면 여기에
   };
 
-  const handleNextSituation = () => {
-    if (situationIndex < situations.length - 1) {
+  const handleNextScript = () => {
+    if (scriptIndex < scripts.length - 1) {
       triggerHapticFeedback();
-      setSituationIndex((prev) => prev + 1);
+      setScriptIndex((prev) => prev + 1);
       setShowRecorder(false);
     }
   };
 
-  const handlePrevSituation = () => {
-    if (situationIndex > 0) {
+  const handlePrevScript = () => {
+    if (scriptIndex > 0) {
       triggerHapticFeedback();
-      setSituationIndex((prev) => prev - 1);
+      setScriptIndex((prev) => prev - 1);
       setShowRecorder(false);
     }
   };
@@ -124,17 +109,30 @@ const SituationRecordingPage = () => {
     router.push("/");
   };
 
-  const getCurrentSituation = (): SituationalScript | undefined => {
-    return situations[situationIndex];
+  const getCurrentScript = (): AnyScript | undefined => {
+    return scripts[scriptIndex];
   };
 
   const getProgressPercentage = (): number => {
     if (scriptProgress) {
       return scriptProgress.progress;
     }
-    // 백업: 현재 인덱스 기반 계산
-    if (situations.length === 0) return 0;
-    return Math.round(((situationIndex + 1) / situations.length) * 100);
+    if (scripts.length === 0) return 0;
+    return Math.round(((scriptIndex + 1) / scripts.length) * 100);
+  };
+
+  // 페이지 제목 가져오기
+  const getPageTitle = (): string => {
+    switch (scriptType) {
+      case ScriptType.SITUATIONAL:
+        return "상황별 녹음";
+      case ScriptType.FORMAL:
+        return "정형화 녹음";
+      case ScriptType.QA_SCENARIO:
+        return "질의응답 녹음";
+      default:
+        return "스크립트 녹음";
+    }
   };
 
   // 로딩 중일 때
@@ -142,19 +140,19 @@ const SituationRecordingPage = () => {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingSpinner}></div>
-        <div className={styles.loadingText}>상황을 불러오고 있어요...</div>
+        <div className={styles.loadingText}>스크립트를 불러오고 있어요...</div>
       </div>
     );
   }
 
   // 에러가 발생했을 때
-  if (error) {
+  if (queryError) {
     return (
       <div className={styles.errorContainer}>
         <div className={styles.errorCard}>
           <div className={styles.errorIcon}>😕</div>
           <h2 className={styles.errorTitle}>문제가 생겼어요</h2>
-          <p className={styles.errorMessage}>{error}</p>
+          <p className={styles.errorMessage}>{queryError.message}</p>
           <button
             onClick={() => window.location.reload()}
             className={styles.retryButton}
@@ -166,31 +164,40 @@ const SituationRecordingPage = () => {
     );
   }
 
-  // 상황이 없을 때
-  if (situations.length === 0) {
+  // 스크립트가 없을 때
+  if (scripts.length === 0) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.loadingText}>아직 녹음할 상황이 없습니다.</div>
+        <div className={styles.loadingText}>
+          아직 녹음할 스크립트가 없습니다.
+        </div>
+        <button
+          onClick={handleAssignScripts}
+          disabled={assignScriptsMutation.isPending}
+          className={styles.assignButton}
+        >
+          {assignScriptsMutation.isPending ? "할당 중..." : "스크립트 할당받기"}
+        </button>
       </div>
     );
   }
 
-  const currentSituation = getCurrentSituation();
+  const currentScript = getCurrentScript();
 
   // 현재 스크립트 타입의 할당 정보만 필터링
-  const situationalAssignment = userAssignments?.find(
-    (assignment) => assignment.scriptType === ScriptType.SITUATIONAL
+  const currentAssignment = userAssignments?.find(
+    (assignment) => assignment.scriptType === scriptType
   );
 
   // 현재 스크립트가 완료되었는지 확인하는 함수
   const isCurrentScriptCompleted = (scriptId: number): boolean => {
-    if (!situationalAssignment) return false;
-    return situationalAssignment.completedScriptIds.includes(scriptId);
+    if (!currentAssignment) return false;
+    return currentAssignment.completedScriptIds.includes(scriptId);
   };
 
   // 현재 스크립트의 완료 상태
-  const currentScriptCompleted = currentSituation
-    ? isCurrentScriptCompleted(currentSituation.id)
+  const currentScriptCompleted = currentScript
+    ? isCurrentScriptCompleted(currentScript.id)
     : false;
 
   return (
@@ -215,30 +222,23 @@ const SituationRecordingPage = () => {
             뒤로가기
           </button>
 
+          <div className={styles.headerTitle}>{getPageTitle()}</div>
+
           <div className={styles.progressIndicator}>
-            {situationIndex + 1} / {situations.length}
+            {scriptIndex + 1} / {scripts.length}
           </div>
         </div>
 
         {/* 메인 콘텐츠 */}
         <div className={styles.mainCard}>
-          {currentSituation && (
+          {currentScript && (
             <>
-              {/* 카테고리 배지 */}
-              <div className={styles.categoryBadge}>
-                📱 {currentSituation.category}/{currentSituation.intent}
-              </div>
-
-              {/* 제목 섹션 */}
-              <div className={styles.titleSection}>
-                <h1 className={styles.title}>{currentSituation.title}</h1>
-                {currentScriptCompleted && (
-                  <div className={styles.completedBadge}>✅ 제출완료</div>
-                )}
-                <p className={styles.description}>
-                  {currentSituation.description}
-                </p>
-              </div>
+              {/* 스크립트 렌더러 - 타입별로 다른 UI 렌더링 */}
+              <ScriptRenderer
+                script={currentScript}
+                scriptType={scriptType}
+                isCompleted={currentScriptCompleted}
+              />
 
               {/* 녹음 섹션 */}
               {!showRecorder ? (
@@ -248,15 +248,15 @@ const SituationRecordingPage = () => {
                     <div className={styles.completedSection}>
                       <div className={styles.completedIcon}>🎉</div>
                       <div className={styles.completedMessage}>
-                        이 상황은 이미 녹음을 완료했습니다!
+                        이 스크립트는 이미 녹음을 완료했습니다!
                       </div>
                       <div className={styles.reRecordPrompt}>
                         다시 녹음하시겠어요?
                       </div>
                       <VoiceRecorder
-                        key={`voice-recorder-${situationIndex}`}
-                        scriptType={ScriptType.SITUATIONAL}
-                        scriptData={currentSituation}
+                        key={`voice-recorder-${scriptIndex}`}
+                        scriptType={scriptType}
+                        scriptData={currentScript}
                         onRecordingComplete={handleRecordingComplete}
                       />
                     </div>
@@ -264,15 +264,15 @@ const SituationRecordingPage = () => {
                     // 미완료 스크립트 표시
                     <>
                       <div className={styles.recordingPrompt}>
-                        🎤 이 상황에서 어떻게 말하시겠어요?
+                        🎤 어떻게 말하시겠어요?
                       </div>
                       <div className={styles.recordingInstruction}>
                         마음편히 자연스럽게 말씀해보세요!
                       </div>
                       <VoiceRecorder
-                        key={`voice-recorder-${situationIndex}`}
-                        scriptType={ScriptType.SITUATIONAL}
-                        scriptData={currentSituation}
+                        key={`voice-recorder-${scriptIndex}`}
+                        scriptType={scriptType}
+                        scriptData={currentScript}
                         onRecordingComplete={handleRecordingComplete}
                       />
                     </>
@@ -305,44 +305,44 @@ const SituationRecordingPage = () => {
               {/* 네비게이션 */}
               <div className={styles.navigation}>
                 <button
-                  onClick={handlePrevSituation}
-                  disabled={situationIndex === 0}
+                  onClick={handlePrevScript}
+                  disabled={scriptIndex === 0}
                   className={`${styles.navButton} ${
-                    situationIndex === 0
+                    scriptIndex === 0
                       ? styles.navButtonDisabled
                       : styles.navButtonEnabled
                   }`}
                 >
                   {/* 이전 스크립트 완료 상태 표시 */}
-                  {situationIndex > 0 &&
-                    isCurrentScriptCompleted(
-                      situations[situationIndex - 1].id
-                    ) && <span className={styles.navCompletedIcon}>✅</span>}
-                  이전상황
+                  {scriptIndex > 0 &&
+                    isCurrentScriptCompleted(scripts[scriptIndex - 1].id) && (
+                      <span className={styles.navCompletedIcon}>✅</span>
+                    )}
+                  이전
                 </button>
                 <div className={styles.statsSection}>
                   <div className={styles.statsLabel}>완료한 녹음</div>
                   <div className={styles.statsValue}>
-                    {situationalAssignment?.completedScriptIds.length || 0} /{" "}
-                    {situations.length}
+                    {currentAssignment?.completedScriptIds.length || 0} /{" "}
+                    {scripts.length}
                   </div>
                 </div>
 
                 <button
-                  onClick={handleNextSituation}
-                  disabled={situationIndex === situations.length - 1}
+                  onClick={handleNextScript}
+                  disabled={scriptIndex === scripts.length - 1}
                   className={`${styles.navButton} ${
-                    situationIndex === situations.length - 1
+                    scriptIndex === scripts.length - 1
                       ? styles.navButtonDisabled
                       : styles.navButtonEnabled
                   }`}
                 >
-                  다음상황
+                  다음
                   {/* 다음 스크립트 완료 상태 표시 */}
-                  {situationIndex < situations.length - 1 &&
-                    isCurrentScriptCompleted(
-                      situations[situationIndex + 1].id
-                    ) && <span className={styles.navCompletedIcon}>✅</span>}
+                  {scriptIndex < scripts.length - 1 &&
+                    isCurrentScriptCompleted(scripts[scriptIndex + 1].id) && (
+                      <span className={styles.navCompletedIcon}>✅</span>
+                    )}
                 </button>
               </div>
             </>
@@ -370,5 +370,3 @@ const SituationRecordingPage = () => {
     </div>
   );
 };
-
-export default SituationRecordingPage;

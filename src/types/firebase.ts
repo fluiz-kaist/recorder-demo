@@ -58,7 +58,7 @@ export type ScriptData = FormalScript | QAScenarioScript | SituationalScript;
 
 // 스크립트 단위 타입 (사용자 진행 상황 관리용)
 export interface Script {
-  id: string; // JSON 파일의 id (0, 1, 2...)
+  id: number; // JSON 파일의 id (0, 1, 2...)
   type: ScriptType; // 스크립트 종류 (formal, qas, situ)
   assignedTo?: string; // 할당된 유저 ID
   assignedAt?: string; // 할당 시간 (ISO string, 한국 시간)
@@ -79,30 +79,30 @@ export interface AudioRecording {
   userId: string; // 녹음한 사용자 ID
   scriptId: number; // 스크립트 ID (0, 1, 2...)
   scriptType: ScriptType; // 스크립트 타입
-  
+
   // 오디오 파일 정보
   audioUrl: string; // Firebase Storage URL
   fileName: string; // 저장된 파일명
   fileSize: number; // 파일 크기 (bytes)
   duration: number; // 녹음 시간 (초)
   audioFormat: AudioFormat; // 오디오 포맷
-  
+
   // STT 및 분석 결과
   sttText: string; // Speech-to-Text 변환된 텍스트
   sttConfidence?: number; // STT 신뢰도 (0-1)
-  
+
   // 시간 정보
   recordedAt: string; // 녹음 완료 시간 (ISO string)
   uploadedAt: string; // 업로드 완료 시간 (ISO string)
   processedAt?: string; // STT 처리 완료 시간 (ISO string)
-  
+
   // 상태 정보
   status: AudioStatus; // 처리 상태
-  
+
   // 메타데이터
   deviceInfo?: string; // 녹음 장치 정보
   browserInfo?: string; // 브라우저 정보
-  quality?: 'high' | 'medium' | 'low'; // 음질 품질
+  quality?: "high" | "medium" | "low"; // 음질 품질
 }
 
 // 오디오 업로드 요청 데이터
@@ -150,17 +150,17 @@ export interface UserScriptAssignment {
 export interface User {
   // 기본 식별 정보
   id: string;
-  
+
   // 개인 정보 (온보딩에서 수집)
   gender: "남성" | "여성";
   ageGroup: string;
   hasConsented: boolean;
-  
+
   // 시간 정보
   createdAt: string; // 계정 생성 시간
   completedAt?: string; // 온보딩 완료 시간
   lastAccessAt: string; // 최종 접속 시간
-  
+
   // 스크립트 관련
   scriptAssignments: UserScriptAssignment[];
 }

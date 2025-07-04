@@ -225,3 +225,44 @@
     color: #333;
   }
 }
+/* MainSelectionPage.module.css에 추가할 스타일 */
+
+/* 기존 cardBlue, cardGreen에 추가로 */
+.cardPurple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #7c3aed;
+}
+
+.cardPurple:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.3);
+}
+
+.cardPurple:active {
+  transform: translateY(-2px);
+}
+
+/* 카드 아이콘 색상 일관성 */
+.cardBlue .cardIcon {
+  color: #3b82f6;
+}
+
+.cardGreen .cardIcon {
+  color: #10b981;
+}
+
+.cardPurple .cardIcon {
+  color: #8b5cf6;
+}
+
+/* 접근성 향상 - 포커스 스타일 */
+.card:focus {
+  outline: 3px solid #4ade80;
+  outline-offset: 2px;
+}
+
+.card:focus-visible {
+  outline: 3px solid #4ade80;
+  outline-offset: 2px;
+}
