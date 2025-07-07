@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * 녹음 완전 제출 API
- * 
+ *
  * 이 API는 사용자의 음성 녹음 파일 제출을 완전히 처리합니다.
  * Firebase Firestore의 batch 기능을 사용하여 다음 작업들을 원자적으로 수행합니다:
- * 
+ *
  * 1. 오디오 파일 메타데이터 저장 (audio_files 컬렉션)
  * 2. 사용자 완료 스크립트 목록 업데이트 (users 컬렉션)
  * 3. 사용자 진도 정보 업데이트 (users/{userId}/progress 서브컬렉션)
- * 
+ *
  * 모든 작업이 성공하거나 모든 작업이 실패하여 데이터 일관성을 보장합니다.
  */
 
@@ -74,10 +75,18 @@ export default async function handler(
     }: CompleteSubmissionRequest = req.body;
 
     // 필수 필드 검증
-    if (!userId || !scriptId || !scriptType || !audioUrl || !sttText || !audioMetadata) {
+    if (
+      !userId ||
+      !scriptId ||
+      !scriptType ||
+      !audioUrl ||
+      !sttText ||
+      !audioMetadata
+    ) {
       return res.status(400).json({
         success: false,
-        message: "필수 필드가 누락되었습니다. userId, scriptId, scriptType, audioUrl, sttText, audioMetadata가 모두 필요합니다.",
+        message:
+          "필수 필드가 누락되었습니다. userId, scriptId, scriptType, audioUrl, sttText, audioMetadata가 모두 필요합니다.",
       });
     }
 
@@ -149,14 +158,14 @@ export default async function handler(
       success: true,
       message: "녹음 파일 제출이 성공적으로 완료되었습니다.",
     });
-
   } catch (error) {
     // 에러 로깅 및 응답
     console.error("녹음 완전 제출 처리 중 오류 발생:", error);
 
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : "알 수 없는 오류가 발생했습니다.";
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "알 수 없는 오류가 발생했습니다.";
 
     return res.status(500).json({
       success: false,

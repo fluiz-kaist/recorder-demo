@@ -88,7 +88,7 @@ export interface AudioRecording {
   audioFormat: AudioFormat; // 오디오 포맷
 
   // STT 및 분석 결과
-  sttText: string; // Speech-to-Text 변환된 텍스트
+  sttText: string; // google-transcribe 변환된 텍스트
   sttConfidence?: number; // STT 신뢰도 (0-1)
 
   // 시간 정보
@@ -203,7 +203,7 @@ export interface CompleteScriptRequest {
   scriptType: ScriptType; // "formal" | "qaScenario" | "situational"
   recordingId: string; // 오디오 녹음 기록 ID
   audioUrl: string; // 녹음된 오디오 파일 URL
-  sttText: string; // Speech-to-Text 변환된 텍스트
+  sttText: string; // google-transcribe 변환된 텍스트
 }
 
 // 스크립트 정보 (저장을 위해)

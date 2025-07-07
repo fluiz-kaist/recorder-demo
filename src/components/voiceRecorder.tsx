@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import styles from "@/styles/VoiceRecorder.module.css";
-import STTComponent, { TranscriptionResult } from "@/components/STTComponent";
+
+import type { WhisperTranscriptionResult } from "@/components/stt/SttWhisper";
 import {
   ScriptType,
   SituationalScript,
@@ -15,6 +16,7 @@ import SuccessPopup from "@/components/SuccessPopup";
 import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
 import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
+import SttWhisper from "@/components/stt/SttWhisper";
 
 // 🎯 간단한 품질 검증 결과 인터페이스
 interface SimpleQualityResult {
@@ -48,7 +50,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
   // STT 관련 상태
   const [transcription, setTranscription] =
-    useState<TranscriptionResult | null>(null);
+    useState<WhisperTranscriptionResult | null>(null);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(
     null
   );
@@ -66,6 +68,8 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const { data: authToken } = useAuthStatusQuery();
   const uploadAudioMutation = useUploadAudioMutation();
   const completeScriptMutation = useCompleteScriptMutation();
+
+  const [hasSTTStarted, setHasSTTStarted] = useState(false);
 
   // 🔥 MobileOptimizedRecorder hook 사용
   const {
@@ -254,9 +258,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     }
   };
 
-  // 🎯 audioBlob이 생성되면 즉시 간단한 품질 검증 후 STT 준비
+  //  audioBlob이 생성되면 즉시 간단한 품질 검증 후 STT 준비
   useEffect(() => {
-    if (audioBlob) {
+    if (audioBlob && !hasSTTStarted) {
       console.log("📄 새로운 오디오 blob 생성됨:", {
         size: audioBlob.size,
         type: audioBlob.type,
@@ -274,6 +278,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       if (quality.isGoodQuality) {
         console.log("✅ 품질 검증 통과 - STT 진행");
         setShowSTT(true);
+        setHasSTTStarted(true);
       } else {
         console.log("⚠️ 품질 검증 실패 - 사용자에게 경고 표시");
         setShowQualityWarning(true);
@@ -293,7 +298,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         URL.revokeObjectURL(url);
       };
     }
-  }, [audioBlob, recordingTime]);
+  }, [audioBlob, recordingTime, hasSTTStarted]);
 
   // 🎯 품질 경고 무시하고 계속 진행
   const proceedDespiteQuality = () => {
@@ -359,7 +364,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   };
 
   // STT 결과 처리
-  const handleTranscriptionComplete = (result: TranscriptionResult | null) => {
+  const handleTranscriptionComplete = (
+    result: WhisperTranscriptionResult | null
+  ) => {
     setTranscription(result);
     if (result) {
       setTranscriptionError(null);
@@ -380,6 +387,12 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   // 새로 녹음하기
   const handleNewRecording = () => {
     console.log("🔄 새 녹음 준비 중...");
+
+    // 기존 오디오 URL 정리 (메모리 누수 방지)
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    // 모든 상태 초기화
     setAudioUrl(null);
     setAudioDuration(null);
     setTranscription(null);
@@ -389,6 +402,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     setShowQualityWarning(false);
     setIsSTTSuccess(false);
     setIsSTTProcessing(false);
+    setHasSTTStarted(false);
+    setShowSuccessPopup(false);
+
     console.log("✅ 새 녹음 준비 완료");
   };
 
@@ -534,8 +550,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           <audio className={styles.audioPlayer} src={audioUrl} controls />
 
           {/* STT 컴포넌트 */}
+          {/* {showSTT && (
+            <SttGoogle
+              audioBlob={audioBlob}
+              onTranscriptionComplete={handleTranscriptionComplete}
+              onError={handleTranscriptionError}
+              onTranscribingStateChange={handleSTTStateChange}
+              autoTranscribe={true}
+            />
+          )} */}
           {showSTT && (
-            <STTComponent
+            <SttWhisper
               audioBlob={audioBlob}
               onTranscriptionComplete={handleTranscriptionComplete}
               onError={handleTranscriptionError}
@@ -556,7 +581,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
           {/* STT 변환 결과 */}
           {transcription && (
-            <div className={styles.transcriptionResult}>
+            <div className={styles.GoogleTranscriptionResult}>
               <div className={styles.transcriptionText}>
                 <p className={styles.transcriptContent}>
                   {transcription.transcript}
