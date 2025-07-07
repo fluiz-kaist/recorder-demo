@@ -11,6 +11,7 @@
   "dependencies": {
     "@google-cloud/speech": "^7.1.0",
     "@tanstack/react-query-devtools": "^5.81.5",
+    "cookie": "^1.0.2",
     "firebase": "^11.8.1",
     "formidable": "^3.5.4",
     "next": "15.3.3",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/cookie": "^1.0.0",
     "@types/formidable": "^3.4.5",
     "@types/long": "^5.0.0",
     "@types/node": "^20.17.57",

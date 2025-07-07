@@ -58,7 +58,7 @@ export default async function handler(
           },
         });
       } catch (error) {
-         console.error("❌에러 발생:", error);
+        console.error("❌에러 발생:", error);
         return res.status(404).json({
           success: false,
           message: "사용자를 찾을 수 없습니다.",
@@ -93,14 +93,25 @@ export default async function handler(
 
       // 사용자 존재 여부 확인
       const existingUser = await getDoc(userDocRef);
-
       if (existingUser.exists()) {
-        return res.status(409).json({
-          success: false,
-          message: "이미 존재하는 사용자입니다.",
+        // 기존 사용자 데이터 반환 + lastAccessAt 업데이트
+        const userData = existingUser.data() as User;
+        const now = getKoreanTime();
+
+        // lastAccessAt 업데이트
+        await updateDoc(userDocRef, {
+          lastAccessAt: now,
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "기존 사용자로 로그인되었습니다.",
+          user: {
+            ...userData,
+            lastAccessAt: now,
+          },
         });
       }
-
       // 현재 한국 시간
       const now = getKoreanTime();
 
