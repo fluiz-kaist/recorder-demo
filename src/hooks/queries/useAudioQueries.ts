@@ -37,7 +37,7 @@ export const useUserAudioRecordingsQuery = (
 
       return data.recordings as AudioRecording[];
     },
-    enabled: !!authToken?.isAuthorized && !!targetUserId,
+    enabled: !!authToken?.isAuthenticated && !!targetUserId,
     staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
     retry: 1,
   });
@@ -72,7 +72,7 @@ export const useAudioRecordingsByTypeQuery = (
 
       return data.recordings as AudioRecording[];
     },
-    enabled: !!authToken?.isAuthorized && !!targetUserId,
+    enabled: !!authToken?.isAuthenticated && !!targetUserId,
     staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
     retry: 1,
   });
@@ -102,7 +102,7 @@ export const useAudioRecordingDetailQuery = (
 
       return data.recording as AudioRecording;
     },
-    enabled: !!authToken?.isAuthorized && !!recordingId,
+    enabled: !!authToken?.isAuthenticated && !!recordingId,
     staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
     retry: 1,
   });

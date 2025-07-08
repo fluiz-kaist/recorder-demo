@@ -2,10 +2,10 @@ import { NextPage } from "next";
 import dynamic from "next/dynamic";
 import styles from "@/styles/VoiceRecorder.module.css";
 // VoiceRecorder 컴포넌트를 동적 임포트 (SSR 비활성화)
-const VoiceRecorder = dynamic(() => import("@/components/voiceRecorder"), {
-  ssr: false,
-  loading: () => <p>음성 녹음기 로딩 중...</p>,
-});
+// const VoiceRecorder = dynamic(() => import("@/components/voiceRecorder"), {
+//   ssr: false,
+//   loading: () => <p>음성 녹음기 로딩 중...</p>,
+// });
 // MobileDebugConsole을 동적 임포트 (개발 환경에서만)
 const MobileDebugConsole = dynamic(
   () => import("@/components/MobileDebugConsole"),
@@ -21,7 +21,7 @@ const Home: NextPage = () => {
         <h1 className={styles.title}>음성 녹음 데모</h1>
         <p className={styles.subtitle}></p>
         <div className={styles.voiceRecorderWrapper}>
-          <VoiceRecorder />
+          {/* <VoiceRecorder /> */}
         </div>
       </main>
 

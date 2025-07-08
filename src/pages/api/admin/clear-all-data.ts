@@ -1,6 +1,6 @@
 // pages/api/admin/clear-all-data.ts - 전체 데이터 삭제 API
 import { NextApiRequest, NextApiResponse } from "next";
-import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
+import { collection, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 
 interface ClearAllDataResponse {

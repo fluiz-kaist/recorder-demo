@@ -37,8 +37,8 @@ interface ConsentPageProps {
 
 export default function ConsentPage({
   consentText,
-  serviceDescription,
-}: ConsentPageProps) {
+}: // serviceDescription,
+ConsentPageProps) {
   const router = useRouter();
 
   // 🟢 쿠키 기반 인증 상태 확인

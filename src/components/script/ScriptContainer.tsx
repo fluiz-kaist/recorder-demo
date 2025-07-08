@@ -46,12 +46,24 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   // 인증 정보 가져오기
   const { data: authToken } = useAuthStatusQuery();
 
+  const userId = authToken?.userId;
+  if (!authToken) {
+    console.log("- authToken이 null입니다");
+  } else if (!userId) {
+    console.log("- authToken.userId가 null입니다");
+  } else {
+    // console.log('✅ 사용자 ID:', userId);
+  }
+
   // 진행률 정보 가져오기
-  const scriptProgress = useScriptProgressByType(scriptType, authToken?.userId);
+  const scriptProgress = useScriptProgressByType(
+    scriptType,
+    userId || undefined
+  );
 
   // 사용자 스크립트 할당 정보 가져오기
   const { data: userAssignments } = useUserScriptAssignmentsQuery(
-    authToken?.userId
+    userId || undefined
   );
 
   // 스크립트 데이터 설정

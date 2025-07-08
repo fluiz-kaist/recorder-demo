@@ -73,7 +73,7 @@ export const useAssignedScriptsQuery = (
 
       return data as AssignedScriptsResponse;
     },
-    enabled: !!authToken?.isAuthorized && !!targetUserId,
+    enabled: !!authToken?.isAuthenticated && !!targetUserId,
     staleTime: 10 * 60 * 1000, // 10분간 캐시 유지
     retry: 1,
   });
@@ -181,7 +181,7 @@ export const useScriptProgressByType = (
   const targetUserId = userId || authToken?.userId;
 
   // 🔴 USER QUERY 의존: useUserScriptAssignmentsQuery 사용
-  const { data: assignments } = useUserScriptAssignmentsQuery(targetUserId);
+  const { data: assignments } = useUserScriptAssignmentsQuery(targetUserId || undefined);
 
   return useMemo(() => {
     if (!assignments) return null;
@@ -218,7 +218,7 @@ export const useUserTotalProgress = (
   const targetUserId = userId || authToken?.userId;
 
   // 🔴 USER QUERY 의존: useUserScriptAssignmentsQuery 사용
-  const { data: assignments } = useUserScriptAssignmentsQuery(targetUserId);
+  const { data: assignments } = useUserScriptAssignmentsQuery(targetUserId || undefined);
 
   return useMemo(() => {
     if (!assignments) return null;
@@ -283,7 +283,7 @@ export const useNextScriptToRecord = (
   const targetUserId = userId || authToken?.userId;
 
   // 🔴 USER QUERY 의존: useUserScriptAssignmentsQuery 사용
-  const { data: assignments } = useUserScriptAssignmentsQuery(targetUserId);
+  const { data: assignments } = useUserScriptAssignmentsQuery(targetUserId || undefined);
   const { data: allLocalScripts } = useAllLocalScriptsQuery();
 
   return useMemo(() => {

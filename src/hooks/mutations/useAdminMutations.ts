@@ -1,251 +1,457 @@
-// hooks/mutations/useAdminMutations.ts - 관리자용 데이터 변경 훅
-import {
-  useMutation,
-  useQueryClient,
-  UseMutationResult,
-} from "@tanstack/react-query";
+// // hooks/queries/useAdminQueries.ts
+// import { useQuery, UseQueryResult } from "@tanstack/react-query";
+// import { useState, useEffect } from "react";
+// import { User } from "@/types/firebase";
 
-/**
- * 스크립트 초기화 뮤테이션
- * 모든 스크립트 할당을 초기화하고 사용자들의 scriptAssignments를 리셋
- */
-export const useInitScriptsMutation = (): UseMutationResult<
-  { success: boolean; message: string },
-  Error,
-  void
-> => {
-  const queryClient = useQueryClient();
+// interface AdminData {
+//   name: string;
+// }
 
-  return useMutation({
-    mutationFn: async (): Promise<{ success: boolean; message: string }> => {
-      const response = await fetch("/api/admin/init-scripts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+// /**
+//  * 관리자 통계 데이터 타입
+//  */
+// export interface AdminStats {
+//   totalUsers: number;
+//   totalRecordings: number;
+//   totalCompletedScripts: number;
+//   averageProgress: number;
+//   usersByAgeGroup: { [ageGroup: string]: number };
+//   usersByGender: { [gender: string]: number };
+//   recordingsByDate: { date: string; count: number }[];
+// }
 
-      const data = await response.json();
+// // 관리자 권한 확인 훅
+// export const useIsAdmin = () => {
+//   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+//   const [adminData, setAdminData] = useState<AdminData | null>(null);
+//   const [isLoading, setIsLoading] = useState(true);
 
-      if (!response.ok) {
-        throw new Error(data.message || "스크립트 초기화에 실패했습니다.");
-      }
+//   useEffect(() => {
+//     const checkAdminStatus = async () => {
+//       try {
+//         const response = await fetch("/api/auth/checkAdmin", {
+//           method: "GET",
+//           credentials: "include",
+//         });
 
-      return data;
-    },
-    onSuccess: () => {
-      // 관련 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
-      queryClient.invalidateQueries({ queryKey: ["allUsers"] });
-      queryClient.invalidateQueries({ queryKey: ["scriptStats"] });
-      queryClient.invalidateQueries({ queryKey: ["assignedScripts"] });
-      queryClient.invalidateQueries({ queryKey: ["userScriptAssignments"] });
+//         if (response.ok) {
+//           const data = await response.json();
+//           setIsAdmin(true);
+//           setAdminData(data.admin);
+//         } else {
+//           setIsAdmin(false);
+//           setAdminData(null);
+//         }
+//       } catch (error) {
+//         console.error("관리자 권한 확인 중 오류:", error);
+//         setIsAdmin(false);
+//         setAdminData(null);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
 
-      // 로컬 스크립트 캐시도 정리
-      queryClient.removeQueries({ queryKey: ["localScripts"] });
-      queryClient.removeQueries({ queryKey: ["allLocalScripts"] });
+//     checkAdminStatus();
+//   }, []);
 
-      console.log("스크립트 초기화 완료");
-    },
-    onError: (error) => {
-      console.error("스크립트 초기화 실패:", error);
-    },
-  });
-};
+//   return { isAdmin, adminData, isLoading };
+// };
 
-/**
- * 사용자 삭제 뮤테이션
- * 사용자와 관련된 모든 데이터 (녹음, 스크립트 할당 등) 삭제
- */
-export const useDeleteUserMutation = (): UseMutationResult<
-  { success: boolean; message: string },
-  Error,
-  string
-> => {
-  const queryClient = useQueryClient();
+// // 관리자 권한 쿼리 훅
+// export const useAdminAuth = () => {
+//   return useQuery({
+//     queryKey: ["adminAuth"],
+//     queryFn: async () => {
+//       const response = await fetch("/api/auth/checkAdmin", {
+//         method: "GET",
+//         credentials: "include",
+//       });
 
-  return useMutation({
-    mutationFn: async (
-      userId: string
-    ): Promise<{ success: boolean; message: string }> => {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+//       if (!response.ok) {
+//         throw new Error("관리자 권한이 없습니다.");
+//       }
 
-      const data = await response.json();
+//       return response.json();
+//     },
+//     retry: false,
+//     staleTime: 1000 * 60 * 5, // 5분간 캐시
+//   });
+// };
 
-      if (!response.ok) {
-        throw new Error(data.message || "사용자 삭제에 실패했습니다.");
-      }
+// // 특정 권한 확인 훅 (간단한 관리자 확인으로 변경)
+// export const useAdminPermission = (permission: string) => {
+//   console.log("permission", permission);
+//   const { adminData } = useIsAdmin();
 
-      return data;
-    },
-    onSuccess: (_, userId) => {
-      // 관련 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
-      queryClient.invalidateQueries({ queryKey: ["allUsers"] });
-      queryClient.invalidateQueries({ queryKey: ["scriptStats"] });
+//   // name이 있으면 모든 권한이 있다고 가정
+//   return !!adminData?.name;
+// };
 
-      // 특정 사용자 관련 캐시 제거
-      queryClient.removeQueries({ queryKey: ["user", userId] });
-      queryClient.removeQueries({ queryKey: ["userDetail", userId] });
-      queryClient.removeQueries({
-        queryKey: ["userScriptAssignments", userId],
-      });
-      queryClient.removeQueries({ queryKey: ["audioRecordings", userId] });
+// /**
+//  * 관리자 전체 통계 조회
+//  */
+// export const useAdminStatsQuery = (): UseQueryResult<AdminStats, Error> => {
+//   return useQuery({
+//     queryKey: ["adminStats"],
+//     queryFn: async (): Promise<AdminStats> => {
+//       const response = await fetch("/api/admin/stats");
+//       const data = await response.json();
 
-      console.log("사용자 삭제 완료:", userId);
-    },
-    onError: (error) => {
-      console.error("사용자 삭제 실패:", error);
-    },
-  });
-};
+//       if (!response.ok) {
+//         throw new Error(data.message || "통계 데이터를 불러올 수 없습니다.");
+//       }
 
-/**
- * 전체 데이터 초기화 뮤테이션
- * 모든 사용자, 녹음, 스크립트 할당 데이터 삭제 (위험한 작업)
- */
-export const useClearAllDataMutation = (): UseMutationResult<
-  { success: boolean; message: string },
-  Error,
-  void
-> => {
-  const queryClient = useQueryClient();
+//       return data.stats as AdminStats;
+//     },
+//     staleTime: 1 * 60 * 1000, // 1분간 캐시 유지
+//     retry: 1,
+//   });
+// };
 
-  return useMutation({
-    mutationFn: async (): Promise<{ success: boolean; message: string }> => {
-      const response = await fetch("/api/admin/clear-all-data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+// /**
+//  * 전체 사용자 목록 조회 (관리자용)
+//  */
+// export const useAllUsersQuery = (params?: {
+//   page?: number;
+//   limit?: number;
+//   sortBy?: string;
+//   sortOrder?: string;
+//   ageGroup?: string;
+//   gender?: string;
+//   hasAssignments?: string;
+// }): UseQueryResult<{ users: User[]; totalCount: number }, Error> => {
+//   const queryParams = new URLSearchParams();
+//   if (params?.page) queryParams.append("page", params.page.toString());
+//   if (params?.limit) queryParams.append("limit", params.limit.toString());
+//   if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+//   if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+//   if (params?.ageGroup) queryParams.append("ageGroup", params.ageGroup);
+//   if (params?.gender) queryParams.append("gender", params.gender);
+//   if (params?.hasAssignments)
+//     queryParams.append("hasAssignments", params.hasAssignments);
 
-      const data = await response.json();
+//   return useQuery({
+//     queryKey: ["allUsers", params],
+//     queryFn: async () => {
+//       const response = await fetch(
+//         `/api/admin/users?${queryParams.toString()}`
+//       );
+//       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "전체 데이터 삭제에 실패했습니다.");
-      }
+//       if (!response.ok) {
+//         throw new Error(data.message || "사용자 목록을 불러올 수 없습니다.");
+//       }
 
-      return data;
-    },
-    onSuccess: () => {
-      // 모든 캐시 정리
-      queryClient.clear();
+//       return {
+//         users: data.users as User[],
+//         totalCount: data.totalCount as number,
+//       };
+//     },
+//     staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
+//     retry: 1,
+//   });
+// };
 
-      // 로컬 스토리지도 정리
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("tempAuthToken");
-      localStorage.removeItem("scriptContents_formal");
-      localStorage.removeItem("scriptContents_qaScenario");
-      localStorage.removeItem("scriptContents_situational");
+// /**
+//  * 특정 사용자의 상세 정보 조회 (관리자용)
+//  */
+// export const useUserDetailQuery = (
+//   userId: string
+// ): UseQueryResult<User, Error> => {
+//   return useQuery({
+//     queryKey: ["userDetail", userId],
+//     queryFn: async (): Promise<User> => {
+//       const response = await fetch(`/api/admin/users/${userId}`);
+//       const data = await response.json();
 
-      console.log("전체 데이터 삭제 완료");
-    },
-    onError: (error) => {
-      console.error("전체 데이터 삭제 실패:", error);
-    },
-  });
-};
+//       if (!response.ok) {
+//         throw new Error(data.message || "사용자 정보를 불러올 수 없습니다.");
+//       }
 
-/**
- * 사용자 스크립트 재할당 뮤테이션
- * 특정 사용자에게 새로운 스크립트 할당
- */
-export const useReassignUserScriptsMutation = (): UseMutationResult<
-  { success: boolean; message: string },
-  Error,
-  { userId: string; scriptTypes?: string[] }
-> => {
-  const queryClient = useQueryClient();
+//       return data.user as User;
+//     },
+//     enabled: !!userId,
+//     staleTime: 1 * 60 * 1000, // 1분간 캐시 유지
+//     retry: 1,
+//   });
+// };
 
-  return useMutation({
-    mutationFn: async ({
-      userId,
-      scriptTypes,
-    }: {
-      userId: string;
-      scriptTypes?: string[];
-    }): Promise<{ success: boolean; message: string }> => {
-      const response = await fetch("/api/admin/reassign-scripts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId, scriptTypes }),
-      });
+// // hooks/mutations/useAdminMutations.ts
+// import { useMutation, useQueryClient } from "@tanstack/react-query";
+// import { useRouter } from "next/router";
 
-      const data = await response.json();
+// interface AdminLoginData {
+//   name: string;
+//   password: string;
+// }
 
-      if (!response.ok) {
-        throw new Error(data.message || "스크립트 재할당에 실패했습니다.");
-      }
+// // 관리자 로그인 뮤테이션
+// export const useAdminLoginMutation = () => {
+//   const router = useRouter();
+//   const queryClient = useQueryClient();
 
-      return data;
-    },
-    onSuccess: (_, variables) => {
-      // 관련 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["allUsers"] });
-      queryClient.invalidateQueries({
-        queryKey: ["userDetail", variables.userId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["userScriptAssignments", variables.userId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["assignedScripts", variables.userId],
-      });
-      queryClient.invalidateQueries({ queryKey: ["scriptStats"] });
+//   return useMutation({
+//     mutationFn: async (loginData: AdminLoginData) => {
+//       const response = await fetch("/api/auth/verifyAdmin", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(loginData),
+//         credentials: "include",
+//       });
 
-      console.log("스크립트 재할당 완료:", variables.userId);
-    },
-    onError: (error) => {
-      console.error("스크립트 재할당 실패:", error);
-    },
-  });
-};
+//       if (!response.ok) {
+//         const error = await response.json();
+//         throw new Error(error.message || "관리자 로그인 실패");
+//       }
 
-/**
- * 시스템 상태 리셋 뮤테이션
- * 서버 캐시 정리 및 시스템 초기화
- */
-export const useResetSystemMutation = (): UseMutationResult<
-  { success: boolean; message: string },
-  Error,
-  void
-> => {
-  const queryClient = useQueryClient();
+//       return response.json();
+//     },
+//     onSuccess: () => {
+//       // 관리자 인증 성공 시 캐시 무효화
+//       queryClient.invalidateQueries({ queryKey: ["adminAuth"] });
 
-  return useMutation({
-    mutationFn: async (): Promise<{ success: boolean; message: string }> => {
-      const response = await fetch("/api/admin/reset-system", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+//       // 관리자 대시보드로 리다이렉트
+//       router.push("/admin/dashboard");
+//     },
+//     onError: (error) => {
+//       console.error("관리자 로그인 실패:", error);
+//     },
+//   });
+// };
 
-      const data = await response.json();
+// // 관리자 로그아웃 뮤테이션
+// export const useAdminLogoutMutation = () => {
+//   const router = useRouter();
+//   const queryClient = useQueryClient();
 
-      if (!response.ok) {
-        throw new Error(data.message || "시스템 리셋에 실패했습니다.");
-      }
+//   return useMutation({
+//     mutationFn: async () => {
+//       const response = await fetch("/api/auth/logoutAdmin", {
+//         method: "POST",
+//         credentials: "include",
+//       });
 
-      return data;
-    },
-    onSuccess: () => {
-      // 모든 캐시 무효화
-      queryClient.invalidateQueries();
+//       if (!response.ok) {
+//         throw new Error("로그아웃 실패");
+//       }
 
-      console.log("시스템 리셋 완료");
-    },
-    onError: (error) => {
-      console.error("시스템 리셋 실패:", error);
-    },
-  });
-};
+//       return response.json();
+//     },
+//     onSuccess: () => {
+//       // 관리자 캐시 클리어
+//       queryClient.removeQueries({ queryKey: ["adminAuth"] });
+
+//       // 로그인 페이지로 리다이렉트
+//       router.push("/admin/login");
+//     },
+//     onError: (error) => {
+//       console.error("관리자 로그아웃 실패:", error);
+//       // 실패해도 로그인 페이지로 이동
+//       router.push("/admin/login");
+//     },
+//   });
+// };
+
+// // 사용자 삭제 뮤테이션
+// export const useDeleteUserMutation = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: async (userId: string) => {
+//       const response = await fetch(`/api/admin/users/${userId}`, {
+//         method: "DELETE",
+//         credentials: "include",
+//       });
+
+//       if (!response.ok) {
+//         const error = await response.json();
+//         throw new Error(error.message || "사용자 삭제에 실패했습니다.");
+//       }
+
+//       return response.json();
+//     },
+//     onSuccess: () => {
+//       // 사용자 목록과 통계 캐시 무효화
+//       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
+//       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+//     },
+//     onError: (error) => {
+//       console.error("사용자 삭제 실패:", error);
+//     },
+//   });
+// };
+
+// /**
+//  * 스크립트 초기화 뮤테이션
+//  * 모든 스크립트 할당을 초기화하고 사용자들의 scriptAssignments를 리셋
+//  */
+// export const useInitScriptsMutation = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: async () => {
+//       const response = await fetch("/api/admin/init-scripts", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         credentials: "include",
+//       });
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(data.message || "스크립트 초기화에 실패했습니다.");
+//       }
+
+//       return data;
+//     },
+//     onSuccess: () => {
+//       // 관련 캐시 무효화
+//       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+//       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
+//       queryClient.invalidateQueries({ queryKey: ["scriptStats"] });
+//       queryClient.invalidateQueries({ queryKey: ["assignedScripts"] });
+//       queryClient.invalidateQueries({ queryKey: ["userScriptAssignments"] });
+
+//       // 로컬 스크립트 캐시도 정리
+//       queryClient.removeQueries({ queryKey: ["localScripts"] });
+//       queryClient.removeQueries({ queryKey: ["allLocalScripts"] });
+
+//       console.log("스크립트 초기화 완료");
+//     },
+//     onError: (error) => {
+//       console.error("스크립트 초기화 실패:", error);
+//     },
+//   });
+// };
+
+// /**
+//  * 전체 데이터 초기화 뮤테이션
+//  * 모든 사용자, 녹음, 스크립트 할당 데이터 삭제 (위험한 작업)
+//  */
+// export const useClearAllDataMutation = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: async () => {
+//       const response = await fetch("/api/admin/clear-all-data", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         credentials: "include",
+//       });
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(data.message || "전체 데이터 삭제에 실패했습니다.");
+//       }
+
+//       return data;
+//     },
+//     onSuccess: () => {
+//       // 모든 캐시 정리
+//       queryClient.clear();
+
+//       console.log("전체 데이터 삭제 완료");
+//     },
+//     onError: (error) => {
+//       console.error("전체 데이터 삭제 실패:", error);
+//     },
+//   });
+// };
+
+// /**
+//  * 사용자 스크립트 재할당 뮤테이션
+//  * 특정 사용자에게 새로운 스크립트 할당
+//  */
+// export const useReassignUserScriptsMutation = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: async ({
+//       userId,
+//       scriptTypes,
+//     }: {
+//       userId: string;
+//       scriptTypes?: string[];
+//     }) => {
+//       const response = await fetch("/api/admin/reassign-scripts", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ userId, scriptTypes }),
+//         credentials: "include",
+//       });
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(data.message || "스크립트 재할당에 실패했습니다.");
+//       }
+
+//       return data;
+//     },
+//     onSuccess: (_, variables) => {
+//       // 관련 캐시 무효화
+//       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
+//       queryClient.invalidateQueries({
+//         queryKey: ["userDetail", variables.userId],
+//       });
+//       queryClient.invalidateQueries({
+//         queryKey: ["userScriptAssignments", variables.userId],
+//       });
+//       queryClient.invalidateQueries({
+//         queryKey: ["assignedScripts", variables.userId],
+//       });
+//       queryClient.invalidateQueries({ queryKey: ["scriptStats"] });
+
+//       console.log("스크립트 재할당 완료:", variables.userId);
+//     },
+//     onError: (error) => {
+//       console.error("스크립트 재할당 실패:", error);
+//     },
+//   });
+// };
+
+// /**
+//  * 시스템 상태 리셋 뮤테이션
+//  * 서버 캐시 정리 및 시스템 초기화
+//  */
+// export const useResetSystemMutation = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: async () => {
+//       const response = await fetch("/api/admin/reset-system", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         credentials: "include",
+//       });
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(data.message || "시스템 리셋에 실패했습니다.");
+//       }
+
+//       return data;
+//     },
+//     onSuccess: () => {
+//       // 모든 캐시 무효화
+//       queryClient.invalidateQueries();
+
+//       console.log("시스템 리셋 완료");
+//     },
+//     onError: (error) => {
+//       console.error("시스템 리셋 실패:", error);
+//     },
+//   });
+// };
