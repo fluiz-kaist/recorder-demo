@@ -2,21 +2,21 @@ import React, { useState, useEffect, useCallback } from "react";
 import styles from "@/styles/SttCompo.module.css";
 import ErrorPopup from "@/components/ErrorPopup";
 
-export interface TranscriptionResult {
+export interface GoogleTranscriptionResult {
   transcript: string;
   confidence: number;
 }
 
 export interface STTResponse {
   success: boolean;
-  transcription?: TranscriptionResult;
+  transcription?: GoogleTranscriptionResult;
   error?: string;
 }
 
 // STT 컴포넌트
-const STTComponent: React.FC<{
+const SttGoogle: React.FC<{
   audioBlob: Blob | null;
-  onTranscriptionComplete: (result: TranscriptionResult | null) => void;
+  onTranscriptionComplete: (result: GoogleTranscriptionResult | null) => void;
   onError: (error: string) => void;
   autoTranscribe?: boolean; // 자동 변환 여부 추가
   onTranscribingStateChange?: (isTranscribing: boolean) => void; // 새로 추가
@@ -112,7 +112,7 @@ const STTComponent: React.FC<{
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch("/api/speech-to-text", {
+      const response = await fetch("/api/stt/google-transcribe", {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -213,4 +213,4 @@ const STTComponent: React.FC<{
   );
 };
 
-export default STTComponent;
+export default SttGoogle;

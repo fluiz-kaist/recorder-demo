@@ -449,7 +449,7 @@
 }
 
 /* 변환 결과 스타일도 심플하게 */
-.transcriptionResult {
+.GoogleTranscriptionResult {
   background-color: #ffffff;
   padding: 20px;
   border-radius: 12px;

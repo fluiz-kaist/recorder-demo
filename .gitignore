@@ -42,3 +42,5 @@ next-env.d.ts
 
 # etc
 cred.json
+
+/backups

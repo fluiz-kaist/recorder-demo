@@ -1,0 +1,597 @@
+/* AdminDashboard.module.css */
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  color: #6b7280;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.actionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.actionButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.refreshButton {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.refreshButton:hover {
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.backButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.backButton:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
+}
+
+/* 통계 섹션 */
+.statsLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 32px;
+}
+
+.errorCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 16px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.errorCard svg {
+  width: 48px;
+  height: 48px;
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.errorCard p {
+  color: #dc2626;
+  font-size: 16px;
+  margin: 0 0 16px 0;
+}
+
+.errorCard button {
+  padding: 8px 16px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.statCard {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.statIcon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIcon svg {
+  width: 28px;
+  height: 28px;
+  color: white;
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* 차트 섹션 */
+.chartsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.chartCard {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
+}
+
+.chartTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.chartContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chartItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chartLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.chartBar {
+  flex: 1;
+  height: 24px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.chartFill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 12px;
+  transition: width 0.8s ease;
+  min-width: 4px;
+}
+
+.chartValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* 녹음 차트 */
+.recordingChart {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  height: 200px;
+  padding: 20px 0;
+}
+
+.recordingItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.recordingDate {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+}
+
+.recordingBar {
+  flex: 1;
+  width: 100%;
+  background: #f3f4f6;
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+  display: flex;
+  align-items: end;
+  min-height: 20px;
+}
+
+.recordingFill {
+  width: 100%;
+  background: linear-gradient(180deg, #667eea, #764ba2);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.8s ease;
+  min-height: 4px;
+}
+
+.recordingCount {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+}
+
+/* 빠른 액션 섹션 */
+.quickActions {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.quickActionCard {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 2px solid #f3f4f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.quickActionCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
+}
+
+.quickActionCard svg {
+  width: 40px;
+  height: 40px;
+  color: #667eea;
+}
+
+.quickActionCard h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.quickActionCard p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .actionButtons {
+    justify-content: center;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .chartsSection {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .actionGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .statCard {
+    padding: 20px;
+  }
+
+  .chartCard {
+    padding: 20px;
+  }
+
+  .quickActionCard {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+
+  .statValue {
+    font-size: 24px;
+  }
+
+  .statIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .statIcon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .recordingChart {
+    height: 150px;
+  }
+
+  .chartLabel {
+    min-width: 60px;
+    font-size: 13px;
+  }
+
+  .chartValue {
+    min-width: 35px;
+    font-size: 13px;
+  }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: #111827;
+    color: white;
+  }
+
+  .title {
+    color: white;
+  }
+
+  .subtitle {
+    color: #9ca3af;
+  }
+
+  .statCard,
+  .chartCard,
+  .quickActionCard {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .statValue {
+    color: white;
+  }
+
+  .chartTitle,
+  .sectionTitle {
+    color: white;
+  }
+
+  .quickActionCard h4 {
+    color: white;
+  }
+
+  .quickActionCard p {
+    color: #9ca3af;
+  }
+
+  .chartLabel,
+  .chartValue {
+    color: #d1d5db;
+  }
+
+  .chartBar {
+    background: #374151;
+  }
+
+  .recordingBar {
+    background: #374151;
+  }
+
+  .recordingDate,
+  .recordingCount {
+    color: #9ca3af;
+  }
+
+  .header {
+    border-color: #374151;
+  }
+
+  .chartTitle {
+    border-color: #374151;
+  }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  .statCard:hover,
+  .quickActionCard:hover,
+  .actionButton:hover {
+    transform: none;
+  }
+
+  .chartFill,
+  .recordingFill {
+    transition: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}
+
+/* 고해상도 디스플레이 지원 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .statCard,
+  .chartCard,
+  .quickActionCard {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .statCard:hover,
+  .quickActionCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+}

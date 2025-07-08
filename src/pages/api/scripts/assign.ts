@@ -7,16 +7,37 @@ import {
   getDocs,
   writeBatch,
   serverTimestamp,
+  query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase/config";
 import {
-  AssignScriptsRequest,
-  AssignScriptsResponse,
-  UserData,
-  ScriptUsage,
+  ScriptType,
+  ScriptStatus,
+  Script,
+  FormalScript,
+  QAScenarioScript,
+  SituationalScript,
+  UserScriptAssignment,
 } from "@/types/firebase";
 import { loadAllScripts, getRandomItems } from "@/lib/scriptLoader";
+
+// API 요청/응답 타입
+interface AssignScriptsRequest {
+  userId: string;
+}
+
+interface AssignScriptsResponse {
+  success: boolean;
+  message?: string;
+  scripts: {
+    formal: FormalScript[];
+    qaScenario: QAScenarioScript[];
+    situational: SituationalScript[];
+  };
+  assignments: UserScriptAssignment[];
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,7 +47,8 @@ export default async function handler(
     return res.status(405).json({
       success: false,
       message: "Method not allowed",
-      scripts: { situational: [], formal: [], qaScenario: [] },
+      scripts: { formal: [], qaScenario: [], situational: [] },
+      assignments: [],
     });
   }
 
@@ -37,324 +59,285 @@ export default async function handler(
       return res.status(400).json({
         success: false,
         message: "User ID is required",
-        scripts: { situational: [], formal: [], qaScenario: [] },
+        scripts: { formal: [], qaScenario: [], situational: [] },
+        assignments: [],
       });
     }
 
-    // 1. 사용자가 이미 할당받았는지 확인
+    // 1. 사용자 존재 확인
     const userRef = doc(db, "users", userId);
     const userDoc = await getDoc(userRef);
 
-    if (userDoc.exists()) {
-      const userData = userDoc.data() as UserData;
-      if (
-        userData.assignedScripts &&
-        (userData.assignedScripts.situational?.length > 0 ||
-          userData.assignedScripts.formal?.length > 0 ||
-          userData.assignedScripts.qaScenario?.length > 0)
-      ) {
-        const assignedScripts = await getAssignedScriptsContent(
-          userData.assignedScripts
-        );
-        return res.status(200).json({
-          success: true,
-          scripts: assignedScripts,
-          message: "이미 할당받은 스크립트가 있습니다.",
-        });
-      }
+    if (!userDoc.exists()) {
+      return res.status(404).json({
+        success: false,
+        message: "사용자를 찾을 수 없습니다. 먼저 회원가입을 완료해주세요.",
+        scripts: { formal: [], qaScenario: [], situational: [] },
+        assignments: [],
+      });
     }
 
-    // 2. 모든 스크립트 로드
-    const allScripts = await loadAllScripts();
-    console.log("🔍 Total scripts loaded:", {
-      situational: allScripts.situational.length,
-      formal: allScripts.formal.length,
-      qaScenario: allScripts.qaScenario.length,
-    });
+    // 2. 이미 할당받은 스크립트가 있는지 확인
+    const existingAssignments = await checkExistingAssignments(userId);
+    if (existingAssignments.length > 0) {
+      const assignedScripts = await getAssignedScriptsContent(
+        existingAssignments
+      );
+      return res.status(200).json({
+        success: true,
+        message: "이미 할당받은 스크립트가 있습니다.",
+        scripts: assignedScripts,
+        assignments: existingAssignments,
+      });
+    }
 
-    // 3. 사용 가능한 스크립트 ID들 가져오기
-    const availableScriptIds = await getAvailableScriptIds(allScripts);
+    // 3. 사용 가능한 스크립트들 찾기
+    const availableScripts = await getAvailableScripts();
 
-    console.log("🔍 Available script IDs:", availableScriptIds);
+    // 4. 필요한 개수만큼 스크립트가 있는지 확인
+    const requiredCounts = { formal: 2, qaScenario: 1, situational: 2 };
 
-    // 4. 사용 가능한 스크립트들 필터링
-    const availableSituational = allScripts.situational.filter((script) =>
-      availableScriptIds.situational.includes(script.id)
-    );
-    const availableFormal = allScripts.formal.filter((script) =>
-      availableScriptIds.formal.includes(script.id)
-    );
-    const availableQAScenario = allScripts.qaScenario.filter((script) =>
-      availableScriptIds.qaScenario.includes(script.id)
-    );
-
-    console.log("🔍 Filtered available scripts:", {
-      situational: availableSituational.length,
-      formal: availableFormal.length,
-      qaScenario: availableQAScenario.length,
-    });
-
-    // 5. 충분한 스크립트가 있는지 확인
     if (
-      availableSituational.length < 1 ||
-      availableFormal.length < 1 ||
-      availableQAScenario.length < 1
+      availableScripts.formal.length < requiredCounts.formal ||
+      availableScripts.qaScenario.length < requiredCounts.qaScenario ||
+      availableScripts.situational.length < requiredCounts.situational
     ) {
       return res.status(400).json({
         success: false,
-        message: `사용 가능한 스크립트가 부족합니다. (상황: ${availableSituational.length}/8, 정형: ${availableFormal.length}/8, QA: ${availableQAScenario.length}/1)`,
-        scripts: { situational: [], formal: [], qaScenario: [] },
+        message: `사용 가능한 스크립트가 부족합니다. (formal: ${availableScripts.formal.length}/${requiredCounts.formal}, qaScenario: ${availableScripts.qaScenario.length}/${requiredCounts.qaScenario}, situational: ${availableScripts.situational.length}/${requiredCounts.situational})`,
+        scripts: { formal: [], qaScenario: [], situational: [] },
+        assignments: [],
       });
     }
 
-    // 6. 랜덤 선택
-    const selectedSituational = getRandomItems(availableSituational, 2);
-    const selectedFormal = getRandomItems(availableFormal, 2);
-    const selectedQAScenario = getRandomItems(availableQAScenario, 1);
-
-    // 7. DB 업데이트 (배치 처리)
-    const batch = writeBatch(db);
-
-    // 스크립트 사용 상태 업데이트
-    const situationalUsageRef = doc(db, "scriptUsage", "situational");
-    const formalUsageRef = doc(db, "scriptUsage", "formal");
-    const qaScenarioUsageRef = doc(db, "scriptUsage", "qaScenario");
-
-    // 선택된 스크립트들을 사용됨으로 표시
-    const situationalUpdates: { [key: string]: boolean } = {};
-    const formalUpdates: { [key: string]: boolean } = {};
-    const qaScenarioUpdates: { [key: string]: boolean } = {};
-
-    selectedSituational.forEach((script) => {
-      situationalUpdates[script.id.toString()] = true;
-    });
-    selectedFormal.forEach((script) => {
-      formalUpdates[script.id.toString()] = true;
-    });
-    selectedQAScenario.forEach((script) => {
-      qaScenarioUpdates[script.id.toString()] = true;
-    });
-
-    batch.update(situationalUsageRef, situationalUpdates);
-    batch.update(formalUsageRef, formalUpdates);
-    batch.update(qaScenarioUsageRef, qaScenarioUpdates);
-
-    // 사용자 데이터 생성/업데이트
-    const assignedScriptIds = {
-      situational: selectedSituational.map((s) => s.id),
-      formal: selectedFormal.map((s) => s.id),
-      qaScenario: selectedQAScenario.map((s) => s.id),
-    };
-
-    if (!userDoc.exists()) {
-      const newUserData: Omit<UserData, "id"> = {
-        createdAt: new Date(),
-        lastAccess: new Date(),
-        assignedScripts: assignedScriptIds,
-        completedScripts: {
-          situational: [],
-          formal: [],
-          qaScenario: [],
-        },
-        totalAssigned: 17,
-        totalCompleted: 0,
-      };
-      batch.set(userRef, {
-        ...newUserData,
-        createdAt: serverTimestamp(),
-        lastAccess: serverTimestamp(),
-      });
-    } else {
-      batch.update(userRef, {
-        assignedScripts: assignedScriptIds,
-        totalAssigned: 17,
-        lastAccess: serverTimestamp(),
-      });
-    }
-
-    // 사용자별 진도 초기화
-    [...selectedSituational, ...selectedFormal, ...selectedQAScenario].forEach(
-      (script) => {
-        const progressRef = doc(
-          db,
-          "users",
-          userId,
-          "progress",
-          script.id.toString()
-        );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const scriptType = selectedSituational.includes(script as any)
-          ? "situational"
-          : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          selectedFormal.includes(script as any)
-          ? "formal"
-          : "qaScenario";
-
-        batch.set(progressRef, {
-          scriptId: script.id,
-          scriptType,
-          status: "assigned",
-          assignedAt: serverTimestamp(),
-        });
-      }
+    // 5. 랜덤 선택
+    const selectedFormal = getRandomItems(
+      availableScripts.formal,
+      requiredCounts.formal
+    );
+    const selectedQaScenario = getRandomItems(
+      availableScripts.qaScenario,
+      requiredCounts.qaScenario
+    );
+    const selectedSituational = getRandomItems(
+      availableScripts.situational,
+      requiredCounts.situational
     );
 
+    console.log("🔍 Selected scripts:", {
+      formal: selectedFormal,
+      qaScenario: selectedQaScenario,
+      situational: selectedSituational, // 이게 제대로 선택되는지 확인
+    });
+
+    // 6. 할당 처리 (배치)
+    const now = new Date().toISOString();
+    const batch = writeBatch(db);
+
+    // 6-1. Script 문서들 생성/업데이트
+    const allSelectedScripts = [
+      ...selectedFormal.map((s) => ({ ...s, type: ScriptType.FORMAL })),
+      ...selectedQaScenario.map((s) => ({
+        ...s,
+        type: ScriptType.QA_SCENARIO,
+      })),
+      ...selectedSituational.map((s) => ({
+        ...s,
+        type: ScriptType.SITUATIONAL,
+      })),
+    ];
+
+    allSelectedScripts.forEach((scriptData) => {
+      const scriptKey = `${scriptData.type}_${scriptData.id}`;
+      const scriptRef = doc(db, "scripts", scriptKey);
+
+      const scriptDoc: Script = {
+        id: scriptData.id,
+        type: scriptData.type,
+        assignedTo: userId,
+        assignedAt: now,
+        status: ScriptStatus.ASSIGNED,
+      };
+
+      batch.set(scriptRef, {
+        ...scriptDoc,
+        assignedAt: serverTimestamp(),
+      });
+    });
+
+    // 6-2. UserScriptAssignment 생성
+    const assignments: UserScriptAssignment[] = [
+      {
+        userId,
+        scriptType: ScriptType.FORMAL,
+        assignedScriptIds: selectedFormal.map((s) => s.id),
+        completedScriptIds: [],
+        assignedAt: now,
+      },
+      {
+        userId,
+        scriptType: ScriptType.QA_SCENARIO,
+        assignedScriptIds: selectedQaScenario.map((s) => s.id),
+        completedScriptIds: [],
+        assignedAt: now,
+      },
+      {
+        userId,
+        scriptType: ScriptType.SITUATIONAL,
+        assignedScriptIds: selectedSituational.map((s) => s.id),
+        completedScriptIds: [],
+        assignedAt: now,
+      },
+    ];
+
+    // 6-3. 사용자의 scriptAssignments 업데이트
+    batch.update(userRef, {
+      scriptAssignments: assignments,
+      lastAccessAt: serverTimestamp(),
+    });
+
+    // 배치 커밋
     await batch.commit();
+
+    console.log("✅ [assgin] 스크립트 할당 완료:", {
+      userId,
+      totalAssigned: allSelectedScripts.length,
+      assignments: assignments.map((a) => ({
+        type: a.scriptType,
+        count: a.assignedScriptIds.length,
+      })),
+    });
 
     return res.status(200).json({
       success: true,
       scripts: {
-        situational: selectedSituational,
         formal: selectedFormal,
-        qaScenario: selectedQAScenario,
+        qaScenario: selectedQaScenario,
+        situational: selectedSituational,
       },
+      assignments,
     });
   } catch (error) {
     console.error("❌ Error assigning scripts:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      scripts: { situational: [], formal: [], qaScenario: [] },
+      scripts: { formal: [], qaScenario: [], situational: [] },
+      assignments: [],
     });
   }
 }
 
-// 수정된 getAvailableScriptIds 함수
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getAvailableScriptIds(allScripts: any) {
+// 사용 가능한 스크립트들 찾기 (Script 컬렉션에서 할당되지 않은 것들)
+async function getAvailableScripts() {
   try {
-    const usageCollection = collection(db, "scriptUsage");
-    const usageDocs = await getDocs(usageCollection);
+    // 모든 스크립트 데이터 로드
+    const allScripts = await loadAllScripts();
 
-    console.log("🔍 ScriptUsage docs found:", usageDocs.size);
+    // 이미 할당된 스크립트들 조회
+    const scriptsCollection = collection(db, "scripts");
+    const assignedQuery = query(
+      scriptsCollection,
+      where("status", "==", ScriptStatus.ASSIGNED)
+    );
+    const assignedDocs = await getDocs(assignedQuery);
 
-    const availableIds = {
-      situational: [] as number[],
-      formal: [] as number[],
-      qaScenario: [] as number[],
-    };
-
-    // scriptUsage 컬렉션이 비어있는 경우, 모든 스크립트를 사용 가능으로 초기화
-    if (usageDocs.empty) {
-      console.log(
-        "⚠️ No scriptUsage docs found. Initializing all scripts as available."
-      );
-
-      // 모든 스크립트를 사용 가능으로 설정
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      availableIds.situational = allScripts.situational.map((s: any) => s.id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      availableIds.formal = allScripts.formal.map((s: any) => s.id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      availableIds.qaScenario = allScripts.qaScenario.map((s: any) => s.id);
-
-      // Firebase에 초기 데이터 생성
-      await initializeScriptUsage(allScripts);
-
-      return availableIds;
-    }
-
-    // 기존 로직
-    usageDocs.forEach((doc) => {
-      const data = doc.data() as ScriptUsage;
-      const scriptType = doc.id as keyof typeof availableIds;
-
-      console.log(`🔍 Processing ${scriptType} usage:`, data);
-
-      Object.entries(data).forEach(([scriptId, isUsed]) => {
-        if (!isUsed) {
-          const numericId = parseInt(scriptId);
-          if (!isNaN(numericId)) {
-            availableIds[scriptType].push(numericId);
-          }
-        }
-      });
+    // 할당된 스크립트 ID들 추출
+    const assignedScriptKeys = new Set<string>();
+    assignedDocs.forEach((doc) => {
+      const scriptData = doc.data() as Script;
+      const scriptKey = `${scriptData.type}_${scriptData.id}`;
+      assignedScriptKeys.add(scriptKey);
     });
 
-    console.log("🔍 Final available IDs:", availableIds);
-    return availableIds;
+    // 사용 가능한 스크립트들 필터링
+    const availableScripts = {
+      formal: allScripts.formal.filter(
+        (script) => !assignedScriptKeys.has(`${ScriptType.FORMAL}_${script.id}`)
+      ),
+      qaScenario: allScripts.qaScenario.filter(
+        (script) =>
+          !assignedScriptKeys.has(`${ScriptType.QA_SCENARIO}_${script.id}`)
+      ),
+      situational: allScripts.situational.filter(
+        (script) =>
+          !assignedScriptKeys.has(`${ScriptType.SITUATIONAL}_${script.id}`)
+      ),
+    };
+
+    console.log("🔍 Available scripts:", {
+      formal: availableScripts.formal.length,
+      qaScenario: availableScripts.qaScenario.length,
+      situational: availableScripts.situational.length,
+    });
+
+    return availableScripts;
   } catch (error) {
-    console.error("❌ Error getting available script IDs:", error);
+    console.error("❌ Error getting available scripts:", error);
 
     // 에러 발생 시 모든 스크립트를 사용 가능으로 반환
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      situational: allScripts.situational.map((s: any) => s.id),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      formal: allScripts.formal.map((s: any) => s.id),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      qaScenario: allScripts.qaScenario.map((s: any) => s.id),
-    };
+    const allScripts = await loadAllScripts();
+    return allScripts;
   }
 }
 
-// scriptUsage 컬렉션 초기화 함수
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function initializeScriptUsage(allScripts: any) {
+// 기존 할당 확인
+async function checkExistingAssignments(
+  userId: string
+): Promise<UserScriptAssignment[]> {
   try {
-    const batch = writeBatch(db);
+    const userRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userRef);
 
-    // situational 스크립트 사용 현황 초기화
-    const situationalUsage: { [key: string]: boolean } = {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    allScripts.situational.forEach((script: any) => {
-      situationalUsage[script.id.toString()] = false;
-    });
-    batch.set(doc(db, "scriptUsage", "situational"), situationalUsage);
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return userData.scriptAssignments || [];
+    }
 
-    // formal 스크립트 사용 현황 초기화
-    const formalUsage: { [key: string]: boolean } = {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    allScripts.formal.forEach((script: any) => {
-      formalUsage[script.id.toString()] = false;
-    });
-    batch.set(doc(db, "scriptUsage", "formal"), formalUsage);
-
-    // qaScenario 스크립트 사용 현황 초기화
-    const qaScenarioUsage: { [key: string]: boolean } = {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    allScripts.qaScenario.forEach((script: any) => {
-      qaScenarioUsage[script.id.toString()] = false;
-    });
-    batch.set(doc(db, "scriptUsage", "qaScenario"), qaScenarioUsage);
-
-    await batch.commit();
-    console.log("✅ Script usage initialized successfully");
+    return [];
   } catch (error) {
-    console.error("❌ Error initializing script usage:", error);
-    throw error;
+    console.error("❌ Error checking existing assignments:", error);
+    return [];
   }
 }
 
-// 할당받은 스크립트 내용 가져오기
-async function getAssignedScriptsContent(
-  assignedScripts: UserData["assignedScripts"]
-) {
+// 할당된 스크립트 내용 가져오기
+async function getAssignedScriptsContent(assignments: UserScriptAssignment[]) {
   const allScripts = await loadAllScripts();
 
-  const situational =
-    assignedScripts.situational
-      ?.map((id) => allScripts.situational.find((script) => script.id === id))
-      .filter(Boolean) || [];
-
-  const formal =
-    assignedScripts.formal
-      ?.map((id) => allScripts.formal.find((script) => script.id === id))
-      .filter(Boolean) || [];
-
-  const qaScenario =
-    assignedScripts.qaScenario
-      ?.map((id) => allScripts.qaScenario.find((script) => script.id === id))
-      .filter(Boolean) || [];
-
-  return {
-    // TypeScript가 filter(Boolean) 후에도 undefined 가능성을 제거하지 못해서 any로 우회
-    // 실제로는 filter(Boolean)에 의해 undefined가 제거된 상태
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    situational: situational as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    formal: formal as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    qaScenario: qaScenario as any,
+  const result = {
+    formal: [] as FormalScript[],
+    qaScenario: [] as QAScenarioScript[],
+    situational: [] as SituationalScript[],
   };
+
+  assignments.forEach((assignment) => {
+    assignment.assignedScriptIds.forEach((scriptId) => {
+      switch (assignment.scriptType) {
+        case ScriptType.FORMAL:
+          const formalScript = allScripts.formal.find(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (s: any) => s.id === scriptId
+          );
+          if (formalScript) result.formal.push(formalScript);
+          break;
+        case ScriptType.QA_SCENARIO:
+          const qaScript = allScripts.qaScenario.find(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (s: any) => s.id === scriptId
+          );
+          if (qaScript) result.qaScenario.push(qaScript);
+          break;
+        case ScriptType.SITUATIONAL:
+          const SituationalScript = allScripts.situational.find(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (s: any) => s.id === scriptId
+          );
+          if (SituationalScript) result.situational.push(SituationalScript);
+          break;
+      }
+    });
+  });
+
+  return result;
 }

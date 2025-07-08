@@ -1,14 +1,14 @@
 import React from "react";
 import styles from "@/styles/ErrorPopup.module.css";
 
-export interface TranscriptionResult {
+export interface GoogleTranscriptionResult {
   transcript: string;
   confidence: number;
 }
 
 export interface STTResponse {
   success: boolean;
-  transcription?: TranscriptionResult;
+  transcription?: GoogleTranscriptionResult;
   error?: string;
 }
 
