@@ -10,6 +10,7 @@ interface RecorderState {
 interface RecorderActions {
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
+  resetRecorder: () => void;
 }
 
 export const useMobileOptimizedRecorder = (): RecorderState &
@@ -37,14 +38,14 @@ export const useMobileOptimizedRecorder = (): RecorderState &
 
     // 모바일에서 가장 호환성 좋은 설정들을 순서대로 시도
     const constraintsList: MediaStreamConstraints[] = [
-      // 🎯 고령자 음성 최적화 설정 (새로 추가)
+      // 고령자 음성 최적화 설정 (새로 추가)
       {
         audio: {
           channelCount: 1,
           sampleRate: 48000,
-          echoCancellation: false, // ← 변경: 약한 음성 보호
-          noiseSuppression: false, // ← 변경: 자연스러운 음성 유지
-          autoGainControl: true, // ← 유지: 작은 목소리 증폭
+          echoCancellation: false, // 변경: 약한 음성 보호
+          noiseSuppression: false, // 변경: 자연스러운 음성 유지
+          autoGainControl: true, // 유지: 작은 목소리 증폭
           ...(isMobile && {
             latency: 0.1,
             volume: 1.0,
@@ -251,6 +252,21 @@ export const useMobileOptimizedRecorder = (): RecorderState &
     console.log("✅ 녹음기 정리 완료");
   }, []);
 
+  // 녹음기 리셋 (새로 추가)
+  const resetRecorder = useCallback(() => {
+    console.log("🔄 녹음기 리셋 시작");
+    
+    // 상태 초기화
+    setIsRecording(false);
+    setRecordingTime(0);
+    setAudioBlob(null);
+    
+    // 리소스 정리
+    cleanup();
+    
+    console.log("✅ 녹음기 리셋 완료");
+  }, [cleanup]);
+
   // 녹음 시작
   const startRecording = useCallback(async (): Promise<void> => {
     try {
@@ -370,5 +386,6 @@ export const useMobileOptimizedRecorder = (): RecorderState &
     audioBlob,
     startRecording,
     stopRecording,
+    resetRecorder,
   };
 };

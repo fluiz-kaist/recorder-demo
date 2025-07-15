@@ -260,7 +260,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                     <div className={styles.completedSection}>
                       <div className={styles.completedIcon}>🎉</div>
                       <div className={styles.completedMessage}>
-                        이 스크립트는 이미 녹음을 완료했습니다!
+                        이미 녹음을 완료했습니다!
                       </div>
                       <div className={styles.reRecordPrompt}>
                         다시 녹음하시겠어요?
@@ -269,6 +269,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                         key={`voice-recorder-${scriptIndex}`}
                         scriptType={scriptType}
                         scriptData={currentScript}
+                        isCompltedScript={currentScriptCompleted}
                         onRecordingComplete={handleRecordingComplete}
                       />
                     </div>
@@ -276,11 +277,9 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                     // 미완료 스크립트 표시
                     <>
                       <div className={styles.recordingPrompt}>
-                        🎤 어떻게 말하시겠어요?
+                        편하게 말씀해주세요!
                       </div>
-                      <div className={styles.recordingInstruction}>
-                        마음편히 자연스럽게 말씀해보세요!
-                      </div>
+
                       <VoiceRecorder
                         key={`voice-recorder-${scriptIndex}`}
                         scriptType={scriptType}

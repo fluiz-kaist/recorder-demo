@@ -6,26 +6,26 @@
   align-items: center;
   justify-content: center;
   min-height: 80vh;
-  color: #6b7280;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text-light);
+  font-family: var(--font-primary);
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: var(--space-lg);
+  font-family: var(--font-primary);
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--color-bg-secondary);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: var(--space-2xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 2px solid var(--color-border);
 }
 
 .titleSection {
@@ -33,75 +33,83 @@
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #1f2937;
-  margin: 0 0 8px 0;
+  font-size: var(--font-4xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-sm) 0;
   letter-spacing: -0.02em;
 }
 
 .subtitle {
-  color: #6b7280;
-  font-size: 16px;
+  color: var(--color-text-light);
+  font-size: var(--space-base);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--line-height-normal);
 }
 
 .actionButtons {
   display: flex;
-  gap: 12px;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
 .actionButton {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
+  color: var(--color-bg-primary);
   border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   text-decoration: none;
 }
 
 .actionButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .actionButton svg {
-  width: 18px;
-  height: 18px;
+  width: var(--font-lg);
+  height: var(--font-lg);
 }
 
 .refreshButton {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(
+    135deg,
+    var(--color-success),
+    var(--color-secondary)
+  );
 }
 
 .refreshButton:hover {
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .backButton {
-  background: #6b7280;
-  color: white;
+  background: var(--color-text-light);
+  color: var(--color-bg-primary);
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   text-decoration: none;
 }
 
 .backButton:hover {
-  background: #4b5563;
+  background: var(--color-text-muted);
   transform: translateY(-2px);
 }
 
@@ -111,11 +119,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 32px;
+  padding: var(--button-height) var(--space-md);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-2xl);
 }
 
 .errorCard {
@@ -123,67 +131,71 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  background: #fef2f2;
-  border: 2px solid #fecaca;
-  border-radius: 16px;
-  margin-bottom: 32px;
+  padding: var(--space-3xl) var(--space-md);
+  background: var(--color-error-bg);
+  border: 2px solid var(--color-warning-bg);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2xl);
   text-align: center;
 }
 
 .errorCard svg {
   width: 48px;
   height: 48px;
-  color: #dc2626;
-  margin-bottom: 16px;
+  color: var(--color-error-hover);
+  margin-bottom: var(--space-base);
 }
 
 .errorCard p {
-  color: #dc2626;
-  font-size: 16px;
-  margin: 0 0 16px 0;
+  color: var(--color-error-hover);
+  font-size: var(--space-base);
+  margin: 0 0 var(--space-base) 0;
 }
 
 .errorCard button {
-  padding: 8px 16px;
-  background: #dc2626;
-  color: white;
+  padding: var(--space-sm) var(--space-base);
+  background: var(--color-error-hover);
+  color: var(--color-bg-primary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-3xl);
 }
 
 .statCard {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
-  transition: all 0.2s ease;
+  background: var(--color-bg-primary);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-100);
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-base);
 }
 
 .statCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .statIcon {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
+  border-radius: var(--font-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,9 +203,9 @@
 }
 
 .statIcon svg {
-  width: 28px;
-  height: 28px;
-  color: white;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  color: var(--color-bg-primary);
 }
 
 .statContent {
@@ -201,88 +213,92 @@
 }
 
 .statTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-  margin: 0 0 4px 0;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-light);
+  margin: 0 0 var(--space-xs) 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .statValue {
-  font-size: 28px;
-  font-weight: 800;
-  color: #1f2937;
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-text-secondary);
   margin: 0;
-  line-height: 1.2;
+  line-height: var(--line-height-tight);
 }
 
 /* 차트 섹션 */
 .chartsSection {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-3xl);
 }
 
 .chartCard {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
+  background: var(--color-bg-primary);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-100);
 }
 
 .chartTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 20px 0;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #f3f4f6;
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-md) 0;
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--color-gray-100);
 }
 
 .chartContent {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-sm);
 }
 
 .chartItem {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-sm);
 }
 
 .chartLabel {
-  font-size: 14px;
-  font-weight: 600;
-  color: #4b5563;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
   min-width: 80px;
   flex-shrink: 0;
 }
 
 .chartBar {
   flex: 1;
-  height: 24px;
-  background: #f3f4f6;
-  border-radius: 12px;
+  height: var(--space-lg);
+  background: var(--color-gray-100);
+  border-radius: var(--space-sm);
   overflow: hidden;
   position: relative;
 }
 
 .chartFill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  border-radius: 12px;
-  transition: width 0.8s ease;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
+  border-radius: var(--space-sm);
+  transition: width var(--transition-slow);
   min-width: 4px;
 }
 
 .chartValue {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
   min-width: 40px;
   text-align: right;
   flex-shrink: 0;
@@ -292,9 +308,9 @@
 .recordingChart {
   display: flex;
   align-items: end;
-  gap: 8px;
+  gap: var(--space-sm);
   height: 200px;
-  padding: 20px 0;
+  padding: var(--space-md) 0;
 }
 
 .recordingItem {
@@ -302,112 +318,116 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
   height: 100%;
 }
 
 .recordingDate {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
+  font-size: var(--space-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-light);
   text-align: center;
 }
 
 .recordingBar {
   flex: 1;
   width: 100%;
-  background: #f3f4f6;
-  border-radius: 6px 6px 0 0;
+  background: var(--color-gray-100);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   overflow: hidden;
   display: flex;
   align-items: end;
-  min-height: 20px;
+  min-height: var(--space-md);
 }
 
 .recordingFill {
   width: 100%;
-  background: linear-gradient(180deg, #667eea, #764ba2);
-  border-radius: 6px 6px 0 0;
-  transition: height 0.8s ease;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: height var(--transition-slow);
   min-height: 4px;
 }
 
 .recordingCount {
-  font-size: 12px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--space-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
   text-align: center;
 }
 
 /* 빠른 액션 섹션 */
 .quickActions {
-  margin-bottom: 40px;
+  margin-bottom: var(--space-3xl);
 }
 
 .sectionTitle {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 20px 0;
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-md) 0;
 }
 
 .actionGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  gap: var(--space-md);
 }
 
 .quickActionCard {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 2px solid #f3f4f6;
+  background: var(--color-bg-primary);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--color-gray-100);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 12px;
+  gap: var(--space-sm);
   text-decoration: none;
   color: inherit;
 }
 
 .quickActionCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  border-color: #667eea;
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-light);
 }
 
 .quickActionCard svg {
   width: 40px;
   height: 40px;
-  color: #667eea;
+  color: var(--color-primary-light);
 }
 
 .quickActionCard h4 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
 .quickActionCard p {
-  font-size: 14px;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--color-text-light);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--line-height-normal);
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #f3f4f6;
-  border-top: 3px solid #667eea;
-  border-radius: 50%;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  border: 3px solid var(--color-gray-100);
+  border-top: 3px solid var(--color-primary-light);
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-base);
 }
 
 @keyframes spin {
@@ -419,17 +439,17 @@
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .container {
-    padding: 16px;
+    padding: var(--space-base);
   }
 
   .header {
     flex-direction: column;
-    gap: 16px;
+    gap: var(--space-base);
     align-items: stretch;
   }
 
   .title {
-    font-size: 24px;
+    font-size: var(--font-2xl);
   }
 
   .actionButtons {
@@ -438,39 +458,39 @@
 
   .statsGrid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--space-base);
   }
 
   .chartsSection {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--space-base);
   }
 
   .actionGrid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--space-base);
   }
 
   .statCard {
-    padding: 20px;
+    padding: var(--space-md);
   }
 
   .chartCard {
-    padding: 20px;
+    padding: var(--space-md);
   }
 
   .quickActionCard {
-    padding: 20px;
+    padding: var(--space-md);
   }
 }
 
 @media (max-width: 480px) {
   .container {
-    padding: 12px;
+    padding: var(--space-sm);
   }
 
   .statValue {
-    font-size: 24px;
+    font-size: var(--font-2xl);
   }
 
   .statIcon {
@@ -479,8 +499,8 @@
   }
 
   .statIcon svg {
-    width: 24px;
-    height: 24px;
+    width: var(--space-lg);
+    height: var(--space-lg);
   }
 
   .recordingChart {
@@ -489,78 +509,78 @@
 
   .chartLabel {
     min-width: 60px;
-    font-size: 13px;
+    font-size: var(--font-xs);
   }
 
   .chartValue {
     min-width: 35px;
-    font-size: 13px;
+    font-size: var(--font-xs);
   }
 }
 
 /* 다크 모드 지원 */
 @media (prefers-color-scheme: dark) {
   .container {
-    background: #111827;
-    color: white;
+    background: var(--color-gray-900);
+    color: var(--color-bg-primary);
   }
 
   .title {
-    color: white;
+    color: var(--color-bg-primary);
   }
 
   .subtitle {
-    color: #9ca3af;
+    color: var(--color-gray-400);
   }
 
   .statCard,
   .chartCard,
   .quickActionCard {
-    background: #1f2937;
-    border-color: #374151;
+    background: var(--color-text-secondary);
+    border-color: var(--color-text-secondary);
   }
 
   .statValue {
-    color: white;
+    color: var(--color-bg-primary);
   }
 
   .chartTitle,
   .sectionTitle {
-    color: white;
+    color: var(--color-bg-primary);
   }
 
   .quickActionCard h4 {
-    color: white;
+    color: var(--color-bg-primary);
   }
 
   .quickActionCard p {
-    color: #9ca3af;
+    color: var(--color-gray-400);
   }
 
   .chartLabel,
   .chartValue {
-    color: #d1d5db;
+    color: var(--color-gray-300);
   }
 
   .chartBar {
-    background: #374151;
+    background: var(--color-text-secondary);
   }
 
   .recordingBar {
-    background: #374151;
+    background: var(--color-text-secondary);
   }
 
   .recordingDate,
   .recordingCount {
-    color: #9ca3af;
+    color: var(--color-gray-400);
   }
 
   .header {
-    border-color: #374151;
+    border-color: var(--color-text-secondary);
   }
 
   .chartTitle {
-    border-color: #374151;
+    border-color: var(--color-text-secondary);
   }
 }
 
@@ -587,11 +607,11 @@
   .statCard,
   .chartCard,
   .quickActionCard {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
   }
 
   .statCard:hover,
   .quickActionCard:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
   }
 }

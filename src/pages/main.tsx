@@ -42,35 +42,6 @@ const MainSelectionPage = () => {
 
         {/* 선택 카드들 */}
         <main className={styles.cardContainer}>
-          {/* 상황별 스크립트 녹음 */}
-          <div
-            onClick={() => {
-              triggerHapticFeedback();
-              handleSituationScript();
-            }}
-            className={`${styles.card} ${styles.cardGreen}`}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => handleKeyDown(e, handleSituationScript)}
-          >
-            <div className={styles.cardIcon}>
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
-              </svg>
-            </div>
-
-            <h2 className={styles.cardTitle}>상황별 녹음</h2>
-
-            <p className={styles.cardDescription}>
-              📱 실제 상황을 보고 발화한 내용을 녹음합니다
-            </p>
-
-            <div className={styles.cardAction}>
-              <span>선택하기</span>
-              <span className={styles.arrow}>→</span>
-            </div>
-          </div>
-
           {/* 정형화 스크립트 녹음 */}
           <div
             onClick={() => {
@@ -91,7 +62,35 @@ const MainSelectionPage = () => {
             <h2 className={styles.cardTitle}>정형화 녹음</h2>
 
             <p className={styles.cardDescription}>
-              📋 주어진 문장을 자연스럽게 읽어주세요
+              주어진 문장을 자연스럽게 읽어주세요
+            </p>
+
+            <div className={styles.cardAction}>
+              <span>선택하기</span>
+              <span className={styles.arrow}>→</span>
+            </div>
+          </div>
+          {/* 상황별 스크립트 녹음 */}
+          <div
+            onClick={() => {
+              triggerHapticFeedback();
+              handleSituationScript();
+            }}
+            className={`${styles.card} ${styles.cardGreen}`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => handleKeyDown(e, handleSituationScript)}
+          >
+            <div className={styles.cardIcon}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+              </svg>
+            </div>
+
+            <h2 className={styles.cardTitle}>상황별 녹음</h2>
+
+            <p className={styles.cardDescription}>
+              상황을 보고 발화한 내용을 녹음합니다
             </p>
 
             <div className={styles.cardAction}>

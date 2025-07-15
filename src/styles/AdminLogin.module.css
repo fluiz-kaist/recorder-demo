@@ -6,9 +6,13 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary) 100%
+  );
+  color: var(--color-bg-primary);
+  font-family: var(--font-primary);
 }
 
 .container {
@@ -16,19 +20,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary) 100%
+  );
+  padding: var(--space-md);
+  font-family: var(--font-primary);
 }
 
 .loginCard {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 400px;
-  padding: 40px;
-  animation: slideUp 0.5s ease-out;
+  padding: var(--space-3xl);
+  animation: slideUp var(--transition-slow) ease-out;
 }
 
 @keyframes slideUp {
@@ -44,66 +52,70 @@
 
 .header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--space-2xl);
 }
 
 .logoSection {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-base);
 }
 
 .logoIcon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+  margin-bottom: var(--space-base);
+  box-shadow: var(--shadow-md);
 }
 
 .logoIcon svg {
-  width: 32px;
-  height: 32px;
-  color: white;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  color: var(--color-bg-primary);
 }
 
 .title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a202c;
+  font-size: var(--font-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .subtitle {
-  color: #718096;
-  font-size: 14px;
+  color: var(--color-text-light);
+  font-size: var(--font-sm);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--line-height-normal);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-lg);
 }
 
 .inputGroup {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 4px;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
 }
 
 .inputWrapper {
@@ -114,99 +126,103 @@
 
 .input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  background: white;
-  color: #1f2937;
+  padding: var(--space-sm) var(--space-base) var(--space-sm) 48px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--space-base);
+  transition: all var(--transition-fast);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
 }
 
 .input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .input::placeholder {
-  color: #9ca3af;
+  color: var(--color-gray-400);
 }
 
 .inputError {
-  border-color: #ef4444;
+  border-color: var(--color-error);
 }
 
 .inputError:focus {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px var(--color-error-bg);
 }
 
 .inputIcon {
   position: absolute;
-  left: 16px;
-  width: 20px;
-  height: 20px;
-  color: #9ca3af;
+  left: var(--space-base);
+  width: var(--icon-base);
+  height: var(--icon-base);
+  color: var(--color-gray-400);
   pointer-events: none;
   z-index: 1;
 }
 
 .passwordToggle {
   position: absolute;
-  right: 16px;
-  width: 20px;
-  height: 20px;
+  right: var(--space-base);
+  width: var(--icon-base);
+  height: var(--icon-base);
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--color-gray-400);
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
+  transition: color var(--transition-fast);
 }
 
 .passwordToggle:hover {
-  color: #6b7280;
+  color: var(--color-text-light);
 }
 
 .passwordToggle svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-base);
+  height: var(--icon-base);
 }
 
 .errorMessage {
-  color: #ef4444;
-  font-size: 14px;
-  margin-top: 4px;
+  color: var(--color-error);
+  font-size: var(--font-sm);
+  margin-top: var(--space-xs);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 .submitButton {
   width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  padding: var(--font-sm);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
+  color: var(--color-bg-primary);
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-sm);
   min-height: 52px;
 }
 
 .submitButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .submitButton:active:not(:disabled) {
@@ -220,16 +236,16 @@
 }
 
 .submitButton svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-base);
+  height: var(--icon-base);
 }
 
 .spinner {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-base);
+  height: var(--icon-base);
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
 }
 
@@ -240,58 +256,58 @@
 }
 
 .globalError {
-  padding: 12px 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  color: #dc2626;
-  font-size: 14px;
+  padding: var(--space-sm) var(--space-base);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-warning-bg);
+  border-radius: var(--radius-md);
+  color: var(--color-error-hover);
+  font-size: var(--font-sm);
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  line-height: 1.5;
+  gap: var(--space-sm);
+  line-height: var(--line-height-normal);
 }
 
 .globalError svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-base);
+  height: var(--icon-base);
   flex-shrink: 0;
   margin-top: 1px;
 }
 
 .footer {
-  margin-top: 24px;
+  margin-top: var(--space-lg);
   text-align: center;
 }
 
 .backButton {
   background: none;
   border: none;
-  color: #6b7280;
-  font-size: 14px;
+  color: var(--color-text-light);
+  font-size: var(--font-sm);
   cursor: pointer;
-  padding: 8px 0;
-  transition: color 0.2s ease;
+  padding: var(--space-sm) 0;
+  transition: color var(--transition-fast);
   text-decoration: none;
 }
 
 .backButton:hover {
-  color: #374151;
+  color: var(--color-text-secondary);
   text-decoration: underline;
 }
 
 /* 반응형 디자인 */
 @media (max-width: 640px) {
   .container {
-    padding: 16px;
+    padding: var(--space-base);
   }
 
   .loginCard {
-    padding: 32px 24px;
+    padding: var(--space-2xl) var(--space-lg);
   }
 
   .title {
-    font-size: 20px;
+    font-size: var(--font-xl);
   }
 
   .logoIcon {
@@ -300,73 +316,77 @@
   }
 
   .logoIcon svg {
-    width: 28px;
-    height: 28px;
+    width: var(--icon-lg);
+    height: var(--icon-lg);
   }
 }
 
 /* 다크 모드 지원 */
 @media (prefers-color-scheme: dark) {
   .container {
-    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-text-primary) 0%,
+      var(--color-text-secondary) 100%
+    );
   }
 
   .loginCard {
-    background: #2d3748;
-    color: white;
+    background: var(--color-text-secondary);
+    color: var(--color-bg-primary);
   }
 
   .title {
-    color: white;
+    color: var(--color-bg-primary);
   }
 
   .subtitle {
-    color: #a0aec0;
+    color: var(--color-gray-300);
   }
 
   .label {
-    color: #e2e8f0;
+    color: var(--color-gray-200);
   }
 
   .input {
-    background: #4a5568;
-    border-color: #4a5568;
-    color: white;
+    background: var(--color-text-muted);
+    border-color: var(--color-text-muted);
+    color: var(--color-bg-primary);
   }
 
   .input::placeholder {
-    color: #a0aec0;
+    color: var(--color-gray-300);
   }
 
   .input:focus {
-    border-color: #667eea;
-    background: #4a5568;
+    border-color: var(--color-primary-light);
+    background: var(--color-text-muted);
   }
 
   .inputIcon {
-    color: #a0aec0;
+    color: var(--color-gray-300);
   }
 
   .passwordToggle {
-    color: #a0aec0;
+    color: var(--color-gray-300);
   }
 
   .passwordToggle:hover {
-    color: #cbd5e0;
+    color: var(--color-gray-200);
   }
 
   .globalError {
-    background: #fed7d7;
-    border-color: #feb2b2;
-    color: #c53030;
+    background: var(--color-error-bg);
+    border-color: var(--color-error-bg);
+    color: var(--color-error);
   }
 
   .backButton {
-    color: #a0aec0;
+    color: var(--color-gray-300);
   }
 
   .backButton:hover {
-    color: #e2e8f0;
+    color: var(--color-gray-200);
   }
 }
 

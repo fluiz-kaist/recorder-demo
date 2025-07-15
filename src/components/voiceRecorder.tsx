@@ -33,12 +33,14 @@ interface VoiceRecorderProps {
   scriptType: ScriptType;
   scriptData: SituationalScript | FormalScript | QAScenarioScript;
   onRecordingComplete?: () => void;
+  isCompltedScript?: boolean;
 }
 
 const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   scriptType,
   scriptData,
   onRecordingComplete,
+  isCompltedScript,
 }) => {
   console.log("VoiceRecorder props:", { scriptType, scriptData });
 
@@ -56,13 +58,16 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   );
   const [showSTT, setShowSTT] = useState(false);
 
-  // 🎯 간단한 품질 검증 관련 상태
+  // 간단한 품질 검증 관련 상태
   const [qualityResult, setQualityResult] =
     useState<SimpleQualityResult | null>(null);
   const [showQualityWarning, setShowQualityWarning] = useState(false);
 
   // 성공 팝업 관련 상태
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isCountingDown, setIsCountingDown] = useState(false);
 
   // React Query 훅들
   const { data: authToken } = useAuthStatusQuery();
@@ -71,13 +76,14 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
   const [hasSTTStarted, setHasSTTStarted] = useState(false);
 
-  // 🔥 MobileOptimizedRecorder hook 사용
+  // MobileOptimizedRecorder hook 사용
   const {
     isRecording,
     recordingTime,
     audioBlob,
     startRecording: startMobileRecording,
     stopRecording: stopMobileRecording,
+    resetRecorder,
   } = useMobileOptimizedRecorder();
 
   // 성공 팝업 닫기 핸들러
@@ -237,12 +243,29 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       setIsSTTSuccess(false);
       setShowSuccessPopup(false);
 
+      // 카운트다운 시작
+      setIsCountingDown(true);
+      setCountdown(3);
+
+      // 3초 카운트다운
+      for (let i = 3; i > 0; i--) {
+        setCountdown(i);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      setCountdown(null);
+      setIsCountingDown(false);
+
+      // 실제 녹음 시작
+
       // MobileOptimizedRecorder의 startRecording 호출
       await startMobileRecording();
 
       console.log("✅ 녹음 시작 완료");
     } catch (err) {
       console.error("❌ 녹음 시작 실패:", err);
+      setIsCountingDown(false);
+      setCountdown(null);
       alert(`녹음 시작 실패: ${(err as Error).message}`);
     }
   };
@@ -392,6 +415,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
     }
+
+    // 훅의 audioBlob과 모든 리소스 초기화
+    resetRecorder();
     // 모든 상태 초기화
     setAudioUrl(null);
     setAudioDuration(null);
@@ -404,6 +430,8 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     setIsSTTProcessing(false);
     setHasSTTStarted(false);
     setShowSuccessPopup(false);
+    setCountdown(null);
+    setIsCountingDown(false);
 
     console.log("✅ 새 녹음 준비 완료");
   };
@@ -436,15 +464,38 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         />
       )}
 
-      {/* 🎯 녹음 안내 (품질 향상을 위한 팁) */}
-      {!audioUrl && !isRecording && (
+      {/*  녹음 안내 (품질 향상을 위한 팁) */}
+      {/* {!audioUrl && !isRecording && !isCompltedScript && (
         <div className={styles.recordingGuide}>
-          <h4>🎤 음성 녹음 안내</h4>
+          <h4>음성 녹음 안내</h4>
           <ul>
-            <li>조용한 곳에서 녹음해 주세요</li>
+            <li>
+              <b>조용한 곳에서</b> 녹음해 주세요
+            </li>
             <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
-            <li>최소 3초 이상 또렷하게 말씀해 주세요</li>
+            <li>최소 3초 이상 말씀해 주세요</li>
           </ul>
+        </div>
+      )} */}
+
+      {!audioUrl && !isCompltedScript && (
+        <div className={styles.recordingGuide}>
+          <h4>음성 녹음 안내</h4>
+          <ul>
+            <li>
+              <b>조용한 곳에서</b> 녹음해 주세요
+            </li>
+            <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
+            <li>최소 3초 이상 말씀해 주세요</li>
+          </ul>
+        </div>
+      )}
+
+      {/* 카운트다운 표시 */}
+      {isCountingDown && countdown && (
+        <div className={styles.countdownContainer}>
+          <div className={styles.countdownNumber}>{countdown}</div>
+          <p className={styles.countdownText}>잠시 후 녹음이 시작됩니다</p>
         </div>
       )}
 
@@ -465,16 +516,22 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             isRecording ? styles.recordingButton : ""
           }`}
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isUploading}
+          disabled={isUploading || isCountingDown}
         >
-          {isRecording ? "🛑 녹음 종료" : "🎤 녹음 시작"}
+          {isCountingDown
+            ? "준비 중..."
+            : isRecording
+            ? "🛑 녹음 종료"
+            : isCompltedScript
+            ? "다시 녹음하기"
+            : "녹음 시작하기"}
         </button>
       )}
 
       {/* 🎯 품질 경고 표시 */}
       {showQualityWarning && qualityResult && (
         <div className={styles.qualityWarning}>
-          <h4>⚠️ 음성 품질 개선 필요</h4>
+          <h4>⚠️ 녹음된 음성의 품질이 좋지 않습니다</h4>
           {audioUrl ? (
             <div className={styles.audioPreview}>
               <p>🔉 녹음된 음성 확인하기:</p>
@@ -565,7 +622,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               onTranscriptionComplete={handleTranscriptionComplete}
               onError={handleTranscriptionError}
               onTranscribingStateChange={handleSTTStateChange}
-              autoTranscribe={true}
+              autoTranscribe={false}
             />
           )}
 
@@ -591,8 +648,22 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           )}
 
           <div className={styles.actionButtons}>
-            {/* STT가 성공했을 때만 제출하기 버튼 표시 */}
-            {isSTTSuccess && (
+            {/* STT가 성공했을 때만 제출하기 버튼 표시, stt true로 쓸때만 사용용 */}
+            {/* {isSTTSuccess && (
+              <button
+                className={styles.uploadButton}
+                onClick={handleUpload}
+                disabled={isUploading || isSTTProcessing}
+              >
+                {isSTTProcessing
+                  ? "음성 분석 중..."
+                  : isUploading
+                  ? "제출 중..."
+                  : "제출하기"}
+              </button>
+            )} */}
+
+            {audioBlob && (
               <button
                 className={styles.uploadButton}
                 onClick={handleUpload}
@@ -611,7 +682,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               onClick={handleNewRecording}
               disabled={isUploading || isSTTProcessing}
             >
-              {isSTTProcessing ? "분석 중..." : "🔄 새로 녹음하기"}
+              {isSTTProcessing ? "분석 중..." : "새로 녹음하기"}
             </button>
           </div>
 

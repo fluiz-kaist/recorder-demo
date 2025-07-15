@@ -1,10 +1,9 @@
 /* 전체 컨테이너 */
 .container {
   min-height: 100vh;
-  background: #f5f9ff;
-  padding: 20px 16px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
-    sans-serif;
+  background: var(--color-gray-50);
+  padding: var(--space-md) var(--space-base);
+  font-family: var(--font-primary);
 }
 
 .content {
@@ -16,40 +15,41 @@
 /* 헤더 영역 */
 .header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: var(--space-3xl);
 }
 
 .title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 16px 0;
-  line-height: 1.3;
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-base) 0;
+  line-height: var(--line-height-tight);
 }
 
 .subtitle {
-  font-size: 18px;
-  color: #4a4a4a;
+  font-size: var(--font-lg);
+  color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--line-height-normal);
 }
 
 /* 카드 컨테이너 */
 .cardContainer {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  margin-bottom: 40px;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-3xl);
 }
 
 /* 카드 공통 스타일 */
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 32px 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-2xl) var(--space-lg);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--transition-fast),
+    box-shadow var(--transition-fast);
   border: 3px solid transparent;
   text-align: center;
   position: relative;
@@ -62,7 +62,7 @@
 .card:hover,
 .card:focus {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   outline: none;
 }
 
@@ -72,38 +72,69 @@
 
 /* 카드 색상 테마 */
 .cardBlue {
-  border-left: 6px solid #4285f4;
+  border-left: 6px solid var(--color-primary);
 }
 
 .cardBlue:hover,
 .cardBlue:focus {
-  border-color: #4285f4;
-  background: #f8fbff;
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 .cardGreen {
-  border-left: 6px solid #34a853;
+  border-left: 6px solid var(--color-secondary);
 }
 
 .cardGreen:hover,
 .cardGreen:focus {
-  border-color: #34a853;
-  background: #f8fff8;
+  border-color: var(--color-secondary);
+  background: var(--color-secondary-bg);
+}
+
+.cardPurple {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary) 100%
+  );
+  border-color: var(--color-primary);
+}
+
+.cardPurple:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%
+  );
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.cardPurple:active {
+  transform: translateY(-2px);
 }
 
 /* 카드 아이콘 */
 .cardIcon {
   width: 64px;
   height: 64px;
-  margin: 0 auto 20px auto;
-  color: #4285f4;
+  margin: 0 auto var(--space-md) auto;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .cardGreen .cardIcon {
-  color: #34a853;
+  color: var(--color-secondary);
+}
+
+.cardBlue .cardIcon {
+  color: var(--color-primary);
+}
+
+.cardPurple .cardIcon {
+  color: var(--color-primary-light);
 }
 
 .cardIcon svg {
@@ -113,19 +144,19 @@
 
 /* 카드 제목 */
 .cardTitle {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 16px 0;
-  line-height: 1.3;
+  font-size: var(--font-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-base) 0;
+  line-height: var(--line-height-tight);
 }
 
 /* 카드 설명 */
 .cardDescription {
-  font-size: 16px;
-  color: #555;
-  margin: 0 0 24px 0;
-  line-height: 1.5;
+  font-size: var(--space-base);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-lg) 0;
+  line-height: var(--line-height-normal);
 }
 
 /* 카드 액션 */
@@ -133,19 +164,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #4285f4;
+  gap: var(--space-sm);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
 }
 
 .cardGreen .cardAction {
-  color: #34a853;
+  color: var(--color-secondary);
 }
 
 .arrow {
-  font-size: 20px;
-  transition: transform 0.2s ease;
+  font-size: var(--font-xl);
+  transition: transform var(--transition-fast);
 }
 
 .card:hover .arrow {
@@ -155,32 +186,32 @@
 /* 하단 정보 */
 .footer {
   text-align: center;
-  margin-top: 40px;
+  margin-top: var(--space-3xl);
 }
 
 .footerText {
-  font-size: 14px;
-  color: #666;
+  font-size: var(--font-sm);
+  color: var(--color-text-light);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--line-height-normal);
 }
 
 /* 모바일 최적화 (작은 화면) */
 @media (max-width: 360px) {
   .container {
-    padding: 16px 12px;
+    padding: var(--space-base) var(--space-sm);
   }
 
   .title {
-    font-size: 24px;
+    font-size: var(--font-2xl);
   }
 
   .subtitle {
-    font-size: 16px;
+    font-size: var(--space-base);
   }
 
   .card {
-    padding: 24px 20px;
+    padding: var(--space-lg) var(--space-md);
     min-height: 180px;
   }
 
@@ -190,11 +221,11 @@
   }
 
   .cardTitle {
-    font-size: 20px;
+    font-size: var(--font-xl);
   }
 
   .cardDescription {
-    font-size: 15px;
+    font-size: var(--font-base);
   }
 }
 
@@ -212,57 +243,27 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .card {
-    border: 2px solid #000;
+    border: 2px solid var(--color-text-primary);
   }
 
   .title,
   .cardTitle {
-    color: #000;
+    color: var(--color-text-primary);
   }
 
   .subtitle,
   .cardDescription {
-    color: #333;
+    color: var(--color-text-primary);
   }
-}
-/* MainSelectionPage.module.css에 추가할 스타일 */
-
-/* 기존 cardBlue, cardGreen에 추가로 */
-.cardPurple {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  border-color: #7c3aed;
-}
-
-.cardPurple:hover {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.3);
-}
-
-.cardPurple:active {
-  transform: translateY(-2px);
-}
-
-/* 카드 아이콘 색상 일관성 */
-.cardBlue .cardIcon {
-  color: #3b82f6;
-}
-
-.cardGreen .cardIcon {
-  color: #10b981;
-}
-
-.cardPurple .cardIcon {
-  color: #8b5cf6;
 }
 
 /* 접근성 향상 - 포커스 스타일 */
 .card:focus {
-  outline: 3px solid #4ade80;
+  outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }
 
 .card:focus-visible {
-  outline: 3px solid #4ade80;
+  outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }
