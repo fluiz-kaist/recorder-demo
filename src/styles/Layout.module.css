@@ -235,11 +235,11 @@
   }
 
   .logoText {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .logoutText {
-    font-size: var(--font-xs);
+    font-size: var(--font-sm);
   }
 
   .footerContainer {
@@ -261,10 +261,9 @@
   }
 
   .helpText {
-    font-size: var(--font-xs);
+    font-size: var(--font-sm);
   }
 }
-
 /* 접근성 향상 */
 @media (prefers-reduced-motion: reduce) {
   .logo,

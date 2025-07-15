@@ -6,6 +6,7 @@ export enum ScriptType {
   FORMAL = "formal", // 정식/공식 (이미지에서 보이는 것)
   QA_SCENARIO = "qaScenario", // 질의응답 시나리오
   SITUATIONAL = "situational", // 상황별 스크립트
+  TUTORIAL = "tutorial",
 }
 
 // 스크립트 상태
@@ -51,6 +52,15 @@ export interface SituationalScript {
   intent: string;
   title: string;
   description: string;
+}
+
+export interface TutorialScript {
+  id: number;
+  category: string;
+  type: string;
+  title: string;
+  description: string;
+  explain: string;
 }
 
 // 스크립트 원본 데이터 유니온 타입

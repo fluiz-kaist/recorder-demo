@@ -76,7 +76,7 @@
   background: var(--color-bg-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: var(--space-2xl) var(--space-lg);
+  padding: var(--space-xl) var(--space-sm);
   margin-bottom: var(--space-md);
 }
 
@@ -95,7 +95,7 @@
 
 .titleSection {
   text-align: center;
-  margin-bottom: var(--space-2xl);
+  margin-bottom: var(--space-xl);
 }
 
 .title {
@@ -103,7 +103,7 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-text-secondary);
   line-height: var(--line-height-tight);
-  margin-bottom: var(--space-base);
+  margin-bottom: var(--space-sm);
   word-break: keep-all;
 }
 
@@ -225,7 +225,7 @@
 /* 녹음 영역 */
 .recordingSection {
   border-radius: var(--radius-xl);
-  padding: var(--space-2xl) var(--space-lg);
+  /* padding: var(--space-2xl) var(--space-lg); */
   margin-bottom: var(--space-2xl);
   text-align: center;
 }
@@ -443,6 +443,7 @@
   border-radius: var(--radius-lg);
   padding: var(--space-md);
   box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-sm);
 }
 
 .progressHeader {
@@ -641,7 +642,6 @@
   color: var(--color-error-hover);
   font-weight: var(--font-weight-semibold);
 }
-
 /* 모바일 최적화 */
 @media (max-width: 480px) {
   .container {
@@ -653,17 +653,17 @@
   }
 
   .headerTitle {
-    font-size: var(--space-base);
+    font-size: var(--font-2xl);
     margin: 0 var(--space-sm);
   }
 
   .backButton {
-    font-size: var(--space-base);
+    font-size: var(--font-base);
     padding: 10px var(--space-sm);
   }
 
   .progressIndicator {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     padding: var(--space-sm) var(--space-sm);
   }
 
@@ -672,27 +672,27 @@
   }
 
   .title {
-    font-size: var(--font-2xl);
+    font-size: var(--font-3xl);
   }
 
   .description {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .formalSentence {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
   }
 
   .situation {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
   }
 
   .qaDescription {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .recordingInstruction {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
   }
 
   .navigation {
@@ -703,7 +703,7 @@
   .navButton {
     width: 100%;
     min-height: var(--button-height-sm);
-    font-size: var(--space-base);
+    font-size: var(--font-base);
   }
 
   .statsSection {
@@ -727,7 +727,7 @@
   }
 
   .recorderTitle {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .recorderWrapper {
@@ -736,7 +736,7 @@
 
   .completeButton {
     width: 100%;
-    font-size: var(--space-base);
+    font-size: var(--font-base);
     padding: var(--font-sm) var(--space-lg);
   }
 
@@ -745,7 +745,7 @@
   }
 
   .completedMessage {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 }
 

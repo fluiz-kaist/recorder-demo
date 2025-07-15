@@ -31,17 +31,49 @@ const MainSelectionPage = () => {
     }
   };
 
+  // 튜토리얼 페이지로 이동
+  const handleTutorial = () => {
+    router.push("tutorial");
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.content}>
         {/* 헤더 */}
         <header className={styles.header}>
-          <h1 className={styles.title}>음성 수집 페이지</h1>
-          <p className={styles.subtitle}>원하는 녹음 방법을 선택해주세요</p>
+          <h1 className={styles.title}></h1>
         </header>
 
         {/* 선택 카드들 */}
         <main className={styles.cardContainer}>
+          <div
+            onClick={() => {
+              triggerHapticFeedback();
+              handleTutorial();
+            }}
+            className={`${styles.card} ${styles.cardOrange}`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => handleKeyDown(e, handleTutorial)}
+          >
+            <div className={styles.cardIcon}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17C11.45,17 11,16.55 11,16C11,15.45 11.45,15 12,15C12.55,15 13,15.45 13,16C13,16.55 12.55,17 12,17M13,13H11V7H13V13Z" />
+              </svg>
+            </div>
+
+            <h2 className={styles.cardTitle}>처음 사용하시나요?</h2>
+
+            <p className={styles.cardDescription}>
+              음성 녹음 방법을 쉽게 알려드립니다
+            </p>
+
+            <div className={styles.cardAction}>
+              <span>사용법 보기</span>
+              <span className={styles.arrow}>→</span>
+            </div>
+          </div>
+
           {/* 정형화 스크립트 녹음 */}
           <div
             onClick={() => {
@@ -59,7 +91,7 @@ const MainSelectionPage = () => {
               </svg>
             </div>
 
-            <h2 className={styles.cardTitle}>정형화 녹음</h2>
+            <h2 className={styles.cardTitle}>정형 녹음</h2>
 
             <p className={styles.cardDescription}>
               주어진 문장을 자연스럽게 읽어주세요

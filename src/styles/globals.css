@@ -1,15 +1,15 @@
 /* ===========================================
-   고령자 친화적 CSS 변수 시스템
+   🎯 고령자 친화적 CSS 변수 시스템
    - 순수 CSS 변수만 사용 (Tailwind 제거)
    - CSS Modules와 호환
    - 선명한 고대비 색상 테마
-   - rem 기반 글자 크기 시스템
+   - 큰 글자 크기 시스템
    - 통일된 브레이크포인트
    =========================================== */
 
 :root {
   /* ===============================
-         색상 시스템 - 선명한 고대비 테마
+         🎨 색상 시스템 - 선명한 고대비 테마
          =============================== */
 
   /* 기본 배경 & 텍스트 */
@@ -86,7 +86,7 @@
   --breakpoint-xl: 1280px; /* 대형 데스크톱 */
 
   /* ===============================
-          폰트 시스템 - 고령자 친화적 (rem 기반)
+          폰트 시스템 - 고령자 친화적
          =============================== */
 
   /* 폰트 패밀리 */
@@ -95,21 +95,21 @@
   --font-mono: "SF Mono", "Monaco", "Consolas", "Liberation Mono", "Courier New",
     monospace;
 
-  /* 기본 폰트 크기 (rem 기반) */
-  --font-xs: 0.875rem; /* 14px */
-  --font-sm: 1rem; /* 16px */
-  --font-base: 1.125rem; /* 18px */
-  --font-lg: 1.25rem; /* 20px */
-  --font-xl: 1.5rem; /* 24px */
-  --font-2xl: 1.75rem; /* 28px */
-  --font-3xl: 2rem; /* 32px */
-  --font-4xl: 2.25rem; /* 36px */
+  /* 기본 폰트 크기 (데스크톱) */
+  --font-xs: 14px; /* 작은 텍스트 */
+  --font-sm: 16px; /* 보조 텍스트 */
+  --font-base: 18px; /* 기본 텍스트 */
+  --font-lg: 20px; /* 큰 텍스트 */
+  --font-xl: 24px; /* 제목 */
+  --font-2xl: 28px; /* 큰 제목 */
+  --font-3xl: 32px; /* 메인 제목 */
+  --font-4xl: 36px; /* 대형 제목 */
 
-  /* 버튼 폰트 크기 (rem 기반) */
-  --font-button-sm: 1rem; /* 16px */
-  --font-button: 1.125rem; /* 18px */
-  --font-button-lg: 1.25rem; /* 20px */
-  --font-button-xl: 1.5rem; /* 24px */
+  /* 버튼 폰트 크기 */
+  --font-button-sm: 16px; /* 작은 버튼 */
+  --font-button: 18px; /* 기본 버튼 */
+  --font-button-lg: 20px; /* 큰 버튼 */
+  --font-button-xl: 24px; /* 특대 버튼 */
 
   /* 라인 높이 */
   --line-height-tight: 1.2; /* 제목용 */
@@ -124,41 +124,41 @@
   --font-weight-extrabold: 800;
 
   /* ===============================
-         크기 & 여백 시스템 (rem 기반)
+         🎛️ 크기 & 여백 시스템
          =============================== */
 
   /* 스페이싱 (고령자 친화적 - 넉넉한 여백) */
-  --space-xs: 0.25rem; /* 4px */
-  --space-sm: 0.5rem; /* 8px */
-  --space-base: 1rem; /* 16px */
-  --space-md: 1.25rem; /* 20px */
-  --space-lg: 1.5rem; /* 24px */
-  --space-xl: 2rem; /* 32px */
-  --space-2xl: 2.5rem; /* 40px */
-  --space-3xl: 3rem; /* 48px */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-base: 16px;
+  --space-md: 20px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 40px;
+  --space-3xl: 48px;
 
-  /* 버튼 크기 (rem 기반) */
-  --button-height-sm: 3rem; /* 48px */
-  --button-height: 3.5rem; /* 56px */
-  --button-height-lg: 4rem; /* 64px */
-  --button-height-xl: 4.5rem; /* 72px */
+  /* 버튼 크기 */
+  --button-height-sm: 48px; /* 작은 버튼 (최소 터치 크기) */
+  --button-height: 56px; /* 기본 버튼 */
+  --button-height-lg: 64px; /* 큰 버튼 */
+  --button-height-xl: 72px; /* 특대 버튼 */
 
-  /* 아이콘 크기 (rem 기반) */
-  --icon-sm: 1.25rem; /* 20px */
-  --icon-base: 1.5rem; /* 24px */
-  --icon-lg: 2rem; /* 32px */
-  --icon-xl: 2.5rem; /* 40px */
+  /* 아이콘 크기 */
+  --icon-sm: 20px;
+  --icon-base: 24px;
+  --icon-lg: 32px;
+  --icon-xl: 40px;
 
-  /* 반지름 (rem 기반) */
-  --radius-sm: 0.25rem; /* 4px */
-  --radius: 0.5rem; /* 8px */
-  --radius-md: 0.75rem; /* 12px */
-  --radius-lg: 1rem; /* 16px */
-  --radius-xl: 1.25rem; /* 20px */
+  /* 반지름 */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-full: 9999px;
 
   /* ===============================
-         애니메이션 & 전환
+         ⚡ 애니메이션 & 전환
          =============================== */
   --transition-fast: 0.15s ease;
   --transition: 0.2s ease;
@@ -170,33 +170,33 @@
 }
 
 /* ===============================
-       반응형 폰트 크기 시스템
+       📱 반응형 폰트 크기 시스템
        =============================== */
 
 /* 태블릿 (768px 이하) */
 @media (max-width: 768px) {
   :root {
     /* 폰트 크기 조정 */
-    --font-xs: 0.8125rem; /* 13px */
-    --font-sm: 0.9375rem; /* 15px */
-    --font-base: 1.0625rem; /* 17px */
-    --font-lg: 1.1875rem; /* 19px */
-    --font-xl: 1.375rem; /* 22px */
-    --font-2xl: 1.625rem; /* 26px */
-    --font-3xl: 1.875rem; /* 30px */
-    --font-4xl: 2.125rem; /* 34px */
+    --font-xs: 13px;
+    --font-sm: 15px;
+    --font-base: 17px;
+    --font-lg: 19px;
+    --font-xl: 22px;
+    --font-2xl: 26px;
+    --font-3xl: 30px;
+    --font-4xl: 34px;
 
     /* 버튼 폰트 조정 */
-    --font-button-sm: 0.9375rem; /* 15px */
-    --font-button: 1.0625rem; /* 17px */
-    --font-button-lg: 1.1875rem; /* 19px */
-    --font-button-xl: 1.375rem; /* 22px */
+    --font-button-sm: 15px;
+    --font-button: 17px;
+    --font-button-lg: 19px;
+    --font-button-xl: 22px;
 
     /* 버튼 높이 조정 */
-    --button-height-sm: 2.75rem; /* 44px */
-    --button-height: 3.25rem; /* 52px */
-    --button-height-lg: 3.75rem; /* 60px */
-    --button-height-xl: 4.25rem; /* 68px */
+    --button-height-sm: 44px;
+    --button-height: 52px;
+    --button-height-lg: 60px;
+    --button-height-xl: 68px;
   }
 }
 
@@ -204,28 +204,28 @@
 @media (max-width: 480px) {
   :root {
     /* 폰트 크기 추가 조정 */
-    --font-xs: 0.75rem; /* 12px */
-    --font-sm: 0.875rem; /* 14px */
-    --font-base: 1rem; /* 16px */
-    --font-lg: 1.125rem; /* 18px */
-    --font-xl: 1.25rem; /* 20px */
-    --font-2xl: 1.5rem; /* 24px */
-    --font-3xl: 1.75rem; /* 28px */
-    --font-4xl: 2rem; /* 32px */
+    --font-xs: 12px;
+    --font-sm: 14px;
+    --font-base: 16px;
+    --font-lg: 18px;
+    --font-xl: 20px;
+    --font-2xl: 24px;
+    --font-3xl: 28px;
+    --font-4xl: 32px;
 
     /* 버튼 폰트 추가 조정 */
-    --font-button-sm: 0.875rem; /* 14px */
-    --font-button: 1rem; /* 16px */
-    --font-button-lg: 1.125rem; /* 18px */
-    --font-button-xl: 1.25rem; /* 20px */
+    --font-button-sm: 14px;
+    --font-button: 16px;
+    --font-button-lg: 18px;
+    --font-button-xl: 20px;
 
     /* 스페이싱 조정 */
-    --space-base: 0.75rem; /* 12px */
-    --space-md: 1rem; /* 16px */
-    --space-lg: 1.25rem; /* 20px */
-    --space-xl: 1.75rem; /* 28px */
-    --space-2xl: 2.25rem; /* 36px */
-    --space-3xl: 2.75rem; /* 44px */
+    --space-base: 12px;
+    --space-md: 16px;
+    --space-lg: 20px;
+    --space-xl: 28px;
+    --space-2xl: 36px;
+    --space-3xl: 44px;
   }
 }
 
@@ -233,20 +233,20 @@
 @media (max-width: 360px) {
   :root {
     /* 최소 크기로 조정 */
-    --font-xs: 0.6875rem; /* 11px */
-    --font-sm: 0.8125rem; /* 13px */
-    --font-base: 0.9375rem; /* 15px */
-    --font-lg: 1.0625rem; /* 17px */
-    --font-xl: 1.1875rem; /* 19px */
-    --font-2xl: 1.375rem; /* 22px */
-    --font-3xl: 1.625rem; /* 26px */
-    --font-4xl: 1.875rem; /* 30px */
+    --font-xs: 11px;
+    --font-sm: 13px;
+    --font-base: 15px;
+    --font-lg: 17px;
+    --font-xl: 19px;
+    --font-2xl: 22px;
+    --font-3xl: 26px;
+    --font-4xl: 30px;
 
     /* 버튼 최소 크기 */
-    --button-height-sm: 2.5rem; /* 40px */
-    --button-height: 3rem; /* 48px */
-    --button-height-lg: 3.5rem; /* 56px */
-    --button-height-xl: 4rem; /* 64px */
+    --button-height-sm: 40px;
+    --button-height: 48px;
+    --button-height-lg: 56px;
+    --button-height-xl: 64px;
   }
 }
 

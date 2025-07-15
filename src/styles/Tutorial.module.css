@@ -1,0 +1,479 @@
+/* 고령자용 녹음 안내 */
+.recordingGuide {
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  /* margin-bottom: var(--space-lg); */
+  text-align: left;
+}
+
+.recordingGuide h4 {
+  margin: 0 0 var(--space-base) 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-button);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.recordingGuide ul {
+  margin: 0;
+  padding-left: var(--space-md);
+  list-style: none;
+}
+
+.recordingGuide li {
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  position: relative;
+}
+
+.recordingGuide li:before {
+  content: "✓";
+  color: var(--color-success);
+  font-weight: bold;
+  position: absolute;
+  left: -20px;
+}
+
+/* styles/ScriptRecording.module.css - 고령자 친화적 통합 스타일 */
+
+/* 기본 컨테이너 */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-bg) 0%,
+    var(--color-secondary-bg) 100%
+  );
+  padding: var(--space-base);
+  font-family: var(--font-primary);
+}
+
+.wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* 헤더 영역 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+  padding: 0 var(--space-xs);
+}
+
+.headerTitle {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  text-align: center;
+  flex: 1;
+  margin: 0 var(--space-base);
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-sm) var(--space-base);
+  border-radius: var(--radius-md);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.backButton:hover {
+  background-color: var(--color-primary-bg);
+  transform: translateX(-2px);
+}
+
+.backIcon {
+  width: var(--icon-base);
+  height: var(--icon-base);
+  margin-right: var(--space-sm);
+}
+
+.progressIndicator {
+  background-color: var(--color-primary);
+  color: var(--color-bg-primary);
+  padding: var(--space-sm) var(--space-base);
+  border-radius: var(--radius-xl);
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* 메인 카드 */
+.mainCard {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2xl) var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+/* 스크립트 타입별 공통 스타일 */
+.categoryBadge {
+  display: inline-block;
+  background: var(--color-primary);
+  color: var(--color-bg-primary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-md);
+  text-align: center;
+}
+
+.titleSection {
+  text-align: center;
+}
+
+.titleSection:has(.completedBadge) {
+  margin-bottom: var(--space-xl);
+}
+
+.titleSection:not(:has(.completedBadge)) {
+  margin-bottom: 0;
+}
+.title {
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--space-sm);
+  word-break: keep-all;
+}
+
+.completedBadge {
+  display: inline-block;
+  background: var(--color-success);
+  color: var(--color-bg-primary);
+  padding: var(--space-sm) var(--space-base);
+  border-radius: var(--radius-xl);
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--space-sm);
+  margin-bottom: 10px;
+}
+
+.description {
+  font-size: var(--font-xl);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  word-break: keep-all;
+  padding: 0 var(--space-sm);
+}
+
+/* 녹음 영역 */
+.recordingSection {
+  border-radius: var(--radius-xl);
+  /* padding: var(--space-2xl) var(--space-lg); */
+  margin-bottom: var(--space-2xl);
+  text-align: center;
+}
+
+.recordingPrompt {
+  font-size: var(--font-xl);
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-base);
+}
+
+/* 완료된 스크립트 섹션 */
+.completedSection {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+  background: var(--color-success-bg);
+  border: 3px solid var(--color-success);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.completedIcon {
+  font-size: 64px;
+  margin-bottom: var(--space-base);
+}
+
+.completedMessage {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success-hover);
+  margin-bottom: var(--space-sm);
+  line-height: var(--line-height-normal);
+}
+
+.reRecordPrompt {
+  font-size: var(--space-base);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-lg);
+}
+
+/* 네비게이션 영역 */
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-base);
+  margin-top: var(--space-2xl);
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-height);
+  padding: var(--space-base) var(--space-md);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition);
+  flex: 1;
+  position: relative;
+}
+
+.navButtonEnabled {
+  background: linear-gradient(
+    135deg,
+    var(--color-success) 0%,
+    var(--color-secondary) 100%
+  );
+  color: var(--color-bg-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.navButtonEnabled:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-secondary) 0%,
+    var(--color-success-hover) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.navButtonDisabled {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-400);
+  cursor: not-allowed;
+}
+
+.navCompletedIcon {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: var(--space-base);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-full);
+  padding: 2px;
+}
+
+/* 통계 영역 */
+.statsSection {
+  text-align: center;
+  flex: 0 0 auto;
+  padding: 0 var(--space-base);
+}
+
+.statsLabel {
+  font-size: var(--space-base);
+  color: var(--color-text-light);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-xs);
+}
+
+.statsValue {
+  font-size: var(--space-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success-hover);
+}
+
+/* 진행률 카드 */
+.progressCard {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.progressLabel {
+  font-size: var(--space-base);
+  color: var(--color-text-light);
+  font-weight: var(--font-weight-medium);
+}
+
+.progressPercentage {
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success);
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: var(--space-sm);
+  background-color: var(--color-gray-200);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--color-success) 0%,
+    var(--color-secondary) 100%
+  );
+  border-radius: var(--radius-xs);
+  transition: width var(--transition-slow);
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .recordingGuide {
+    padding: var(--space-base);
+    margin-bottom: var(--space-md);
+  }
+
+  .recordingGuide h4 {
+    font-size: var(--font-xl);
+  }
+
+  .recordingGuide li {
+    font-size: var(--font-base);
+  }
+
+  .container {
+    padding: var(--space-sm);
+  }
+
+  .header {
+    margin-bottom: var(--space-base);
+  }
+
+  .headerTitle {
+    font-size: var(--font-2xl);
+    margin: 0 var(--space-sm);
+  }
+
+  .backButton {
+    font-size: var(--font-base);
+    padding: 10px var(--space-sm);
+  }
+
+  .progressIndicator {
+    font-size: var(--font-base);
+    padding: var(--space-sm) var(--space-sm);
+  }
+
+  .mainCard {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .title {
+    font-size: var(--font-3xl);
+  }
+
+  .description {
+    font-size: var(--font-lg);
+  }
+
+  .navigation {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .navButton {
+    width: 100%;
+    min-height: var(--button-height-sm);
+    font-size: var(--font-base);
+  }
+
+  .statsSection {
+    order: -1;
+    margin-bottom: var(--space-base);
+  }
+
+  .statsValue {
+    font-size: var(--font-3xl);
+  }
+
+  .completedIcon {
+    font-size: 48px;
+  }
+
+  .completedMessage {
+    font-size: var(--font-lg);
+  }
+}
+/* 접근성 향상 - 애니메이션 감소 */
+@media (prefers-reduced-motion: reduce) {
+  .container,
+  .mainCard,
+  .navButton,
+  .progressBarFill {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .mainCard {
+    border: 3px solid var(--color-text-primary);
+  }
+
+  .categoryBadge {
+    border: 2px solid var(--color-text-primary);
+  }
+
+  .recordingSection,
+  .completedSection {
+    border: 3px solid var(--color-text-primary);
+  }
+
+  .navButtonEnabled {
+    border: 2px solid var(--color-text-primary);
+  }
+}
+
+/* 큰 텍스트 선호 지원 */
+@media (max-width: 480px) and (prefers-contrast: high) {
+  .title {
+    font-size: var(--font-3xl);
+  }
+
+  .description {
+    font-size: var(--font-xl);
+  }
+}
+
+.tutorialInstruction {
+  font-size: var(--space-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  word-break: keep-all;
+  box-shadow: var(--shadow-md);
+}

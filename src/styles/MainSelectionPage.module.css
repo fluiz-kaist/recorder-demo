@@ -35,13 +35,16 @@
 
 /* 카드 컨테이너 */
 .cardContainer {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr; /* 1열 */
+  grid-template-rows: repeat(3, 1fr); /* 3행 */
   gap: var(--space-lg);
   margin-bottom: var(--space-3xl);
+  /* 필요하다면 최소 높이 설정 */
+  min-height: 600px; /* 옵션: 전체 높이 조정 */
 }
 
-/* 카드 공통 스타일 */
+/* 카드 공통 스타일 - Grid 아이템 조정 */
 .card {
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
@@ -53,10 +56,12 @@
   border: 3px solid transparent;
   text-align: center;
   position: relative;
-  min-height: 200px;
+  /* min-height 제거하고 Grid가 높이 결정하도록 */
+  /* min-height: 200px; */
   display: flex;
   flex-direction: column;
   justify-content: center;
+  max-height: 200px;
 }
 
 .card:hover,
@@ -203,11 +208,11 @@
   }
 
   .title {
-    font-size: var(--font-2xl);
+    font-size: var(--font-3xl);
   }
 
   .subtitle {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .card {
@@ -221,14 +226,13 @@
   }
 
   .cardTitle {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
   }
 
   .cardDescription {
-    font-size: var(--font-base);
+    font-size: var(--font-lg);
   }
 }
-
 /* 접근성 향상 */
 @media (prefers-reduced-motion: reduce) {
   .card {

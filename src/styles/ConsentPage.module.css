@@ -230,36 +230,35 @@
   }
 
   .header h1 {
-    font-size: var(--font-3xl);
+    font-size: var(--font-4xl);
   }
 
   .consentSection h2,
   .infoSection h2,
   .serviceSection h2 {
-    font-size: var(--font-2xl);
+    font-size: var(--font-3xl);
   }
 
   .inputGroup h3 {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
   }
 
   .selectButton {
-    font-size: var(--font-lg);
+    font-size: var(--font-xl);
     padding: var(--font-lg) var(--space-md);
     min-height: var(--button-height-sm);
   }
 
   .submitButton {
-    font-size: var(--font-2xl);
+    font-size: var(--font-3xl);
     padding: var(--space-md);
     min-height: 72px;
   }
 
   .serviceDescription p {
-    font-size: var(--font-lg);
+    font-size: var(--font-xl);
   }
 }
-
 /* 텍스트 입력 필드 스타일 */
 .textInput {
   width: 100%;
@@ -447,20 +446,19 @@
   }
 
   .textInput {
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .submitButton {
     padding: var(--font-lg);
-    font-size: var(--space-base);
+    font-size: var(--font-lg);
   }
 
   .selectButton {
     padding: var(--font-sm) var(--space-md);
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
   }
 }
-
 .loadingContainer {
   display: flex;
   flex-direction: column;

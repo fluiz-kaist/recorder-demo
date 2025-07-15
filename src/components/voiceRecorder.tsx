@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import styles from "@/styles/VoiceRecorder.module.css";
-
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 import type { WhisperTranscriptionResult } from "@/components/stt/SttWhisper";
 import {
   ScriptType,
@@ -10,6 +10,7 @@ import {
   FormalScript,
   QAScenarioScript,
   AudioFormat,
+  TutorialScript,
 } from "@/types/firebase";
 import { useMobileOptimizedRecorder } from "@/hooks/useMobileOptimizedRecorder";
 import SuccessPopup from "@/components/SuccessPopup";
@@ -31,9 +32,14 @@ interface SimpleQualityResult {
 // Props 인터페이스 수정
 interface VoiceRecorderProps {
   scriptType: ScriptType;
-  scriptData: SituationalScript | FormalScript | QAScenarioScript;
+  scriptData:
+    | SituationalScript
+    | FormalScript
+    | QAScenarioScript
+    | TutorialScript;
   onRecordingComplete?: () => void;
   isCompltedScript?: boolean;
+  isTutorial?: boolean;
 }
 
 const RecorderComponent: React.FC<VoiceRecorderProps> = ({
@@ -41,6 +47,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   scriptData,
   onRecordingComplete,
   isCompltedScript,
+  isTutorial = false,
 }) => {
   console.log("VoiceRecorder props:", { scriptType, scriptData });
 
@@ -49,7 +56,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isSTTProcessing, setIsSTTProcessing] = useState(false);
   const [isSTTSuccess, setIsSTTSuccess] = useState(false);
-
+  const [shouldSTTOnUpload, setShouldSTTOnUpload] = useState(false);
+  // 스크롤 훅 사용
+  const scrollToTop = useScrollToTop();
   // STT 관련 상태
   const [transcription, setTranscription] =
     useState<WhisperTranscriptionResult | null>(null);
@@ -323,7 +332,33 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     }
   }, [audioBlob, recordingTime, hasSTTStarted]);
 
-  // 🎯 품질 경고 무시하고 계속 진행
+  const performSTTForUpload = async (
+    audioBlob: Blob
+  ): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append("file", audioBlob, "recording.webm");
+      formData.append("model", "whisper-1");
+      formData.append("language", "ko");
+      formData.append("response_format", "json");
+
+      const response = await fetch("/api/stt/whisper-transcribe", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.success ? result.transcription?.transcript : null;
+    } catch (error) {
+      console.error("Upload STT failed:", error);
+      return null;
+    }
+  };
+  // 품질 경고 무시하고 계속 진행
   const proceedDespiteQuality = () => {
     setShowQualityWarning(false);
     setShowSTT(true);
@@ -332,18 +367,41 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
   // React Query 기반 업로드 처리
   const handleUpload = async () => {
-    if (!audioBlob || !audioDuration || !authToken?.userId || !transcription) {
+    // 튜토리얼인 경우 서버 업로드 없이 바로 완료 처리
+    if (isTutorial) {
+      console.log("튜토리얼 녹음 완료:", transcription?.transcript);
+      setShowSuccessPopup(true);
+      return;
+    }
+
+    //stt가 있어야 업로드 하는 버전
+    // if (!audioBlob || !audioDuration || !authToken?.userId || !transcription) {
+    //   console.error("업로드에 필요한 데이터가 없습니다.");
+    //   return;
+    // }
+    if (!audioBlob || !audioDuration || !authToken?.userId) {
       console.error("업로드에 필요한 데이터가 없습니다.");
       return;
     }
 
     try {
+      let sttText = transcription?.transcript || "";
+
+      if (!transcription) {
+        console.log("업로드 중 STT 수행...");
+        setIsSTTProcessing(true);
+        sttText = (await performSTTForUpload(audioBlob)) || "";
+        setIsSTTProcessing(false);
+      }
       console.log("업로드 시작:", {
         userId: authToken.userId,
         scriptType,
         scriptId: scriptData.id,
         duration: audioDuration,
+        sttText: sttText,
       });
+
+      // STT가 아직 안된 경우 업로드 시 STT 수행
 
       // 1. 오디오 업로드
       const uploadResult = await uploadAudioMutation.mutateAsync({
@@ -366,7 +424,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         scriptType,
         recordingId: uploadResult.recordingId,
         audioUrl: uploadResult.audioUrl,
-        sttText: transcription.transcript,
+        sttText: sttText,
       });
 
       console.log("스크립트 완료 처리 완료:", completeResult);
@@ -432,7 +490,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     setShowSuccessPopup(false);
     setCountdown(null);
     setIsCountingDown(false);
-
+    scrollToTop();
     console.log("✅ 새 녹음 준비 완료");
   };
 
@@ -454,7 +512,11 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       {/* 성공 팝업 */}
       {showSuccessPopup && (
         <SuccessPopup
-          message="음성 녹음 파일이 성공적으로 제출되었습니다!"
+          message={
+            isTutorial
+              ? "연습 녹음이 완료되었습니다!"
+              : "음성 녹음 파일이 성공적으로 제출되었습니다!"
+          }
           details={
             transcription
               ? `변환된 텍스트: "${transcription.transcript}"`
@@ -478,7 +540,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         </div>
       )} */}
 
-      {!audioUrl && !isCompltedScript && (
+      {/* {!audioUrl && !isCompltedScript && (
         <div className={styles.recordingGuide}>
           <h4>음성 녹음 안내</h4>
           <ul>
@@ -489,7 +551,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             <li>최소 3초 이상 말씀해 주세요</li>
           </ul>
         </div>
-      )}
+      )} */}
 
       {/* 카운트다운 표시 */}
       {isCountingDown && countdown && (
@@ -663,7 +725,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               </button>
             )} */}
 
-            {audioBlob && (
+            {/* {audioBlob && (
               <button
                 className={styles.uploadButton}
                 onClick={handleUpload}
@@ -672,7 +734,29 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 {isSTTProcessing
                   ? "음성 분석 중..."
                   : isUploading
-                  ? "제출 중..."
+                  ? isTutorial
+                    ? "완료 중..."
+                    : "제출 중..."
+                  : isTutorial
+                  ? "연습 완료"
+                  : "제출하기"}
+              </button>
+            )} */}
+
+            {audioBlob && (
+              <button
+                className={styles.uploadButton}
+                onClick={handleUpload}
+                disabled={isUploading || isSTTProcessing}
+              >
+                {isSTTProcessing
+                  ? "음성 변환 중..."
+                  : isUploading
+                  ? isTutorial
+                    ? "완료 중..."
+                    : "제출 중..."
+                  : isTutorial
+                  ? "연습 완료"
                   : "제출하기"}
               </button>
             )}

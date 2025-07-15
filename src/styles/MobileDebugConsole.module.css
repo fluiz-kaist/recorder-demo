@@ -195,14 +195,13 @@
   }
 
   .logMessage {
-    font-size: 10px;
+    font-size: var(--font-sm);
   }
 
   .title {
-    font-size: var(--space-sm);
+    font-size: var(--font-base);
   }
 }
-
 .authContainer {
   padding: var(--space-base);
   text-align: center;

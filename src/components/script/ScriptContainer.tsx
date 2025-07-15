@@ -19,6 +19,7 @@ import {
 } from "@/hooks/queries/useUserQueries";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 // 유니온 타입 정의
 type AnyScript = SituationalScript | FormalScript | QAScenarioScript;
@@ -34,6 +35,9 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   const [scripts, setScripts] = useState<AnyScript[]>([]);
   const [scriptIndex, setScriptIndex] = useState(0);
   const [showRecorder, setShowRecorder] = useState(false);
+
+  // 스크롤 훅 사용
+  const scrollToTop = useScrollToTop();
 
   // React Query로 스크립트 데이터 가져오기
   const {
@@ -105,6 +109,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       triggerHapticFeedback();
       setScriptIndex((prev) => prev + 1);
       setShowRecorder(false);
+      scrollToTop(); // 훅 사용
     }
   };
 
@@ -113,6 +118,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       triggerHapticFeedback();
       setScriptIndex((prev) => prev - 1);
       setShowRecorder(false);
+      scrollToTop(); // 훅 사용
     }
   };
 
@@ -139,9 +145,12 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       case ScriptType.SITUATIONAL:
         return "상황별 녹음";
       case ScriptType.FORMAL:
-        return "정형화 녹음";
+        return "정형 녹음";
       case ScriptType.QA_SCENARIO:
         return "질의응답 녹음";
+
+      case ScriptType.TUTORIAL:
+        return "녹음 연습하기";
       default:
         return "스크립트 녹음";
     }
@@ -240,6 +249,23 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             {scriptIndex + 1} / {scripts.length}
           </div>
         </div>
+        {/* 전체 진행률 */}
+        <div className={styles.progressCard}>
+          <div className={styles.progressHeader}>
+            <span className={styles.progressLabel}>전체 진행률</span>
+            <span className={styles.progressPercentage}>
+              {getProgressPercentage()}%
+            </span>
+          </div>
+          <div className={styles.progressBarTrack}>
+            <div
+              className={styles.progressBarFill}
+              style={{
+                width: `${getProgressPercentage()}%`,
+              }}
+            ></div>
+          </div>
+        </div>
 
         {/* 메인 콘텐츠 */}
         <div className={styles.mainCard}>
@@ -276,10 +302,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                   ) : (
                     // 미완료 스크립트 표시
                     <>
-                      <div className={styles.recordingPrompt}>
-                        편하게 말씀해주세요!
-                      </div>
-
                       <VoiceRecorder
                         key={`voice-recorder-${scriptIndex}`}
                         scriptType={scriptType}
@@ -358,24 +380,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
               </div>
             </>
           )}
-        </div>
-
-        {/* 전체 진행률 */}
-        <div className={styles.progressCard}>
-          <div className={styles.progressHeader}>
-            <span className={styles.progressLabel}>전체 진행률</span>
-            <span className={styles.progressPercentage}>
-              {getProgressPercentage()}%
-            </span>
-          </div>
-          <div className={styles.progressBarTrack}>
-            <div
-              className={styles.progressBarFill}
-              style={{
-                width: `${getProgressPercentage()}%`,
-              }}
-            ></div>
-          </div>
         </div>
       </div>
     </div>

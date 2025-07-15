@@ -532,7 +532,7 @@
   }
 
   .title {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
     margin-bottom: 1.2rem;
   }
 
@@ -542,7 +542,7 @@
   }
 
   .recordingTime {
-    font-size: var(--font-base);
+    font-size: var(--font-lg);
   }
 
   .recordButton {
@@ -573,7 +573,7 @@
   }
 
   .audioDuration {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     align-self: flex-end;
   }
 }
@@ -610,7 +610,7 @@
   }
 }
 
-/* 🎯 고령자용 녹음 안내 */
+/* 고령자용 녹음 안내 */
 .recordingGuide {
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border);
@@ -862,11 +862,11 @@
   }
 
   .recordingGuide h4 {
-    font-size: var(--font-lg);
+    font-size: var(--font-xl);
   }
 
   .recordingGuide li {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
   }
 
   .qualityWarning {
@@ -884,8 +884,8 @@
   }
 
   .proceedButton {
-    font-size: var(--font-base);
-    min-height: var(--button-height-sm);
+    font-size: var(--font-button);
+    min-height: var(--button-height);
   }
 
   .resultDetails {

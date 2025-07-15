@@ -23,9 +23,12 @@ export default function ScriptPage({ scriptType }: ScriptPageProps) {
       case ScriptType.SITUATIONAL:
         return "상황별 녹음";
       case ScriptType.FORMAL:
-        return "정형화 녹음";
+        return "정형 녹음";
       case ScriptType.QA_SCENARIO:
         return "질의응답 녹음";
+
+      // case ScriptType.TUTORIAL:
+      //   return "녹음 연습하기";
       default:
         return "스크립트 녹음";
     }

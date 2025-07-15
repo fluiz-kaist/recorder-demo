@@ -195,7 +195,7 @@ ConsentPageProps) {
         await assignScriptsMutation.mutateAsync({
           userId: authStatus.userId,
         });
-        console.log("스크립트 할당 완료");
+        console.log("신규 사용자의 스크립트 할당 완료");
       }
 
       // 🟢 로컬 스토리지에 완료 상태 업데이트

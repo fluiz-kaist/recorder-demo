@@ -5,10 +5,15 @@ import {
   SituationalScript,
   FormalScript,
   QAScenarioScript,
+  TutorialScript,
 } from "@/types/firebase";
 import styles from "@/styles/ScriptRecording.module.css";
 
-type AnyScript = SituationalScript | FormalScript | QAScenarioScript;
+type AnyScript =
+  | SituationalScript
+  | FormalScript
+  | QAScenarioScript
+  | TutorialScript;
 
 interface ScriptRendererProps {
   script: AnyScript;
@@ -38,11 +43,11 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
   // Situational Script 렌더링
   const renderSituationalScript = (script: SituationalScript) => (
     <>
-      <div className={styles.categoryBadge}>
+      {/* <div className={styles.categoryBadge}>
         {getTypeIcon(ScriptType.SITUATIONAL)} {script.category}/{script.intent}
-      </div>
+      </div> */}
       <div className={styles.titleSection}>
-        <h1 className={styles.title}>{script.title}</h1>
+        {/* <h1 className={styles.title}>{script.title}</h1> */}
         {isCompleted && (
           <div className={styles.completedBadge}>✅ 제출완료</div>
         )}
@@ -54,21 +59,19 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
   // Formal Script 렌더링
   const renderFormalScript = (script: FormalScript) => (
     <>
-      <div className={styles.categoryBadge}>
+      {/* <div className={styles.categoryBadge}>
         {getTypeIcon(ScriptType.FORMAL)} {script.category}/{script.intent}
-      </div>
+      </div> */}
       <div className={styles.titleSection}>
-        <h1 className={styles.title}>{script.title}</h1>
+        {/* <h1 className={styles.title}>{script.title}</h1> */}
         {isCompleted && (
           <div className={styles.completedBadge}>✅ 제출완료</div>
         )}
       </div>
       <div className={styles.formalSentenceSection}>
-        <div className={styles.formalSentenceLabel}>정형화 문장</div>
+        {/* <div className={styles.formalSentenceLabel}>정형화 문장</div> */}
         <div className={styles.formalSentence}>{script.formalSentence}</div>
-        <div className={styles.formalInstruction}>
-          위 문장을 자연스럽게 읽어주세요
-        </div>
+        <div className={styles.formalInstruction}>위 문장을 읽어주세요</div>
       </div>
     </>
   );
@@ -76,11 +79,11 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
   // QA Scenario Script 렌더링
   const renderQAScenarioScript = (script: QAScenarioScript) => (
     <>
-      <div className={styles.categoryBadge}>
+      {/* <div className={styles.categoryBadge}>
         {getTypeIcon(ScriptType.QA_SCENARIO)} 질의응답
-      </div>
+      </div> */}
       <div className={styles.titleSection}>
-        <h1 className={styles.title}>질의응답 시나리오</h1>
+        {/* <h1 className={styles.title}>질의응답 시나리오</h1> */}
         {isCompleted && (
           <div className={styles.completedBadge}>✅ 제출완료</div>
         )}
@@ -90,14 +93,39 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         <div className={styles.situation}>{script.situation}</div>
         <div className={styles.descriptionLabel}>상세 설명</div>
         <div className={styles.qaDescription}>{script.description}</div>
-        <div className={styles.qaInstruction}>
+        {/* <div className={styles.qaInstruction}>
           이 상황에서 어떻게 대답하시겠어요?
-        </div>
+        </div> */}
+      </div>
+    </>
+  );
+
+  // 튜토리얼 렌더링
+  const renderTutorial = (script: TutorialScript) => (
+    <>
+      {/* <div className={styles.categoryBadge}>
+        {getTypeIcon(ScriptType.TUTORIAL)} 녹음 연습하기
+      </div> */}
+      <div className={styles.titleSection}>
+        <h1 className={styles.title}>{script.title}</h1>
+        {isCompleted && (
+          <div className={styles.completedBadge}>✅ 제출완료</div>
+        )}
+      </div>
+      <div className={styles.formalSentenceSection}>
+        {/* <div className={styles.situationLabel}>상황</div> */}
+        <div className={styles.situation}>{script.description}</div>
+        {/* <div className={styles.descriptionLabel}>상세 설명</div> */}
+        <div className={styles.tutorialInstruction}>{script.explain}</div>
+        {/* <div className={styles.qaInstruction}>
+          이 상황에서 어떻게 대답하시겠어요?
+        </div> */}
       </div>
     </>
   );
 
   // 타입에 따른 렌더링
+  console.log("여기 스크립트 타입?", scriptType);
   switch (scriptType) {
     case ScriptType.SITUATIONAL:
       return renderSituationalScript(script as SituationalScript);
@@ -105,6 +133,9 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
       return renderFormalScript(script as FormalScript);
     case ScriptType.QA_SCENARIO:
       return renderQAScenarioScript(script as QAScenarioScript);
+
+    case ScriptType.TUTORIAL:
+      return renderTutorial(script as TutorialScript);
     default:
       return (
         <div className={styles.unknownScript}>
