@@ -1,0 +1,301 @@
+/* Layout.module.css - 헤더와 푸터 통합 스타일 */
+
+/* 헤더 스타일 */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  background: linear-gradient(135deg, #4285f4 0%, #667eea 100%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.headerContainer {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+/* 로고 영역 */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.logo:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.logo:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.logo:focus {
+  outline: 3px solid #4ade80;
+  outline-offset: 2px;
+}
+
+.logoIcon {
+  width: 28px;
+  height: 28px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.logoIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+    sans-serif;
+}
+
+/* 로그아웃 버튼 */
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.logoutButton:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.logoutButton:focus {
+  outline: 3px solid #4ade80;
+  outline-offset: 2px;
+}
+
+.logoutIcon {
+  width: 20px;
+  height: 20px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoutIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.logoutText {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+    sans-serif;
+}
+
+/* 푸터 스타일 */
+.footer {
+  width: 100%;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 40px;
+}
+
+.footerContainer {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+    sans-serif;
+}
+
+/* 도움말 섹션 */
+.helpSection {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 20px;
+}
+
+.helpItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.helpItem:hover {
+  background: #f8fbff;
+  transform: translateY(-1px);
+}
+
+.helpItem:active {
+  transform: translateY(0);
+}
+
+.helpItem:focus {
+  outline: 3px solid #4ade80;
+  outline-offset: 2px;
+}
+
+.helpIcon {
+  width: 32px;
+  height: 32px;
+  color: #4285f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fbff;
+  border-radius: 6px;
+}
+
+.helpIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.helpText {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4285f4;
+  text-align: center;
+}
+
+/* 구분선 */
+.divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 20px 0;
+}
+
+/* 저작권 정보 */
+.copyright {
+  text-align: center;
+}
+
+.copyrightText {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.versionText {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* 모바일 최적화 (작은 화면) */
+@media (max-width: 360px) {
+  .headerContainer {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .logoText {
+    font-size: 16px;
+  }
+
+  .logoutText {
+    font-size: 13px;
+  }
+
+  .footerContainer {
+    padding: 20px 12px;
+  }
+
+  .helpSection {
+    gap: 24px;
+  }
+
+  .helpIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .helpIcon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .helpText {
+    font-size: 13px;
+  }
+}
+
+/* 접근성 향상 */
+@media (prefers-reduced-motion: reduce) {
+  .logo,
+  .logoutButton,
+  .helpItem {
+    transition: none;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .footer {
+    border-top: 2px solid #000;
+  }
+
+  .copyrightText {
+    color: #000;
+  }
+
+  .versionText {
+    color: #333;
+  }
+
+  .helpText {
+    color: #000;
+  }
+}
+
+/* 포커스 스타일 일관성 */
+.logo:focus-visible,
+.logoutButton:focus-visible,
+.helpItem:focus-visible {
+  outline: 3px solid #4ade80;
+  outline-offset: 2px;
+}

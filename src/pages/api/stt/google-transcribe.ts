@@ -1,4 +1,4 @@
-// pages/api/speech-to-text.ts
+// pages/api/stt/google-transcribe.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { SpeechClient } from "@google-cloud/speech";
 import formidable, { IncomingForm } from "formidable";
@@ -12,14 +12,14 @@ export const config = {
   },
 };
 
-interface TranscriptionResult {
+interface GoogleTranscriptionResult {
   transcript: string;
   confidence: number;
 }
 
 interface STTResponse {
   success: boolean;
-  transcription?: TranscriptionResult;
+  transcription?: GoogleTranscriptionResult;
   error?: string;
 }
 
@@ -43,7 +43,7 @@ try {
     throw new Error("Google Cloud 인증 정보가 설정되지 않았습니다.");
   }
 } catch (error) {
-  console.error("Google Speech Client 초기화 실패:", error);
+  console.error("[g] Google Speech Client 초기화 실패:", error);
 }
 
 // 파일 파싱을 위한 Promise 래퍼
@@ -69,14 +69,14 @@ const parseForm = (
 
 // 파일 타입 및 인코딩 감지
 const detectAudioFormat = (filename: string, mimetype: string) => {
-  console.log("🔍 오디오 포맷 감지:", { filename, mimetype });
+  console.log("[g] 오디오 포맷 감지:", { filename, mimetype });
 
   // 파일 확장자 기반 감지
   const extension = filename?.toLowerCase().split(".").pop();
 
   // MIME 타입 기반 감지
   if (mimetype?.includes("webm")) {
-    console.log("✅ WebM 포맷 감지");
+    console.log("[g] WebM 포맷 감지");
     return {
       encoding: "WEBM_OPUS" as const,
       sampleRateHertz: 48000, // WebM Opus 기본 샘플레이트
@@ -84,7 +84,7 @@ const detectAudioFormat = (filename: string, mimetype: string) => {
   }
 
   if (mimetype?.includes("wav") || extension === "wav") {
-    console.log("✅ WAV 포맷 감지");
+    console.log("[g] WAV 포맷 감지");
     return {
       encoding: "LINEAR16" as const,
       sampleRateHertz: 16000, // WAV 기본 샘플레이트
@@ -92,21 +92,21 @@ const detectAudioFormat = (filename: string, mimetype: string) => {
   }
 
   if (mimetype?.includes("mp3") || extension === "mp3") {
-    console.log("✅ MP3 포맷 감지");
+    console.log("[g] MP3 포맷 감지");
     return {
       encoding: "MP3" as const,
     };
   }
 
   if (mimetype?.includes("flac") || extension === "flac") {
-    console.log("✅ FLAC 포맷 감지");
+    console.log("[g] FLAC 포맷 감지");
     return {
       encoding: "FLAC" as const,
     };
   }
 
   // 기본값: WebM (새로운 기본값)
-  console.log("⚠️ 알 수 없는 포맷, WebM으로 가정");
+  console.log("[g] 알 수 없는 포맷, WebM으로 가정");
   return {
     encoding: "WEBM_OPUS" as const,
     sampleRateHertz: 48000,
@@ -125,11 +125,11 @@ export default async function handler(
   }
 
   try {
-    console.log("🗣️ STT API 요청 시작");
+    console.log("[g] STT API 요청 시작");
 
     // Speech Client 확인
     if (!speechClient) {
-      console.error("❌ Speech Client가 초기화되지 않음");
+      console.error("[g] Speech Client가 초기화되지 않음");
       return res.status(500).json({
         success: false,
         error: "Google Cloud Speech 서비스를 초기화할 수 없습니다.",
@@ -138,7 +138,7 @@ export default async function handler(
 
     // 폼 데이터 파싱
     const { fields, files } = await parseForm(req);
-    console.log("📄 폼 데이터 파싱 완료:", {
+    console.log("[g] 폼 데이터 파싱 완료:", {
       fields: Object.keys(fields),
       files: Object.keys(files),
     });
@@ -152,7 +152,7 @@ export default async function handler(
       });
     }
 
-    console.log("🎵 오디오 파일 정보:", {
+    console.log("[g] 오디오 파일 정보:", {
       filepath: audioFile.filepath,
       originalFilename: audioFile.originalFilename,
       mimetype: audioFile.mimetype,
@@ -172,7 +172,7 @@ export default async function handler(
 
     // 오디오 파일 읽기
     const audioBytes = fs.readFileSync(audioFile.filepath);
-    console.log("📖 오디오 파일 읽기 완료, 크기:", audioBytes.length);
+    console.log("[g] 오디오 파일 읽기 완료, 크기:", audioBytes.length);
 
     // Google STT 요청 설정
     const request = {
@@ -195,7 +195,7 @@ export default async function handler(
       },
     };
 
-    console.log("🚀 Google STT API 호출 시작", {
+    console.log("[g] Google STT API 호출 시작", {
       encoding: audioFormat.encoding,
       sampleRate: audioFormat.sampleRateHertz,
       languageCode,
@@ -204,7 +204,7 @@ export default async function handler(
     // Google STT API 호출
     const [response] = await speechClient.recognize(request);
 
-    console.log("✅ Google STT API 응답 받음:", {
+    console.log("[g] Google STT API 응답 받음:", {
       resultsCount: response.results?.length || 0,
     });
 
@@ -227,19 +227,19 @@ export default async function handler(
       });
     }
 
-    const transcription: TranscriptionResult = {
+    const transcription: GoogleTranscriptionResult = {
       transcript: bestAlternative.transcript,
       confidence: bestAlternative.confidence || 0,
     };
 
-    console.log("📝 변환 결과:", transcription);
+    console.log("[g] 변환 결과:", transcription);
 
     // 임시 파일 정리
     try {
       fs.unlinkSync(audioFile.filepath);
-      console.log("🧹 임시 파일 정리 완료");
+      console.log("[g] 임시 파일 정리 완료");
     } catch (cleanupError) {
-      console.warn("⚠️ 임시 파일 정리 실패:", cleanupError);
+      console.warn("[g] 임시 파일 정리 실패:", cleanupError);
     }
 
     // 성공 응답
@@ -248,7 +248,7 @@ export default async function handler(
       transcription,
     });
   } catch (error) {
-    console.error("❌ STT API 오류:", error);
+    console.error("[g] STT API 오류:", error);
 
     let errorMessage = "음성 텍스트 변환 중 오류가 발생했습니다.";
 

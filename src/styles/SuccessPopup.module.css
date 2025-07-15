@@ -1,0 +1,144 @@
+/* 성공 팝업 오버레이 */
+.successOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+/* 성공 팝업 컨테이너 */
+.successPopup {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: successSlideIn 0.3s ease-out;
+  border: 2px solid #22c55e;
+}
+
+@keyframes successSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 성공 팝업 헤더 */
+.successHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-radius: 14px 14px 0 0;
+}
+
+.successHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.successCloseButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.successCloseButton:hover {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #374151;
+}
+
+/* 성공 팝업 바디 */
+.successBody {
+  padding: 24px;
+}
+
+.successMessage {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.successDetails {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* 성공 팝업 푸터 */
+.successFooter {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.successOkButton {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+}
+
+.successOkButton:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+}
+
+.successOkButton:active {
+  transform: translateY(0);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 480px) {
+  .successPopup {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .successHeader,
+  .successBody,
+  .successFooter {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .successHeader h3 {
+    font-size: 16px;
+  }
+
+  .successMessage {
+    font-size: 15px;
+  }
+}

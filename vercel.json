@@ -1,6 +1,6 @@
 {
   "functions": {
-    "pages/api/speech-to-text.js": {
+    "pages/api/stt/google-transcribe.js": {
       "maxDuration": 30
     }
   }
