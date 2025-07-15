@@ -280,7 +280,7 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
               ? "변환 중..."
               : hasTranscribed
               ? "변환 완료"
-              : "텍스트로 변환하기"}
+              : "음성을 문장으로 변환하기"}
           </button>
         )}
 

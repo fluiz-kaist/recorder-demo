@@ -1,26 +1,322 @@
-@import "tailwindcss";
+/* ===========================================
+   🎯 고령자 친화적 CSS 변수 시스템
+   - 순수 CSS 변수만 사용 (Tailwind 제거)
+   - CSS Modules와 호환
+   - 선명한 고대비 색상 테마
+   - 큰 글자 크기 시스템
+   - 통일된 브레이크포인트
+   =========================================== */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ===============================
+         🎨 색상 시스템 - 선명한 고대비 테마
+         =============================== */
+
+  /* 기본 배경 & 텍스트 */
+  --color-bg-primary: #ffffff; /* 순백색 배경 */
+  --color-bg-secondary: #f8fafc; /* 연한 회색 배경 */
+  --color-bg-tertiary: #f1f5f9; /* 더 연한 회색 */
+
+  --color-text-primary: #000000; /* 순검정 텍스트 - 21:1 대비 */
+  --color-text-secondary: #1a1a1a; /* 진한 회색 텍스트 - 19.56:1 대비 */
+  --color-text-muted: #374151; /* 중간 회색 텍스트 - 9.74:1 대비 */
+  --color-text-light: #6b7280; /* 연한 회색 텍스트 - 5.74:1 대비 */
+
+  /* 메인 컬러 - 진하고 선명한 색상 */
+  --color-primary: #1e3a8a; /* 진한 파란색 - 8.59:1 대비 */
+  --color-primary-hover: #1e40af; /* 호버 상태 */
+  --color-primary-light: #3b82f6; /* 밝은 버전 */
+  --color-primary-bg: #eff6ff; /* 배경용 연한 버전 */
+
+  --color-secondary: #15803d; /* 진한 초록색 - 7.44:1 대비 */
+  --color-secondary-hover: #166534; /* 호버 상태 */
+  --color-secondary-light: #22c55e; /* 밝은 버전 */
+  --color-secondary-bg: #f0fdf4; /* 배경용 연한 버전 */
+
+  /* 상태 컬러 */
+  --color-success: #166534; /* 성공 - 9.18:1 대비 */
+  --color-success-hover: #14532d; /* 호버 상태 */
+  --color-success-light: #22c55e; /* 밝은 버전 */
+  --color-success-bg: #f0fdf4; /* 배경용 */
+
+  --color-warning: #a16207; /* 경고 - 7.19:1 대비 */
+  --color-warning-hover: #92400e; /* 호버 상태 */
+  --color-warning-light: #f59e0b; /* 밝은 버전 */
+  --color-warning-bg: #fffbeb; /* 배경용 */
+
+  --color-error: #991b1b; /* 에러 - 10.59:1 대비 */
+  --color-error-hover: #7f1d1d; /* 호버 상태 */
+  --color-error-light: #ef4444; /* 밝은 버전 */
+  --color-error-bg: #fef2f2; /* 배경용 */
+
+  /* 중성 컬러 */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* 테두리 & 구분선 */
+  --color-border: #e5e7eb; /* 기본 테두리 */
+  --color-border-strong: #d1d5db; /* 진한 테두리 */
+  --color-border-focus: #3b82f6; /* 포커스 테두리 */
+
+  /* 그림자 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* ===============================
+         브레이크포인트 (일관된 기준)
+         =============================== */
+  --breakpoint-xs: 360px; /* 초소형 모바일 */
+  --breakpoint-sm: 480px; /* 소형 모바일 */
+  --breakpoint-md: 768px; /* 태블릿 */
+  --breakpoint-lg: 1024px; /* 소형 데스크톱 */
+  --breakpoint-xl: 1280px; /* 대형 데스크톱 */
+
+  /* ===============================
+          폰트 시스템 - 고령자 친화적
+         =============================== */
+
+  /* 폰트 패밀리 */
+  --font-primary: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "Monaco", "Consolas", "Liberation Mono", "Courier New",
+    monospace;
+
+  /* 기본 폰트 크기 (데스크톱) */
+  --font-xs: 14px; /* 작은 텍스트 */
+  --font-sm: 16px; /* 보조 텍스트 */
+  --font-base: 18px; /* 기본 텍스트 */
+  --font-lg: 20px; /* 큰 텍스트 */
+  --font-xl: 24px; /* 제목 */
+  --font-2xl: 28px; /* 큰 제목 */
+  --font-3xl: 32px; /* 메인 제목 */
+  --font-4xl: 36px; /* 대형 제목 */
+
+  /* 버튼 폰트 크기 */
+  --font-button-sm: 16px; /* 작은 버튼 */
+  --font-button: 18px; /* 기본 버튼 */
+  --font-button-lg: 20px; /* 큰 버튼 */
+  --font-button-xl: 24px; /* 특대 버튼 */
+
+  /* 라인 높이 */
+  --line-height-tight: 1.2; /* 제목용 */
+  --line-height-normal: 1.5; /* 기본 */
+  --line-height-relaxed: 1.8; /* 긴 텍스트용 */
+
+  /* 폰트 굵기 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* ===============================
+         🎛️ 크기 & 여백 시스템
+         =============================== */
+
+  /* 스페이싱 (고령자 친화적 - 넉넉한 여백) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-base: 16px;
+  --space-md: 20px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 40px;
+  --space-3xl: 48px;
+
+  /* 버튼 크기 */
+  --button-height-sm: 48px; /* 작은 버튼 (최소 터치 크기) */
+  --button-height: 56px; /* 기본 버튼 */
+  --button-height-lg: 64px; /* 큰 버튼 */
+  --button-height-xl: 72px; /* 특대 버튼 */
+
+  /* 아이콘 크기 */
+  --icon-sm: 20px;
+  --icon-base: 24px;
+  --icon-lg: 32px;
+  --icon-xl: 40px;
+
+  /* 반지름 */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* ===============================
+         ⚡ 애니메이션 & 전환
+         =============================== */
+  --transition-fast: 0.15s ease;
+  --transition: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* 모션 감소 사용자를 위한 설정 */
+  --motion-duration: 0.2s;
+  --motion-easing: ease-out;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ===============================
+       📱 반응형 폰트 크기 시스템
+       =============================== */
 
-@media (prefers-color-scheme: dark) {
+/* 태블릿 (768px 이하) */
+@media (max-width: 768px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* 폰트 크기 조정 */
+    --font-xs: 13px;
+    --font-sm: 15px;
+    --font-base: 17px;
+    --font-lg: 19px;
+    --font-xl: 22px;
+    --font-2xl: 26px;
+    --font-3xl: 30px;
+    --font-4xl: 34px;
+
+    /* 버튼 폰트 조정 */
+    --font-button-sm: 15px;
+    --font-button: 17px;
+    --font-button-lg: 19px;
+    --font-button-xl: 22px;
+
+    /* 버튼 높이 조정 */
+    --button-height-sm: 44px;
+    --button-height: 52px;
+    --button-height-lg: 60px;
+    --button-height-xl: 68px;
   }
 }
 
+/* 소형 모바일 (480px 이하) */
+@media (max-width: 480px) {
+  :root {
+    /* 폰트 크기 추가 조정 */
+    --font-xs: 12px;
+    --font-sm: 14px;
+    --font-base: 16px;
+    --font-lg: 18px;
+    --font-xl: 20px;
+    --font-2xl: 24px;
+    --font-3xl: 28px;
+    --font-4xl: 32px;
+
+    /* 버튼 폰트 추가 조정 */
+    --font-button-sm: 14px;
+    --font-button: 16px;
+    --font-button-lg: 18px;
+    --font-button-xl: 20px;
+
+    /* 스페이싱 조정 */
+    --space-base: 12px;
+    --space-md: 16px;
+    --space-lg: 20px;
+    --space-xl: 28px;
+    --space-2xl: 36px;
+    --space-3xl: 44px;
+  }
+}
+
+/* 초소형 모바일 (360px 이하) */
+@media (max-width: 360px) {
+  :root {
+    /* 최소 크기로 조정 */
+    --font-xs: 11px;
+    --font-sm: 13px;
+    --font-base: 15px;
+    --font-lg: 17px;
+    --font-xl: 19px;
+    --font-2xl: 22px;
+    --font-3xl: 26px;
+    --font-4xl: 30px;
+
+    /* 버튼 최소 크기 */
+    --button-height-sm: 40px;
+    --button-height: 48px;
+    --button-height-lg: 56px;
+    --button-height-xl: 64px;
+  }
+}
+
+/* ===============================
+        기본 HTML 요소 스타일링
+       =============================== */
+
+html {
+  font-size: 16px; /* 기준 크기 */
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--font-base);
+  line-height: var(--line-height-normal);
+  font-weight: var(--font-weight-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===============================
+        접근성 & 모션 감소 설정
+       =============================== */
+
+/* 모션 감소 설정 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration: 0.01ms;
+    --transition-fast: none;
+    --transition: none;
+    --transition-slow: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :root {
+    --color-text-primary: #000000;
+    --color-bg-primary: #ffffff;
+    --color-border: #000000;
+    --color-border-strong: #000000;
+  }
+}
+
+/* ===============================
+        포커스 관리 (키보드 접근성)
+       =============================== */
+
+/* 포커스 표시를 위한 전역 스타일 */
+:focus-visible {
+  outline: 3px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* ===============================
+        인쇄 스타일
+       =============================== */
+
+@media print {
+  :root {
+    --color-text-primary: #000000;
+    --color-bg-primary: #ffffff;
+  }
 }

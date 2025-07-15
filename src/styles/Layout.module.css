@@ -6,15 +6,19 @@
   top: 0;
   z-index: 100;
   width: 100%;
-  background: linear-gradient(135deg, #4285f4 0%, #667eea 100%);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-light) 100%
+  );
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px);
 }
 
 .headerContainer {
   max-width: 480px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--space-base);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -27,9 +31,9 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  padding: var(--space-sm) var(--space-sm);
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -45,47 +49,46 @@
 }
 
 .logo:focus {
-  outline: 3px solid #4ade80;
+  outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }
 
 .logoIcon {
-  width: 28px;
-  height: 28px;
-  color: white;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  color: var(--color-bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   backdrop-filter: blur(10px);
 }
 
 .logoIcon svg {
-  width: 18px;
-  height: 18px;
+  width: var(--font-lg);
+  height: var(--font-lg);
 }
 
 .logoText {
-  font-size: 18px;
-  font-weight: 700;
-  color: white;
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-bg-primary);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
-    sans-serif;
+  font-family: var(--font-primary);
 }
 
 /* 로그아웃 버튼 */
 .logoutButton {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-sm);
   background: rgba(255, 255, 255, 0.15);
   border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   backdrop-filter: blur(10px);
   -webkit-tap-highlight-color: transparent;
 }
@@ -101,70 +104,68 @@
 }
 
 .logoutButton:focus {
-  outline: 3px solid #4ade80;
+  outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }
 
 .logoutIcon {
-  width: 20px;
-  height: 20px;
-  color: white;
+  width: var(--icon-base);
+  height: var(--icon-base);
+  color: var(--color-bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .logoutIcon svg {
-  width: 16px;
-  height: 16px;
+  width: var(--space-base);
+  height: var(--space-base);
 }
 
 .logoutText {
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
-    sans-serif;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-bg-primary);
+  font-family: var(--font-primary);
 }
 
 /* 푸터 스타일 */
 .footer {
   width: 100%;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  margin-top: 40px;
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-3xl);
 }
 
 .footerContainer {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
-    sans-serif;
+  padding: var(--space-lg) var(--space-base);
+  font-family: var(--font-primary);
 }
 
 /* 도움말 섹션 */
 .helpSection {
   display: flex;
   justify-content: center;
-  gap: 32px;
-  margin-bottom: 20px;
+  gap: var(--space-2xl);
+  margin-bottom: var(--space-md);
 }
 
 .helpItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
   cursor: pointer;
-  padding: 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  padding: var(--space-sm);
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
   -webkit-tap-highlight-color: transparent;
 }
 
 .helpItem:hover {
-  background: #f8fbff;
+  background: var(--color-primary-bg);
   transform: translateY(-1px);
 }
 
@@ -173,38 +174,38 @@
 }
 
 .helpItem:focus {
-  outline: 3px solid #4ade80;
+  outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }
 
 .helpIcon {
-  width: 32px;
-  height: 32px;
-  color: #4285f4;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fbff;
-  border-radius: 6px;
+  background: var(--color-primary-bg);
+  border-radius: var(--radius-sm);
 }
 
 .helpIcon svg {
-  width: 20px;
-  height: 20px;
+  width: var(--space-md);
+  height: var(--space-md);
 }
 
 .helpText {
-  font-size: 14px;
-  font-weight: 600;
-  color: #4285f4;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
   text-align: center;
 }
 
 /* 구분선 */
 .divider {
   height: 1px;
-  background: #e5e7eb;
-  margin: 20px 0;
+  background: var(--color-border);
+  margin: var(--space-md) 0;
 }
 
 /* 저작권 정보 */
@@ -213,57 +214,56 @@
 }
 
 .copyrightText {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
+  font-size: var(--font-sm);
+  color: var(--color-text-light);
+  margin: 0 0 var(--space-sm) 0;
+  line-height: var(--line-height-normal);
 }
 
 .versionText {
-  font-size: 12px;
-  color: #999;
+  font-size: var(--space-sm);
+  color: var(--color-gray-400);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--line-height-normal);
 }
 
 /* 모바일 최적화 (작은 화면) */
 @media (max-width: 360px) {
   .headerContainer {
-    padding: 0 12px;
+    padding: 0 var(--space-sm);
     height: 56px;
   }
 
   .logoText {
-    font-size: 16px;
+    font-size: var(--font-lg);
   }
 
   .logoutText {
-    font-size: 13px;
+    font-size: var(--font-sm);
   }
 
   .footerContainer {
-    padding: 20px 12px;
+    padding: var(--space-md) var(--space-sm);
   }
 
   .helpSection {
-    gap: 24px;
+    gap: var(--space-lg);
   }
 
   .helpIcon {
-    width: 28px;
-    height: 28px;
+    width: var(--icon-lg);
+    height: var(--icon-lg);
   }
 
   .helpIcon svg {
-    width: 18px;
-    height: 18px;
+    width: var(--font-lg);
+    height: var(--font-lg);
   }
 
   .helpText {
-    font-size: 13px;
+    font-size: var(--font-sm);
   }
 }
-
 /* 접근성 향상 */
 @media (prefers-reduced-motion: reduce) {
   .logo,
@@ -276,19 +276,19 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .footer {
-    border-top: 2px solid #000;
+    border-top: 2px solid var(--color-text-primary);
   }
 
   .copyrightText {
-    color: #000;
+    color: var(--color-text-primary);
   }
 
   .versionText {
-    color: #333;
+    color: var(--color-text-primary);
   }
 
   .helpText {
-    color: #000;
+    color: var(--color-text-primary);
   }
 }
 
@@ -296,6 +296,6 @@
 .logo:focus-visible,
 .logoutButton:focus-visible,
 .helpItem:focus-visible {
-  outline: 3px solid #4ade80;
+  outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }

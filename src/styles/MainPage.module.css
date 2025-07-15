@@ -2,25 +2,25 @@
 
 .container {
   min-height: 100vh;
-  background-color: #ffffff;
-  padding: 24px 20px;
-  font-family: "Malgun Gothic", "맑은 고딕", Arial, sans-serif;
-  line-height: 1.6;
+  background-color: var(--color-bg-primary);
+  padding: var(--space-lg) var(--space-md);
+  font-family: var(--font-primary);
+  line-height: var(--line-height-relaxed);
   max-width: 600px;
   margin: 0 auto;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 40px;
-  border-bottom: 3px solid #333;
-  padding-bottom: 20px;
+  margin-bottom: var(--space-3xl);
+  border-bottom: 3px solid var(--color-text-primary);
+  padding-bottom: var(--space-md);
 }
 
 .header h1 {
-  font-size: 32px;
-  font-weight: bold;
-  color: #333;
+  font-size: var(--font-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -29,84 +29,84 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  font-size: 24px;
-  font-family: "Malgun Gothic", "맑은 고딕", Arial, sans-serif;
-  color: #333;
+  font-size: var(--font-2xl);
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
 }
 
 .welcomeSection {
-  margin-bottom: 40px;
+  margin-bottom: var(--space-3xl);
   text-align: center;
 }
 
 .welcomeSection h2 {
-  font-size: 28px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20px;
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
 }
 
 .userInfo {
-  background-color: #f8f9fa;
-  border: 2px solid #dee2e6;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background-color: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .userInfo p {
-  font-size: 20px;
-  margin: 8px 0;
-  color: #333;
+  font-size: var(--font-xl);
+  margin: var(--space-sm) 0;
+  color: var(--color-text-primary);
 }
 
 .userInfo strong {
-  color: #007bff;
+  color: var(--color-primary);
 }
 
 .welcomeMessage {
-  font-size: 22px;
-  color: #333;
-  font-weight: bold;
+  font-size: var(--font-2xl);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
 }
 
 .contentSection {
-  padding: 24px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 2px solid #dee2e6;
+  padding: var(--space-lg);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius);
+  border: 2px solid var(--color-border);
 }
 
 .contentSection h3 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 16px;
+  font-size: var(--font-2xl);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-base);
 }
 
 .contentSection p {
-  font-size: 18px;
-  color: #333;
-  line-height: 1.6;
+  font-size: var(--font-lg);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-relaxed);
 }
 
 @media (max-width: 768px) {
   .container {
-    padding: 20px 16px;
+    padding: var(--space-md) var(--space-base);
   }
 
   .header h1 {
-    font-size: 28px;
+    font-size: var(--font-3xl);
   }
 
   .welcomeSection h2 {
-    font-size: 24px;
+    font-size: var(--font-2xl);
   }
 
   .contentSection h3 {
-    font-size: 22px;
+    font-size: var(--font-2xl);
   }
 
   .loading {
-    font-size: 20px;
+    font-size: var(--font-xl);
   }
 }
