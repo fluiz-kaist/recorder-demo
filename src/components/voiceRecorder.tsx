@@ -18,7 +18,8 @@ import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
 import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
 import SttWhisper from "@/components/stt/SttWhisper";
-
+import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
+import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
 // 🎯 간단한 품질 검증 결과 인터페이스
 interface SimpleQualityResult {
   isGoodQuality: boolean;
@@ -77,13 +78,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCountingDown, setIsCountingDown] = useState(false);
-
+  const [hasSTTStarted, setHasSTTStarted] = useState(false);
   // React Query 훅들
   const { data: authToken } = useAuthStatusQuery();
   const uploadAudioMutation = useUploadAudioMutation();
   const completeScriptMutation = useCompleteScriptMutation();
-
-  const [hasSTTStarted, setHasSTTStarted] = useState(false);
+  const assignScriptsMutation = useAssignScriptsMutation();
+  const { data: localScripts } = useAllLocalScriptsQuery();
 
   // MobileOptimizedRecorder hook 사용
   const {
@@ -239,7 +240,25 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   // 🔥 녹음 시작
   const startRecording = async () => {
     try {
-      console.log("🎤 녹음 시작 요청");
+      console.log("[vr]녹음 시작 요청");
+
+      // 튜토리얼 스크립트이고 로컬에 스크립트가 없는 경우에만 할당 실행
+      if (isTutorial && authToken?.userId && !localScripts) {
+        try {
+          console.log("튜토리얼 스크립트 - 로컬 스크립트 없음, 할당 실행");
+          await assignScriptsMutation.mutateAsync({
+            userId: authToken.userId,
+          });
+          console.log("튜토리얼 스크립트 할당 완료");
+        } catch (error) {
+          console.error("튜토리얼 스크립트 할당 실패:", error);
+          // 스크립트 할당 실패해도 녹음은 계속 진행
+        }
+      } else if (isTutorial && localScripts) {
+        console.log(
+          "튜토리얼 스크립트 - 이미 로컬에 스크립트 존재, 할당 건너뜀"
+        );
+      }
 
       // 이전 녹음 결과 초기화
       setAudioUrl(null);
@@ -578,12 +597,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             isRecording ? styles.recordingButton : ""
           }`}
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isUploading || isCountingDown}
+          //  튜토리얼 스크립트 할당 중일 때도 비활성화
+          disabled={
+            isUploading || isCountingDown || assignScriptsMutation.isPending
+          }
         >
           {isCountingDown
             ? "준비 중..."
+            : assignScriptsMutation.isPending
+            ? "준비 중..."
             : isRecording
-            ? "🛑 녹음 종료"
+            ? "녹음 종료"
             : isCompltedScript
             ? "다시 녹음하기"
             : "녹음 시작하기"}
@@ -756,7 +780,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                     ? "완료 중..."
                     : "제출 중..."
                   : isTutorial
-                  ? "연습 완료"
+                  ? "연습 녹음 제출하기"
                   : "제출하기"}
               </button>
             )}

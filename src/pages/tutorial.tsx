@@ -162,6 +162,18 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
               <li>최소 3초 이상 말씀해 주세요</li>
             </ul>
+
+            <h4>음성 녹음 방법</h4>
+            <ul>
+              <li>
+                녹음을 하기 위해서 먼저 마이크 사용을 허락해주셔야 합니다.
+                [허용] 버튼이 나오면 눌러주세요.
+              </li>
+              <li>
+                이 사이트에서 마이크를 사용하도록 허용하시겠습니까? 라는 창이
+                보이면, <b>[허용] 또는 [Allow] 버튼을 눌러주세요.</b>
+              </li>
+            </ul>
           </div>
           {currentScript && (
             <>
