@@ -150,7 +150,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
         return "질의응답 녹음";
 
       case ScriptType.TUTORIAL:
-        return "녹음 연습하기";
+        return "녹음 연습";
       default:
         return "스크립트 녹음";
     }

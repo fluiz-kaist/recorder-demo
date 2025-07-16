@@ -20,12 +20,12 @@ import {
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 
 const ageGroups = [
+  "55-59세",
   "60-64세",
   "65-69세",
   "70-74세",
   "75-79세",
-  "80-84세",
-  "85세 이상",
+  "80세 이상",
 ] as const;
 
 const genders = ["남성", "여성"] as const;
