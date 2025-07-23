@@ -10,13 +10,14 @@ import {
   useAuthStatusQuery,
   // useUserQuery,
   useIsAuthenticated,
-  useVerifyAuthorizedUserMutation,
   useLocalUserQuery,
 } from "@/hooks/queries/useUserQueries";
 import {
   useRegisterUserMutation,
   useUpdateScriptAssignmentsMutation,
 } from "@/hooks/mutations/useUserMutations";
+
+import { useHybridAuthMutation } from "@/hooks/mutations/useHybridAuth";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 
 const ageGroups = [
@@ -48,7 +49,7 @@ ConsentPageProps) {
   const isAuthenticated = useIsAuthenticated();
 
   // 뮤테이션 훅들
-  const verifyUserMutation = useVerifyAuthorizedUserMutation();
+  const verifyUserMutation = useHybridAuthMutation();
   const registerUserMutation = useRegisterUserMutation();
   const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
@@ -143,23 +144,10 @@ ConsentPageProps) {
         socialNumber: userInput.socialNumber,
       });
       // 성공 시 쿠키가 자동으로 설정되고 페이지가 새로고침됨
+      // 기존 catch 블록 전체를 이렇게 교체
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes("승인되지 않은 사용자")) {
-          setError(
-            "승인되지 않은 사용자입니다. 서비스 이용 권한이 없습니다. 관리자에게 문의하세요."
-          );
-          // 입력 필드 초기화
-          setUserInput((prev) => ({
-            ...prev,
-            name: "",
-            socialNumber: "",
-          }));
-        } else if (error.message.includes("이름과 주민번호")) {
-          setError("입력하신 정보를 다시 확인해주세요.");
-        } else {
-          setError(error.message);
-        }
+        setError(error.message);
       } else {
         setError("인증에 실패했습니다. 다시 시도해주세요.");
       }
@@ -341,7 +329,7 @@ ConsentPageProps) {
           {process.env.NODE_ENV === "development" && (
             <div className={styles.debugInfo}>
               <h4>🐛 개발 정보</h4>
-              <p>쿠키 기반 인증이 적용되었습니다.</p>
+              <p>하이브리드 인증이 적용되었습니다. (해시 기반 → 기존 방식)</p>
               <p>승인된 이름과 주민번호를 입력하세요.</p>
             </div>
           )}

@@ -1,10 +1,17 @@
-// hooks/mutations/useUserMutations.ts - 쿠키 기반 인증으로 수정된 사용자 데이터 변경 훅
+// hooks/mutations/useUserMutations.ts - 개선된 사용자 데이터 변경 훅
 import {
   useMutation,
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User } from "@/types/firebase";
+import { getKoreanTime } from "@/utils/auth";
+import {
+  updateUserRelatedCache,
+  updateAuthStatusCache,
+  clearUserRelatedCache,
+} from "@/utils/queryCache";
+import { clearLocalUserData } from "@/utils/localStorage";
 
 /**
  * 사용자 등록 요청 데이터 타입
@@ -25,12 +32,72 @@ interface UpdateUserRequest {
 }
 
 /**
- * 한국 시간 생성 함수
+ * 사용자 인증 확인 뮤테이션 (쿠키 기반)
+ * 기존: useVerifyAuthorizedUserMutation (useUserQueries.ts에서 이동)
  */
-const getKoreanTime = (): string => {
-  const now = new Date();
-  const koreanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return koreanTime.toISOString();
+export const useVerifyAuthorizedUserMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      name,
+      socialNumber,
+    }: {
+      name: string;
+      socialNumber: string;
+    }) => {
+      const response = await fetch("/api/auth/verifyAuthorizedUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // 쿠키 포함
+        body: JSON.stringify({ name, socialNumber }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "인증에 실패했습니다.");
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      // 기존 사용자인지 확인
+      if (data.user.isExistingUser) {
+        console.log("data.user?", data.user);
+        console.log("data?", data);
+        // 기존 사용자 데이터로 캐시 업데이트
+        updateAuthStatusCache(queryClient, true, data.user.userId);
+        updateUserRelatedCache(
+          queryClient,
+          data.user.userId,
+          data.user.existingData
+        );
+
+        console.log("기존 사용자 로그인 성공:", data.user.name);
+
+        // 기존 사용자는 바로 메인으로 이동
+        window.location.href = "/main";
+        return;
+      }
+
+      // 신규 사용자 처리
+      const userInfo = {
+        name: data.user.name,
+        completedAt: null, // 초기에는 미완료
+        scriptAssignments: [],
+      };
+
+      // 신규 사용자 캐시 업데이트
+      updateAuthStatusCache(queryClient, true, data.user.userId);
+      queryClient.setQueryData(["localUser"], userInfo);
+
+      console.log("신규 사용자 인증 성공:", data.user.name);
+    },
+    onError: (error) => {
+      console.error("인증 실패:", error);
+    },
+  });
 };
 
 /**
@@ -76,24 +143,8 @@ export const useRegisterUserMutation = (): UseMutationResult<
       return data.user as User;
     },
     onSuccess: (user, variables) => {
-      // 로컬 스토리지에 민감하지 않은 정보만 저장
-      const localUserInfo = {
-        gender: user.gender || "",
-        ageGroup: user.ageGroup || "",
-        completedAt: user.completedAt,
-        scriptAssignments: user.scriptAssignments || [],
-      };
-      localStorage.setItem("userInfo", JSON.stringify(localUserInfo));
-
-      // 관련 쿼리 캐시 업데이트
-      queryClient.setQueryData(["user", variables.userId], user);
-      queryClient.setQueryData(["localUser"], localUserInfo);
-      queryClient.setQueryData(["currentUserId"], variables.userId);
-      queryClient.setQueryData(
-        ["userCompletionStatus", variables.userId],
-        !!user.completedAt // 완료 상태는 completedAt 존재 여부로 판단
-      );
-
+      // 통합된 캐시 업데이트 함수 사용
+      updateUserRelatedCache(queryClient, variables.userId, user);
       console.log("사용자 등록/로그인 완료:", user);
     },
     onError: (error) => {
@@ -136,27 +187,8 @@ export const useUpdateUserMutation = (): UseMutationResult<
       return data.user as User;
     },
     onSuccess: (updatedUser, variables) => {
-      // 로컬 스토리지에 민감하지 않은 정보만 업데이트
-      const localUserInfo = {
-        gender: updatedUser.gender || "",
-        ageGroup: updatedUser.ageGroup || "",
-        completedAt: updatedUser.completedAt,
-        scriptAssignments: updatedUser.scriptAssignments || [],
-      };
-      localStorage.setItem("userInfo", JSON.stringify(localUserInfo));
-
-      // 관련 쿼리 캐시 업데이트
-      queryClient.setQueryData(["user", variables.userId], updatedUser);
-      queryClient.setQueryData(["localUser"], localUserInfo);
-
-      // 스크립트 할당 관련 캐시도 업데이트
-      if (updatedUser.scriptAssignments) {
-        queryClient.setQueryData(
-          ["userScriptAssignments", variables.userId],
-          updatedUser.scriptAssignments
-        );
-      }
-
+      // 통합된 캐시 업데이트 함수 사용
+      updateUserRelatedCache(queryClient, variables.userId, updatedUser);
       console.log("사용자 정보 업데이트 완료:", updatedUser);
     },
     onError: (error) => {
@@ -200,23 +232,8 @@ export const useUpdateScriptAssignmentsMutation = (): UseMutationResult<
       return data.user as User;
     },
     onSuccess: (updatedUser, variables) => {
-      // 로컬 스토리지에 민감하지 않은 정보만 업데이트
-      const localUserInfo = {
-        gender: updatedUser.gender || "",
-        ageGroup: updatedUser.ageGroup || "",
-        completedAt: updatedUser.completedAt,
-        scriptAssignments: updatedUser.scriptAssignments || [],
-      };
-      localStorage.setItem("userInfo", JSON.stringify(localUserInfo));
-
-      // 관련 쿼리 캐시 업데이트
-      queryClient.setQueryData(["user", variables.userId], updatedUser);
-      queryClient.setQueryData(["localUser"], localUserInfo);
-      queryClient.setQueryData(
-        ["userScriptAssignments", variables.userId],
-        updatedUser.scriptAssignments
-      );
-
+      // 통합된 캐시 업데이트 함수 사용
+      updateUserRelatedCache(queryClient, variables.userId, updatedUser);
       console.log(
         "스크립트 할당 업데이트 완료:",
         updatedUser.scriptAssignments
@@ -298,17 +315,9 @@ export const useLogoutUserMutation = (): UseMutationResult<
       }
     },
     onSuccess: () => {
-      // 로컬 스토리지 정리
-      localStorage.removeItem("userInfo");
-      sessionStorage.clear();
-
-      // 모든 사용자 관련 쿼리 캐시 정리
-      queryClient.removeQueries({ queryKey: ["user"] });
-      queryClient.removeQueries({ queryKey: ["localUser"] });
-      queryClient.removeQueries({ queryKey: ["currentUserId"] });
-      queryClient.removeQueries({ queryKey: ["authStatus"] });
-      queryClient.removeQueries({ queryKey: ["userCompletionStatus"] });
-      queryClient.removeQueries({ queryKey: ["userScriptAssignments"] });
+      // 통합된 정리 함수들 사용
+      clearLocalUserData();
+      clearUserRelatedCache(queryClient);
 
       console.log("사용자 로그아웃 완료");
 

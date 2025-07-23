@@ -58,6 +58,7 @@ interface FirebaseConfig {
 }
 
 function createFirebaseConfig(): FirebaseConfig | null {
+  console.log("파이어베이서 config시작");
   const envVars = debugEnvironmentVariables();
 
   // 필수 환경변수 체크
@@ -105,6 +106,7 @@ function createFirebaseConfig(): FirebaseConfig | null {
 // Firebase 앱 초기화 (개선된 버전)
 function initializeFirebaseApp(): FirebaseApp | null {
   try {
+    console.log("initializeFirebaseApp?");
     const firebaseConfig = createFirebaseConfig();
 
     if (!firebaseConfig) {
