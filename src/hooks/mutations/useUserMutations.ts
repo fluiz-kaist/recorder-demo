@@ -21,6 +21,8 @@ interface RegisterUserRequest {
   gender: "남성" | "여성";
   ageGroup: string;
   hasConsented: boolean;
+  userName: string;
+  authorizedUserId: string;
 }
 
 /**
@@ -117,6 +119,8 @@ export const useRegisterUserMutation = (): UseMutationResult<
       gender,
       ageGroup,
       hasConsented,
+      userName,
+      authorizedUserId,
     }: RegisterUserRequest): Promise<User> => {
       const now = getKoreanTime();
 
@@ -131,6 +135,8 @@ export const useRegisterUserMutation = (): UseMutationResult<
           ageGroup,
           hasConsented,
           completedAt: now,
+          userName,
+          authorizedUserId,
         }),
       });
 

@@ -175,7 +175,8 @@ export interface User {
   scriptAssignments: UserScriptAssignment[];
 
   //
-  name?: string;
+  userName?: string;
+  authorizedUserId:string;
 }
 
 // 통계를 위한 타입

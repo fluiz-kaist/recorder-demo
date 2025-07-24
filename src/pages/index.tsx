@@ -255,7 +255,9 @@ ConsentPageProps) {
         userId,
         gender: userInput.gender,
         ageGroup: userInput.ageGroup,
-        hasConsented: userInput.hasConsented,
+        hasConsented: userInput.hasConsented,         
+        userName: authData.name || "noName",
+        authorizedUserId: userHash,
       });
 
       // 스크립트 할당

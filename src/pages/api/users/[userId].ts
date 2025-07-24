@@ -73,6 +73,8 @@ export default async function handler(
         ageGroup,
         hasConsented = true, // 기본값 true (동의 후 등록이므로)
         completedAt,
+        userName,
+        authorizedUserId,
       } = req.body;
 
       // 필수 필드 검증
@@ -120,6 +122,8 @@ export default async function handler(
         id: userId,
         gender,
         ageGroup,
+        userName,
+        authorizedUserId,
         hasConsented,
         createdAt: now,
         lastAccessAt: now,
