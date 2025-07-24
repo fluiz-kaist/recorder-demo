@@ -47,7 +47,7 @@ export default async function handler(
     }
 
     // 1. 사용자 정보 조회
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, "usersV2", userId);
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {

@@ -153,6 +153,7 @@ export default async function handler(
 
     // 5. users 컬렉션에서 기존 사용자 데이터 확인
     const userDocRef = doc(db, "usersV2", userId);
+    // console.log("기존 데이터 사용자 확인", userDocRef);
     const existingUserDoc = await getDoc(userDocRef);
     const isExistingUser = existingUserDoc.exists();
 
@@ -166,16 +167,16 @@ export default async function handler(
       console.log(`👤 신규 사용자`);
     }
 
-    // 6. httpOnly 쿠키 설정 (보안 강화)
-    const cookie = serialize("auth-token", userId, {
-      httpOnly: false, // 클라이언트에서 접근 가능하도록 설정
-      secure: process.env.NODE_ENV === "production", // HTTPS에서만
-      sameSite: "lax", // CSRF 공격 방지
-      maxAge: 60 * 60 * 24 * 7, // 7일
-      path: "/",
-    });
+    // // 6. httpOnly 쿠키 설정 (보안 강화)
+    // const cookie = serialize("auth-token", userId, {
+    //   httpOnly: false, // 클라이언트에서 접근 가능하도록 설정
+    //   secure: process.env.NODE_ENV === "production", // HTTPS에서만
+    //   sameSite: "lax", // CSRF 공격 방지
+    //   maxAge: 60 * 60 * 24 * 7, // 7일
+    //   path: "/",
+    // });
 
-    res.setHeader("Set-Cookie", cookie);
+    // res.setHeader("Set-Cookie", cookie);
 
     // 7. 성공 응답
     const { maskedName } = maskPersonalInfo(cleanName, cleanSocialNumber);
@@ -189,7 +190,7 @@ export default async function handler(
       method: "hash-based", // 구분을 위한 필드
       user: {
         name: cleanName, // 클라이언트에서 필요한 실제 이름
-        userId: userId,
+        // userId: userId,
         isExistingUser: isExistingUser,
         ...(isExistingUser && { existingData }),
       },

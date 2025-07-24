@@ -19,7 +19,11 @@ import {
 
 import { useHybridAuthMutation } from "@/hooks/mutations/useHybridAuth";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-
+import {
+  generateUserHash,
+  generateSecureUserId,
+  maskPersonalInfo,
+} from "@/utils/hash";
 const ageGroups = [
   "55-59세",
   "60-64세",
@@ -75,14 +79,23 @@ ConsentPageProps) {
   // 🟢 로컬에서 저장된 사용자 이름 가져오기
   const userName = localUser?.name || "";
 
-  // 🟢 이미 인증되고 등록 완료된 사용자는 메인 페이지로 리다이렉트
+  // 🟢 세션 스토리지 기반 인증 상태 확인으로 변경
   useEffect(() => {
-    if (!authLoading && isAuthenticated && localUser?.completedAt) {
-      console.log("이미 등록 완료된 사용자, 메인 페이지로 이동");
-      setIsRedirecting(true);
-      router.push("/main");
+    // 🆕 세션 스토리지 체크
+    const pendingAuth = sessionStorage.getItem("pendingAuth");
+    if (pendingAuth) {
+      try {
+        const authData = JSON.parse(pendingAuth);
+        if (authData.isExistingUser) {
+          console.log("기존 사용자 감지, 메인 페이지로 이동");
+          setIsRedirecting(true);
+          router.push("/main");
+        }
+      } catch (error) {
+        console.error("세션 데이터 파싱 오류:", error);
+      }
     }
-  }, [authLoading, isAuthenticated, localUser?.completedAt, router]);
+  }, [router]);
 
   // 🟢 인증 상태 확인 중이거나 리다이렉트 중일 때는 로딩 표시
   if (authLoading || isRedirecting) {
@@ -156,53 +169,62 @@ ConsentPageProps) {
 
   // 🟢 사용자 등록 및 스크립트 할당 통합 함수
   const handleCompleteRegistration = async () => {
-    if (!authStatus?.userId) {
-      setError("인증이 필요합니다.");
-      return;
-    }
-
     if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
       setError("모든 항목을 선택하고 동의해주세요.");
       return;
     }
-
+  
     try {
       console.log("사용자 등록/로그인 시작");
-
+  
+      // 🆕 세션에서 인증 데이터 가져오기
+      const pendingAuth = sessionStorage.getItem('pendingAuth');
+      if (!pendingAuth) {
+        setError("인증 정보가 없습니다. 다시 인증해주세요.");
+        return;
+      }
+  
+      const authData = JSON.parse(pendingAuth);
+      const userId = generateSecureUserId();
+  
+      // 🆕 authorizedUsersV2에 userId 저장
+      const userHash = generateUserHash(authData.name, userInput.socialNumber || authData.name);
+      
+      await fetch('/api/auth/completeAuth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          userId: userId,
+          userHash: userHash  // 해시도 함께 전달
+        })
+      });
+  
+      console.log("🍪 쿠키 생성 완료");
+  
+      // 사용자 등록
       const registeredUser = await registerUserMutation.mutateAsync({
-        userId: authStatus.userId,
+        userId,
         gender: userInput.gender,
         ageGroup: userInput.ageGroup,
         hasConsented: userInput.hasConsented,
       });
-
-      console.log("사용자 등록/로그인 완료:", registeredUser);
-
-      // 신규 사용자만 스크립트 할당
-      if (!registeredUser.completedAt) {
-        await assignScriptsMutation.mutateAsync({
-          userId: authStatus.userId,
-        });
-        console.log("신규 사용자의 스크립트 할당 완료");
-      }
-
-      // 🟢 로컬 스토리지에 완료 상태 업데이트
-      const updatedUserInfo = {
-        name: userName,
-        completedAt: new Date().toISOString(),
-        scriptAssignments: [], // 스크립트 할당 정보는 서버에서 관리
-      };
-      localStorage.setItem("userInfo", JSON.stringify(updatedUserInfo));
-
+  
+      // 스크립트 할당
+      await assignScriptsMutation.mutateAsync({ userId });
+  
+      // 세션 정리
+      sessionStorage.removeItem("pendingAuth");
+  
+      console.log("✅ 모든 등록 완료");
       setIsRedirecting(true);
       router.push("/main");
+  
     } catch (error) {
       console.error("등록 처리 중 오류:", error);
-      setError(
-        error instanceof Error ? error.message : "등록 중 오류가 발생했습니다."
-      );
+      setError(error instanceof Error ? error.message : "등록 중 오류가 발생했습니다.");
     }
-  };
+  }
 
   // 제출 가능 여부 확인
   const isSubmitEnabled = (): boolean => {
@@ -241,7 +263,9 @@ ConsentPageProps) {
     updateScriptsMutation.error?.message;
 
   // 🟢 인증되지 않은 사용자를 위한 인증 폼
-  if (!isAuthenticated) {
+  const pendingAuth = sessionStorage.getItem("pendingAuth");
+  if (!pendingAuth) {
+    // 세션에 인증 데이터가 없으면 인증 폼 표시
     return (
       <>
         <Head>

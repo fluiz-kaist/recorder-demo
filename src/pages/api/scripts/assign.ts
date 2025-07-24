@@ -65,7 +65,7 @@ export default async function handler(
     }
 
     // 1. 사용자 존재 확인
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, "usersV2", userId);
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
@@ -286,7 +286,7 @@ async function checkExistingAssignments(
   userId: string
 ): Promise<UserScriptAssignment[]> {
   try {
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, "usersV2", userId);
     const userDoc = await getDoc(userRef);
 
     if (userDoc.exists()) {

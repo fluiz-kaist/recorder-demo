@@ -104,27 +104,39 @@ export const useHybridAuthMutation = (): UseMutationResult<
 
       console.log(`🎯 인증 성공 (${data.method} 방식):`, data.user.name);
 
+      //  세션 스토리지에 임시 저장 (쿠키 대신)
+      sessionStorage.setItem(
+        "pendingAuth",
+        JSON.stringify({
+          userId: data.user.userId,
+          name: data.user.name,
+          method: data.method,
+          timestamp: Date.now(),
+          isExistingUser: data.user.isExistingUser,
+          existingData: data.user.existingData,
+        })
+      );
+
       // 기존 사용자인지 확인
+
+      // 기존 사용자 처리는 그대로 (동의 과정 건너뛰고 바로 완료)
       if (data.user.isExistingUser) {
-        // 기존 사용자 데이터로 캐시 업데이트
-        updateAuthStatusCache(queryClient, true, data.user.userId);
+        console.log("기존 사용자 - 바로 쿠키 생성 및 메인 이동");
+        // 기존 사용자는 바로 완료 처리 (별도 API 호출 필요)
+        fetch("/api/auth/completeAuth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ userId: data.user.userId }),
+        }).then(() => {
+          console.log("✅ 기존 사용자 로그인 성공:", data.user);
 
-        if (data.user.existingData) {
-          updateUserRelatedCache(
-            queryClient,
-            data.user.userId,
-            data.user.existingData
-          );
-        }
-
-        console.log("✅ 기존 사용자 로그인 성공:", data.user.name);
-
-        // 기존 사용자는 바로 메인으로 이동
-        setTimeout(() => {
           window.location.href = "/main";
-        }, 1000);
+        });
         return;
       }
+
+      console.log("✅ 신규 사용자 - 동의 화면으로 진행");
 
       // 신규 사용자 처리
       const userInfo = {

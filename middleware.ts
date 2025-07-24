@@ -14,6 +14,7 @@ export function middleware(request: NextRequest) {
   );
 
   // 쿠키 없으면 홈으로 리다이렉트
+  console.log("isProtectedRoute?", isProtectedRoute, "authTOken", authTOken);
   if (isProtectedRoute && !authToken) {
     return NextResponse.redirect(new URL("/", request.url));
   }

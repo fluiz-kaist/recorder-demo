@@ -25,7 +25,7 @@ export default async function handler(
     });
   }
 
-  const userDocRef = doc(db, "users", userId);
+  const userDocRef = doc(db, "usersV2", userId);
 
   try {
     if (req.method === "GET") {

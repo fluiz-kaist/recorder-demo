@@ -124,7 +124,7 @@ export default async function handler(
 
     // 2. 사용자 완료 스크립트 목록 업데이트
     // users 컬렉션에서 해당 사용자의 완료된 스크립트 목록과 통계 업데이트
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, "usersV2", userId);
     const completedField = `completedScripts.${scriptType}`;
 
     batch.update(userRef, {
@@ -136,7 +136,7 @@ export default async function handler(
 
     // 3. 사용자 진도 정보 업데이트
     // users/{userId}/progress 서브컬렉션에 해당 스크립트의 진도 정보 업데이트
-    const progressRef = doc(db, "users", userId, "progress", scriptId);
+    const progressRef = doc(db, "usersV2", userId, "progress", scriptId);
     const progressData = {
       status: "completed",
       recordedAt: serverTimestamp(),
