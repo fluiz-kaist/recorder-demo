@@ -1,6 +1,6 @@
 // hooks/useScriptUtils.ts - 스크립트 관련 유틸리티 훅들
 
-import { useLocalUserQuery } from "@/hooks/queries/useUserQueries";
+import { useMinimalUserQuery } from "@/hooks/queries/useUserQueries";
 import { useScriptDataQuery } from "@/hooks/queries/useScriptQueries";
 import { useInitializeScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,8 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * 이 훅은 스크립트 데이터의 존재 여부를 확인하고, 없으면 로딩을 트리거합니다.
  */
 export const useScriptLoader = (setNumber: number, setId: number = 1) => {
-  const queryClient = useQueryClient();
-  const {data: localUser} = useLocalUserQuery();
+  const { data: minimalUserInfo } = useMinimalUserQuery();
 
   // scriptDataQuery를 사용하여 현재 캐시된 스크립트 데이터 상태를 확인합니다.
   const {
@@ -25,7 +24,7 @@ export const useScriptLoader = (setNumber: number, setId: number = 1) => {
 
   // 스크립트를 서버에서 로드하는 비동기 함수
   const loadScriptsFromServer = async () => {
-    if (!localUser?.id) {
+    if (!minimalUserInfo?.id) {
       console.error("사용자 정보가 없어 스크립트를 로드할 수 없습니다.");
       throw new Error("사용자 정보가 없습니다.");
     }
@@ -41,12 +40,12 @@ export const useScriptLoader = (setNumber: number, setId: number = 1) => {
     }
 
     console.log(
-      `스크립트 로드 시작 (userId: ${localUser.id}, setNumber: ${setNumber}, setId: ${setId})`
+      `스크립트 로드 시작 (userId: ${minimalUserInfo.id}, setNumber: ${setNumber}, setId: ${setId})`
     );
 
     try {
       const result = await initializeScriptsMutation.mutateAsync({
-        userId: localUser.id,
+        userId: minimalUserInfo.id,
         setNumber,
         setId,
       });

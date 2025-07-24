@@ -5,7 +5,7 @@ import {
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { useLocalUserQuery } from "@/hooks/queries/useUserQueries";
+import { useMinimalUserQuery } from "@/hooks/queries/useUserQueries";
 import { ScriptDataManager } from "@/utils/scriptDataManager";
 import {
   ScriptType,
@@ -185,7 +185,7 @@ export const useClearScriptDataMutation = () => {
  */
 export const useRefreshScriptDataMutation = () => {
   const queryClient = useQueryClient();
-  const { data: localUser } = useLocalUserQuery();
+  const { data: minimalUserInfo } = useMinimalUserQuery();
 
   return useMutation({
     mutationFn: async ({
@@ -304,7 +304,6 @@ export const useCompleteScriptMutation = (): UseMutationResult<
       if (data.user) {
         // 업데이트된 사용자 정보로 직접 캐시 업데이트
         queryClient.setQueryData(["user", variables.userId], data.user);
-        queryClient.setQueryData(["localUser"], data.user);
 
         // 사용자 스크립트 할당 정보도 직접 업데이트
         queryClient.setQueryData(

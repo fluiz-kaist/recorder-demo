@@ -82,7 +82,6 @@ export const useVerifyAuthorizedUserMutation = () => {
       // 신규 사용자 캐시 업데이트
       console.log("신규사용자캐시업뎃");
       updateAuthStatusCache(queryClient, true, data.user.userId);
-      queryClient.setQueryData(["localUser"], userInfo);
 
       console.log("신규 사용자 인증 성공:", data.user.name);
     },

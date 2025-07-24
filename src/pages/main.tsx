@@ -4,7 +4,7 @@ import styles from "@/styles/MainSelectionPage.module.css";
 import Head from "next/head";
 import {
   useCurrentSetNumber,
-  useLocalUserQuery,
+  useMinimalUserQuery,
   useUserQuery,
 } from "@/hooks/queries/useUserQueries";
 import { useScriptLoader } from "@/hooks/useScriptUtils";
@@ -60,10 +60,11 @@ const MainSelectionPage = () => {
   const router = useRouter();
 
   // 🟢 쿠키 기반 인증 상태 확인
-  const { data: localUser, isLoading: isUserLoading } = useLocalUserQuery();
+  const { data: minimalUserInfo, isLoading: isUserLoading } =
+    useMinimalUserQuery();
 
   // 🟢 인증된 사용자 이름 가져오기
-  const userName = localUser?.userName;
+  const userName = minimalUserInfo?.userName;
 
   // 진행 상태 (서버)
   const { data: fullUser } = useUserQuery();
@@ -127,10 +128,11 @@ const MainSelectionPage = () => {
   // 튜토리얼 페이지로 이동
   const handleTutorial = async () => {
     try {
-      if (!localUser?.id) {
+      if (!minimalUserInfo?.id) {
         console.error("사용자 정보가 없습니다.");
         return;
       }
+      //스크립트를 로드
       await loadScriptsFromServer();
       console.log("✅ 스크립트 초기화 완료, 튜토리얼로 이동");
       router.push("/tutorial");
@@ -153,8 +155,9 @@ const MainSelectionPage = () => {
     router.push(`/recording/${encodeURIComponent(serviceName)}`);
   };
 
-  if (!localUser) {
-    // localUser가 로드되지 않았으면 로딩 스피너 표시
+  console.log("minimalUserInfo?", minimalUserInfo);
+  if (!minimalUserInfo) {
+    // minimalUserInfo 로드되지 않았으면 로딩 스피너 표시
     return (
       <>
         <Head>

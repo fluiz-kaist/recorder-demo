@@ -9,7 +9,7 @@ import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
 import {
   useAuthStatusQuery,
-  useLocalUserQuery,
+  useMinimalUserQuery,
 } from "@/hooks/queries/useUserQueries";
 import {
   useRegisterUserMutation,
@@ -46,7 +46,7 @@ ConsentPageProps) {
 
   // 🟢 쿠키 기반 인증 상태 확인
   const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
+  const { minimalUserInfo } = useMinimalUserQuery();
 
   // 뮤테이션 훅들
   const verifyUserMutation = useHybridAuthMutation();
@@ -73,7 +73,7 @@ ConsentPageProps) {
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
   // 🟢 로컬에서 저장된 사용자 이름 가져오기
-  const userName = localUser?.userName || "";
+  const userName = minimalUserInfo?.userName || "";
   // 🟢 기존 사용자 처리 함수 추가
   const handleCompleteExistingUser = async (authData: any) => {
     try {
@@ -557,8 +557,8 @@ ConsentPageProps) {
               인증 상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
             </p>
             <p>사용자 ID: {authStatus?.userId}</p>
-            <p>로컬 사용자: {localUser ? "있음" : "없음"}</p>
-            <p>완료 상태: {localUser?.completedAt ? "완료" : "미완료"}</p>
+            <p>로컬 사용자: {minimalUserInfo ? "있음" : "없음"}</p>
+            <p>완료 상태: {minimalUserInfo?.completedAt ? "완료" : "미완료"}</p>
             <p>입력 정보: {JSON.stringify(userInput)}</p>
           </div>
         )}

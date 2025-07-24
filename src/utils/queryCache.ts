@@ -13,16 +13,6 @@ export const updateUserRelatedCache = (
   // 서버 데이터 캐시 업데이트
   queryClient.setQueryData(["user", userId], user);
 
-  // 로컬 사용자 정보로 변환하여 캐시 업데이트
-  const localUserInfo = {
-    name: user.userName || "",
-    gender: user.gender || "",
-    ageGroup: user.ageGroup || "",
-    completedAt: user.completedAt,
-    scriptAssignments: user.scriptAssignments || [],
-  };
-  queryClient.setQueryData(["localUser"], localUserInfo);
-
   // 기타 관련 캐시들
   queryClient.setQueryData(["currentUserId"], userId);
   queryClient.setQueryData(
@@ -57,7 +47,6 @@ export const updateAuthStatusCache = (
  */
 export const clearUserRelatedCache = (queryClient: QueryClient) => {
   queryClient.removeQueries({ queryKey: ["user"] });
-  queryClient.removeQueries({ queryKey: ["localUser"] });
   queryClient.removeQueries({ queryKey: ["currentUserId"] });
   queryClient.removeQueries({ queryKey: ["authStatus"] });
   queryClient.removeQueries({ queryKey: ["userCompletionStatus"] });

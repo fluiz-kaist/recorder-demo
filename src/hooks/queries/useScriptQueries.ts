@@ -1,7 +1,7 @@
 // queries/useScriptQueries.ts - 스크립트 관련 쿼리들
 
 import { useQuery } from "@tanstack/react-query";
-import { useLocalUserQuery } from "@/hooks/queries/useUserQueries";
+import { useMinimalUserQuery } from "@/hooks/queries/useUserQueries";
 import { ScriptDataManager } from "@/utils/scriptDataManager";
 
 // 타입 정의
@@ -27,10 +27,10 @@ interface TaskInfo {
  * 스크립트 데이터가 로드되면 React Query 캐시에 저장됩니다.
  */
 export const useScriptDataQuery = (setNumber: number, setId: number = 1) => {
-  const { data: localUser } = useLocalUserQuery();
+  const { data: minimalUserInfo } = useMinimalUserQuery();
 
   return useQuery({
-    queryKey: ["scriptData", localUser?.id, setNumber, setId],
+    queryKey: ["scriptData", minimalUserInfo?.id, setNumber, setId],
     queryFn: async () => {
       // localStorage에서 스크립트 데이터를 직접 가져옵니다.
       // 이 함수는 서버 호출이 아니라 로컬 스토리지 읽기입니다.
@@ -47,7 +47,7 @@ export const useScriptDataQuery = (setNumber: number, setId: number = 1) => {
       return scriptData;
     },
     // localUser.id가 있을 때만 쿼리를 실행합니다.
-    enabled: !!localUser?.id,
+    enabled: !!minimalUserInfo?.id,
     // 스크립트 데이터는 자주 변하지 않으므로, 꽤 긴 staleTime을 설정합니다.
     staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
     // 데이터가 없으면 refetch 하지 않도록 설정

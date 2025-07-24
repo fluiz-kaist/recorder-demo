@@ -154,19 +154,6 @@ export const useHybridAuthMutation = (): UseMutationResult<
       );
 
       console.log("✅ 신규 사용자 - localStorage 저장 완료");
-
-      // // 신규 사용자 처리
-      // const userInfo = {
-      //   name: data.user.name,
-      //   completedAt: null,
-      //   scriptAssignments: [],
-      // };
-      // // 신규 사용자는 미인증 상태 유지
-      // updateAuthStatusCache(queryClient, false, null);
-      // // ✅ 로컬 사용자 정보만 업데이트
-      // queryClient.setQueryData(["localUser"], userInfo);
-
-      // console.log("✅ 신규 사용자 인증 성공:", data.user.name);
     },
     onError: (error) => {
       console.error("❌ 하이브리드 인증 실패:", error);

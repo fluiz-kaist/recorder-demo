@@ -9,7 +9,7 @@ import { getCookie } from "@/utils/auth";
  * localStorage에서는 id, userName, completedAt만 가져옴
  * main에서 로딩을 위해 사용함
  */
-export const useLocalUserQuery = (): UseQueryResult<
+export const useMinimalUserQuery = (): UseQueryResult<
   {
     id: string;
     userName?: string;
@@ -24,7 +24,7 @@ export const useLocalUserQuery = (): UseQueryResult<
     queryFn: async () => {
       if (fullUser) {
         console.log(
-          "useLocalUserQuery (derived): useUserQuery 데이터에서 추출",
+          "useMinimalUserQuery (derived): useUserQuery 데이터에서 추출",
           {
             id: fullUser.id,
             userName: fullUser.userName,
@@ -52,8 +52,6 @@ export const useLocalUserQuery = (): UseQueryResult<
  */
 export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
-  // const { data: localUser } = useLocalUserQuery();
-  // const localUser = getUserFromLocal();
 
   return useQuery({
     queryKey: ["user", userId || authStatus?.userId],
@@ -147,7 +145,7 @@ export const useUserCompletionStatusQuery = (
   userId?: string
 ): UseQueryResult<boolean, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
+  const { data: minimalUserInfo } = useMinimalUserQuery();
 
   return useQuery({
     queryKey: ["userCompletionStatus", userId || authStatus?.userId],
@@ -159,7 +157,7 @@ export const useUserCompletionStatusQuery = (
       }
 
       // 🔄 로컬에서 온보딩 완료 여부 확인 (localStorage에 있음)
-      if (localUser?.completedAt) {
+      if (minimalUserInfo?.completedAt) {
         return true;
       }
 
