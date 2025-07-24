@@ -130,43 +130,41 @@ export default async function handler(
       });
     }
 
-    // 4. 기존 userId 확인 또는 새로 생성
-    let userId = authorizedData.userId;
+    // 4. 기존 userId 확인 (생성하지 않음)
+    const userId = authorizedData.userId;
 
     if (!userId) {
-      // 안전한 userId 생성
-      userId = generateSecureUserId();
-      console.log(`🆕 새 userId 생성: ${userId}`);
-
-      // DB에 userId 업데이트
+      console.log(`👤 신규 사용자 - userId 없음 (동의 미완료)`);
+      // lastLogin만 업데이트 (userId 생성하지 않음)
       await updateDoc(authorizedDocRef, {
-        userId: userId,
         lastLogin: new Date().toISOString(),
-        loginAttempts: 0, // 성공 시 시도 횟수 초기화
+        loginAttempts: 0,
       });
     } else {
-      console.log(`🔄 기존 userId 사용: ${userId}`);
+      console.log(`🔄 기존 사용자 - userId 있음: ${userId}`);
       // 기존 userId 있으면 lastLogin만 업데이트
       await updateDoc(authorizedDocRef, {
         lastLogin: new Date().toISOString(),
-        loginAttempts: 0, // 성공 시 시도 횟수 초기화
+        loginAttempts: 0,
       });
     }
 
-    // 5. users 컬렉션에서 기존 사용자 데이터 확인
-    const userDocRef = doc(db, "usersV2", userId);
-    // console.log("기존 데이터 사용자 확인", userDocRef);
-    const existingUserDoc = await getDoc(userDocRef);
-    const isExistingUser = existingUserDoc.exists();
+    // 5. 기존 사용자 판단: authV2의 userId 필드로 판단
+    const isExistingUser = !!userId;
 
     let existingData: UserData | undefined;
-    if (isExistingUser) {
-      existingData = existingUserDoc.data() as UserData;
-      console.log(
-        `👤 기존 사용자 데이터 있음: completedAt=${!!existingData.completedAt}`
-      );
+    if (isExistingUser && userId) {
+      // 기존 사용자인 경우에만 usersV2 데이터 조회
+      const userDocRef = doc(db, "usersV2", userId);
+      const existingUserDoc = await getDoc(userDocRef);
+      if (existingUserDoc.exists()) {
+        existingData = existingUserDoc.data() as UserData;
+        console.log(
+          `👤 기존 사용자 데이터 있음: completedAt=${!!existingData.completedAt}`
+        );
+      }
     } else {
-      console.log(`👤 신규 사용자`);
+      console.log(`👤 신규 사용자 - 동의 필요`);
     }
 
     // // 6. httpOnly 쿠키 설정 (보안 강화)
@@ -183,12 +181,12 @@ export default async function handler(
     // 7. 성공 응답
     const { maskedName } = maskPersonalInfo(cleanName, cleanSocialNumber);
     console.log(
-      `🎉 인증 성공: ${maskedName}, userId: ${userId}, 방식: hash-based`
+      `🎉 등록된 사용자 인증 성공: ${maskedName}, userId: ${userId}, 방식: hash-based`
     );
 
     return res.status(200).json({
       success: true,
-      message: "인증 성공 (해시 기반)",
+      message: "등록된 사용자 인증 성공 (해시 기반)",
       method: "hash-based", // 구분을 위한 필드
       user: {
         name: cleanName, // 클라이언트에서 필요한 실제 이름

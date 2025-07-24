@@ -85,8 +85,8 @@ ConsentPageProps) {
     try {
       setIsRedirecting(true);
 
-      console.log("authData.userId?", authData.userId);
-      console.log("authdat?", authData);
+      // console.log("authData.userId?", authData.userId);
+      // console.log("authdat?", authData);
 
       // 바로 쿠키 생성 (동의는 이미 완료됨)
       await fetch("/api/auth/completeAuth", {
@@ -116,11 +116,11 @@ ConsentPageProps) {
   // 🟢 세션 스토리지 기반 인증 상태 확인으로 변경
   useEffect(() => {
     const pendingAuth = localStorage.getItem("pendingAuth");
-    console.log("pendingAuth?", pendingAuth);
+    // console.log("pendingAuth?", pendingAuth);
     if (pendingAuth) {
       try {
         const authData = JSON.parse(pendingAuth);
-        console.log("authData?", authData);
+        // console.log("authData?", authData);
         if (authData.isExistingUser) {
           console.log("기존 사용자 감지, 쿠키 생성 후 메인으로 이동");
           handleCompleteExistingUser(authData); // 🟢 함수 호출로 변경
