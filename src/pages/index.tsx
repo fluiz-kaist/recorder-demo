@@ -17,7 +17,8 @@ import {
 } from "@/hooks/mutations/useUserMutations";
 
 import { useHybridAuthMutation } from "@/hooks/mutations/useHybridAuth";
-import { useAssignScriptsMutation } from "../../useScriptMutations";
+
+import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { generateUserHash, generateSecureUserId } from "@/utils/hash";
 
 const ageGroups = [

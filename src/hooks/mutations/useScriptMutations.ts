@@ -1,9 +1,19 @@
 // mutations/useScriptMutations.ts - 스크립트 관련 뮤테이션들
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  UseMutationResult,
+} from "@tanstack/react-query";
 import { useLocalUserQuery } from "@/hooks/queries/useUserQueries";
 import { ScriptDataManager } from "@/utils/scriptDataManager";
-
+import {
+  ScriptType,
+  UserScriptAssignment,
+  FormalScript,
+  SituationalScript,
+  User,
+} from "@/types/firebase";
 // 타입 정의
 interface InitializeScriptsParams {
   userId: string;
@@ -19,6 +29,45 @@ interface InitializeScriptsResponse {
     situational: any[];
     formal: any[];
   };
+}
+
+/**
+ * 스크립트 할당 요청 데이터 타입
+ */
+interface AssignScriptsRequest {
+  userId: string;
+}
+
+/**
+ * 스크립트 할당 응답 데이터 타입 (assign.ts 기반)
+ */
+interface AssignScriptsResponse {
+  success: boolean;
+  message?: string;
+  scripts: {
+    formal: FormalScript[];
+    situational: SituationalScript[];
+  };
+  assignments: UserScriptAssignment[];
+}
+/**
+ * 스크립트 완료 응답 데이터 타입
+ */
+interface CompleteScriptResponse {
+  success: boolean;
+  message?: string;
+  user?: User; // 업데이트된 사용자 정보
+}
+/**
+ * 스크립트 완료 요청 데이터 타입 (수정된 complete.ts 기반)
+ */
+interface CompleteScriptRequest {
+  userId: string;
+  scriptId: number;
+  scriptType: ScriptType;
+  recordingId: string; // 오디오 업로드 후 받은 recording ID
+  audioUrl: string;
+  sttText: string;
 }
 
 /**
@@ -203,6 +252,167 @@ export const useRefreshScriptDataMutation = () => {
     },
     onError: (error) => {
       console.error("❌ 스크립트 데이터 새로고침 실패:", error);
+    },
+  });
+};
+/////////
+
+/**
+ * 스크립트 완료 처리 뮤테이션 (수정된 complete.ts 사용)
+ * 오디오 업로드 후 호출하여 스크립트 완료 상태로 변경
+ */
+export const useCompleteScriptMutation = (): UseMutationResult<
+  CompleteScriptResponse,
+  Error,
+  CompleteScriptRequest
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      scriptId,
+      scriptType,
+      recordingId,
+      audioUrl,
+      sttText,
+    }: CompleteScriptRequest): Promise<CompleteScriptResponse> => {
+      const response = await fetch("/api/scripts/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          scriptId,
+          scriptType,
+          recordingId,
+          audioUrl,
+          sttText,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "스크립트 완료 처리에 실패했습니다.");
+      }
+
+      return data as CompleteScriptResponse;
+    },
+    onSuccess: (data, variables) => {
+      if (data.user) {
+        // 업데이트된 사용자 정보로 직접 캐시 업데이트
+        queryClient.setQueryData(["user", variables.userId], data.user);
+        queryClient.setQueryData(["localUser"], data.user);
+
+        // 사용자 스크립트 할당 정보도 직접 업데이트
+        queryClient.setQueryData(
+          ["userScriptAssignments", variables.userId],
+          data.user.scriptAssignments
+        );
+
+        // localStorage의 사용자 정보도 업데이트
+        localStorage.setItem("userInfo", JSON.stringify(data.user));
+      }
+
+      // assignedScripts 쿼리도 업데이트 (할당 정보 변경됨)
+      const existingAssignedScripts =
+        queryClient.getQueryData<AssignScriptsResponse>([
+          "assignedScripts",
+          variables.userId,
+        ]);
+      if (existingAssignedScripts && data.user) {
+        const updatedAssignedScripts: AssignScriptsResponse = {
+          ...existingAssignedScripts,
+          assignments: data.user.scriptAssignments,
+        };
+        queryClient.setQueryData(
+          ["assignedScripts", variables.userId],
+          updatedAssignedScripts
+        );
+      }
+
+      console.log("스크립트 완료 처리 완료:", variables);
+    },
+    onError: (error) => {
+      console.error("스크립트 완료 처리 중 오류:", error);
+    },
+  });
+};
+
+/**
+ * 스크립트 완료 응답 데이터 타입
+ */
+interface CompleteScriptResponse {
+  success: boolean;
+  message?: string;
+  user?: User; // 업데이트된 사용자 정보
+}
+
+/**
+ * 사용자에게 스크립트 할당 뮤테이션
+ * assign.ts의 /api/scripts/assign 엔드포인트 사용
+ */
+export const useAssignScriptsMutation = (): UseMutationResult<
+  AssignScriptsResponse,
+  Error,
+  AssignScriptsRequest
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+    }: AssignScriptsRequest): Promise<AssignScriptsResponse> => {
+      console.log("요청1");
+      const response = await fetch("/api/scripts/assign", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "스크립트 할당에 실패했습니다.");
+      }
+
+      return data as AssignScriptsResponse;
+    },
+    onSuccess: (data, variables) => {
+      // 스크립트 내용을 localStorage에 저장
+      if (data.success && data.scripts) {
+        Object.entries(data.scripts).forEach(([scriptType, scripts]) => {
+          if (Array.isArray(scripts) && scripts.length > 0) {
+            localStorage.setItem(
+              `scriptContents_${scriptType}`,
+              JSON.stringify(scripts)
+            );
+          }
+        });
+      }
+
+      // 직접 캐시 업데이트 (무효화 대신)
+      queryClient.setQueryData(["assignedScripts", variables.userId], data);
+
+      // 로컬 스크립트 캐시도 직접 업데이트
+      queryClient.setQueryData(["allLocalScripts"], {
+        formal: data.scripts.formal || [],
+        situational: data.scripts.situational || [],
+      });
+
+      // 개별 타입별 로컬 스크립트도 업데이트
+      Object.entries(data.scripts).forEach(([scriptType, scripts]) => {
+        queryClient.setQueryData(["localScripts", scriptType], scripts);
+      });
+
+      console.log("스크립트 할당 완료:", data);
+    },
+    onError: (error) => {
+      console.error("스크립트 할당 중 오류:", error);
     },
   });
 };

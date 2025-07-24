@@ -27,7 +27,7 @@ interface TaskInfo {
  * 스크립트 데이터가 로드되면 React Query 캐시에 저장됩니다.
  */
 export const useScriptDataQuery = (setNumber: number, setId: number = 1) => {
-  const {data: localUser} = useLocalUserQuery();
+  const { data: localUser } = useLocalUserQuery();
 
   return useQuery({
     queryKey: ["scriptData", localUser?.id, setNumber, setId],
@@ -155,5 +155,51 @@ export const useScriptStatsQuery = (setNumber: number, setId: number = 1) => {
     },
     enabled: !!scriptDataQuery.data,
     staleTime: 10 * 60 * 1000, // 10분간 캐시
+  });
+};
+/**
+ * 모든 타입의 로컬 저장된 스크립트 조회
+ * @returns UseQueryResult<{ formal: FormalScript[];SituationalScript[] } | null, Error>
+ */
+export const useAllLocalScriptsQuery = (): UseQueryResult<
+  {
+    formal: FormalScript[];
+    situational: SituationalScript[];
+  } | null,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["allLocalScripts"],
+    queryFn: async (): Promise<{
+      formal: FormalScript[];
+      situational: SituationalScript[];
+    } | null> => {
+      if (typeof window === "undefined") return null;
+
+      const formal = localStorage.getItem("scriptContents_formal");
+      const qaScenario = localStorage.getItem("scriptContents_qaScenario");
+      const situational = localStorage.getItem("scriptContents_situational");
+
+      if (!formal && !qaScenario && !situational) return null;
+
+      try {
+        return {
+          formal: formal ? JSON.parse(formal) : [],
+          qaScenario: qaScenario ? JSON.parse(qaScenario) : [],
+          situational: situational ? JSON.parse(situational) : [],
+        };
+      } catch (error) {
+        console.error("로컬 스크립트 파싱 오류:", error);
+        localStorage.removeItem("scriptContents_formal");
+        localStorage.removeItem("scriptContents_qaScenario");
+        localStorage.removeItem("scriptContents_situational");
+        return null;
+      }
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 };

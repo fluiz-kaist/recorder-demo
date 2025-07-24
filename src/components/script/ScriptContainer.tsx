@@ -7,12 +7,13 @@ import { ScriptType, SituationalScript, FormalScript } from "@/types/firebase";
 import {
   useLocalScriptsByTypeQuery,
   useScriptProgressByType,
-} from "../../../useScriptQueries";
+} from "@/hooks/queries/useScriptQueries";
 import {
   useAuthStatusQuery,
   useUserScriptAssignmentsQuery,
 } from "@/hooks/queries/useUserQueries";
-import { useAssignScriptsMutation } from "../../../useScriptMutations";
+
+import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 
