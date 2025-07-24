@@ -16,7 +16,7 @@ import {
   useUpdateScriptAssignmentsMutation,
 } from "@/hooks/mutations/useUserMutations";
 
-import { useHybridAuthMutation } from "@/hooks/mutations/useHybridAuth";
+import { useAuthMutation } from "@/hooks/mutations/useAuth";
 
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { generateUserHash, generateSecureUserId } from "@/utils/hash";
@@ -49,7 +49,7 @@ ConsentPageProps) {
   const { minimalUserInfo } = useMinimalUserQuery();
 
   // 뮤테이션 훅들
-  const verifyUserMutation = useHybridAuthMutation();
+  const verifyUserMutation = useAuthMutation();
   const registerUserMutation = useRegisterUserMutation();
   const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
