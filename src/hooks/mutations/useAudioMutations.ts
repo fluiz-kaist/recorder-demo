@@ -4,14 +4,8 @@ import {
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
-import {
-//   AudioUploadRequest,
-  AudioUploadResponse,
-  AudioRecording,
-  ScriptType,
-  AudioFormat,
-} from "@/types/firebase";
-
+import { AudioRecording, ScriptType, AudioFormat } from "@/types/firebase";
+import { AudioUploadResponse } from "@/types/api";
 /**
  * 오디오 업로드 뮤테이션 요청 데이터 (클라이언트용)
  */

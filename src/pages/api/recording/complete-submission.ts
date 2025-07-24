@@ -21,34 +21,10 @@ import {
   increment,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-
-// 요청 데이터 타입 정의
-interface CompleteSubmissionRequest {
-  userId: string;
-  scriptId: string;
-  scriptType: string;
-  audioUrl: string;
-  filePath: string;
-  sttText: string;
-  audioMetadata: {
-    documentId: string;
-    fileName: string;
-    duration: number;
-    uploadedAt: string;
-    fileSize: number;
-    scriptInfo?: any;
-    fileCategory?: string;
-    category: string;
-    searchKey: string;
-  };
-}
-
-// 응답 데이터 타입 정의
-interface CompleteSubmissionResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
+import {
+  CompleteSubmissionRequest,
+  CompleteSubmissionResponse,
+} from "@/types/api";
 
 export default async function handler(
   req: NextApiRequest,

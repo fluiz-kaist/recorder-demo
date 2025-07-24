@@ -4,16 +4,11 @@ import {
   ScriptType,
   SituationalScript,
   FormalScript,
-  QAScenarioScript,
   TutorialScript,
 } from "@/types/firebase";
 import styles from "@/styles/ScriptRecording.module.css";
 
-type AnyScript =
-  | SituationalScript
-  | FormalScript
-  | QAScenarioScript
-  | TutorialScript;
+type AnyScript = SituationalScript | FormalScript | TutorialScript;
 
 interface ScriptRendererProps {
   script: AnyScript;
@@ -76,30 +71,6 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
     </>
   );
 
-  // QA Scenario Script 렌더링
-  const renderQAScenarioScript = (script: QAScenarioScript) => (
-    <>
-      {/* <div className={styles.categoryBadge}>
-        {getTypeIcon(ScriptType.QA_SCENARIO)} 질의응답
-      </div> */}
-      <div className={styles.titleSection}>
-        {/* <h1 className={styles.title}>질의응답 시나리오</h1> */}
-        {isCompleted && (
-          <div className={styles.completedBadge}>✅ 제출완료</div>
-        )}
-      </div>
-      <div className={styles.qaSection}>
-        <div className={styles.situationLabel}>상황</div>
-        <div className={styles.situation}>{script.situation}</div>
-        <div className={styles.descriptionLabel}>상세 설명</div>
-        <div className={styles.qaDescription}>{script.description}</div>
-        {/* <div className={styles.qaInstruction}>
-          이 상황에서 어떻게 대답하시겠어요?
-        </div> */}
-      </div>
-    </>
-  );
-
   // 튜토리얼 렌더링
   const renderTutorial = (script: TutorialScript) => (
     <>
@@ -131,8 +102,6 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
       return renderSituationalScript(script as SituationalScript);
     case ScriptType.FORMAL:
       return renderFormalScript(script as FormalScript);
-    case ScriptType.QA_SCENARIO:
-      return renderQAScenarioScript(script as QAScenarioScript);
 
     case ScriptType.TUTORIAL:
       return renderTutorial(script as TutorialScript);

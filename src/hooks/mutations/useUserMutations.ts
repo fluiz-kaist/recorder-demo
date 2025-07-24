@@ -12,18 +12,7 @@ import {
   clearUserRelatedCache,
 } from "@/utils/queryCache";
 import { clearLocalUserData } from "@/utils/localStorage";
-
-/**
- * 사용자 등록 요청 데이터 타입
- */
-interface RegisterUserRequest {
-  userId: string;
-  gender: "남성" | "여성";
-  ageGroup: string;
-  hasConsented: boolean;
-  userName: string;
-  authorizedUserId: string;
-}
+import { RegisterUserRequest } from "@/types/api";
 
 /**
  * 사용자 정보 업데이트 요청 데이터 타입
@@ -91,6 +80,7 @@ export const useVerifyAuthorizedUserMutation = () => {
       };
 
       // 신규 사용자 캐시 업데이트
+      console.log("신규사용자캐시업뎃");
       updateAuthStatusCache(queryClient, true, data.user.userId);
       queryClient.setQueryData(["localUser"], userInfo);
 

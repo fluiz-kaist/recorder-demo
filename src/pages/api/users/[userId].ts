@@ -117,17 +117,92 @@ export default async function handler(
       // 현재 한국 시간
       const now = getKoreanTime();
 
+      // 🆕 새로운 데이터 구조로 초기 participation 설정
+      const initialParticipation = {
+        currentSetNumber: 1, // 첫 번째 세트부터 시작
+        totalCompletedSets: 0, // 아직 완료된 세트 없음
+        maxAllowedSets: 3, // 최대 3세트 참가 가능 (설정값)
+
+        // 기본 진행 방식 (사용자가 나중에 변경 가능)
+        preferredMode: "mixed" as const, // 혼합 모드가 기본값
+
+        // 아직 세트가 할당되지 않은 상태
+        sets: [], // 빈 배열로 시작
+
+        // 초기 통계
+        stats: {
+          totalRecordings: 0,
+          totalApprovedRecordings: 0,
+          averageQualityScore: 0,
+          firstParticipationAt: "", // 첫 세트 시작 시 설정될 예정
+          lastParticipationAt: "",
+        },
+      };
+
+      // 🆕 현재 상태 초기화
+      const initialCurrentStatus = {
+        isTutorialCompleted: false, // 튜토리얼 미완료
+        canStartRecording: false, // 아직 세트 할당 안됨
+
+        // 다음 작업은 아직 없음 (세트 할당 후 결정)
+        nextTask: null,
+
+        // 초기 진행률
+        progress: {
+          completedPercentage: 0,
+          submittedPercentage: 0,
+          approvedPercentage: 0,
+        },
+
+        // 대기 상태
+        pendingApproval: false,
+        canStartNextSet: false, // 첫 세트도 아직 할당 안됨
+      };
+
+      // 🆕 초기 설정값
+      const initialSettings = {
+        autoSubmitAfterRecording: false, // 수동 제출이 기본값
+        requireManualReview: true, // 수동 검토가 기본값 (나중에 자동화 가능)
+        allowAutoApproval: false, // 자동 승인 비활성화 (안전을 위해)
+      };
+
       // 새 사용자 데이터 (모든 타임스탬프를 string으로 통일)
       const newUserData: User = {
+        // 기본 정보
         id: userId,
         gender,
         ageGroup,
         userName,
         authorizedUserId,
         hasConsented,
+
+        // 시간 정보
         createdAt: now,
         lastAccessAt: now,
-        completedAt: completedAt ? now : undefined,
+        completedAt: completedAt ? now : undefined, // 온보딩 완료 시점
+
+        // 🎯 새로운 참가 관리 구조
+        participation: initialParticipation,
+
+        // 🎯 현재 상태
+        currentStatus: initialCurrentStatus,
+
+        // 🎯 설정
+        settings: initialSettings,
+
+        // 🔄 레거시 호환용 (기존 코드들이 아직 이 필드를 참조할 수 있음)
+        recordingStatus: {
+          isTutorialCompleted: false,
+          isAllRecordingCompleted: false,
+          allRecordingCompletedAt: "",
+          progress: {
+            totalAssigned: 0,
+            tutorialCompleted: 0,
+            mainSituationalCompleted: 0,
+            mainFormalCompleted: 0,
+            lastRecordedAt: "",
+          },
+        },
         scriptAssignments: [], // 빈 배열로 초기화
       };
 

@@ -1,7 +1,3 @@
-// types/firebase.ts
-///// upgrade ver
-
-// 스크립트 종류 - Firebase 컬렉션명과 일치
 export enum ScriptType {
   FORMAL = "formal", // 정식/공식 (이미지에서 보이는 것)
   QA_SCENARIO = "qaScenario", // 질의응답 시나리오
@@ -32,28 +28,6 @@ export enum AudioFormat {
   WEBM = "webm",
 }
 
-export interface FormalScript {
-  id: number;
-  category: string;
-  intent: string;
-  title: string;
-  formalSentence: string;
-}
-
-export interface QAScenarioScript {
-  id: number;
-  situation: string;
-  description: string;
-}
-
-export interface SituationalScript {
-  id: number;
-  category: string;
-  intent: string;
-  title: string;
-  description: string;
-}
-
 export interface TutorialScript {
   id: number;
   category: string;
@@ -63,8 +37,23 @@ export interface TutorialScript {
   explain: string;
 }
 
-// 스크립트 원본 데이터 유니온 타입
-export type ScriptData = FormalScript | QAScenarioScript | SituationalScript;
+// export interface FormalScript {
+//   id: number;
+//   category: string;
+//   intent: string;
+//   title: string;
+//   formalSentence: string;
+// }
+
+// export interface SituationalScript {
+//   id: number;
+//   category: string;
+//   intent: string;
+//   title: string;
+//   description: string;
+// }
+
+
 
 // 스크립트 단위 타입 (사용자 진행 상황 관리용)
 export interface Script {
@@ -90,6 +79,8 @@ export interface AudioRecording {
   scriptId: number; // 스크립트 ID (0, 1, 2...)
   scriptType: ScriptType; // 스크립트 타입
 
+  createdAt: string;
+
   // 오디오 파일 정보
   audioUrl: string; // Firebase Storage URL
   fileName: string; // 저장된 파일명
@@ -113,36 +104,22 @@ export interface AudioRecording {
   deviceInfo?: string; // 녹음 장치 정보
   browserInfo?: string; // 브라우저 정보
   quality?: "high" | "medium" | "low"; // 음질 품질
+
+  //관리자용
+  // 품질 및 검토 관련 (관리자 기능)
+  qualityScore?: number;
+  isApproved?: boolean;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
+
+  //호환용?
+  filePath?: string;
 }
 
-// 오디오 업로드 요청 데이터
-export interface AudioUploadRequest {
-  userId: string;
-  scriptId: number;
-  scriptType: ScriptType;
-  audioBlob: Blob;
-  duration: number;
-  audioFormat: AudioFormat;
-  deviceInfo?: string;
-  browserInfo?: string;
-}
-
-// 오디오 업로드 응답 데이터
-export interface AudioUploadResponse {
-  success: boolean;
-  message?: string;
-  recordingId: string;
-  audioUrl: string;
-  fileName: string;
-  fileSize: number;
-  sttText?: string; // STT 결과 (즉시 처리된 경우)
-}
-
-// STT 처리 결과
-export interface STTResult {
-  text: string;
-  confidence: number;
-  processedAt: string;
+// 통계를 위한 타입
+export interface ScriptUsage {
+  [scriptId: number]: boolean; // "0": true, "1": false 형태
 }
 
 // 유저별 스크립트 할당 정보
@@ -156,84 +133,283 @@ export interface UserScriptAssignment {
   assignedAt: string; // 할당 시간
 }
 
-// 유저 데이터 타입
-export interface User {
-  // 기본 식별 정보
-  id: string;
+// // 유저 데이터 타입
+// export interface User {
+//   // 기본 식별 정보
+//   id: string;
+//   //선동록한 정보 collection key용
+//   authorizedUserId: string;
+//   userName?: string;
 
-  // 개인 정보 (온보딩에서 수집)
+//   // 개인 정보 (온보딩에서 수집)
+//   gender: "남성" | "여성";
+//   ageGroup: string;
+//   hasConsented: boolean;
+
+//   // 시간 정보
+//   createdAt: string; // 계정 생성 시간
+//   completedAt?: string; // 온보딩 완료 시간
+//   lastAccessAt: string; // 최종 접속 시간
+//   // 🆕 녹음 작업 관련 진행 상태
+//   recordingStatus: {
+//     isTutorialCompleted: boolean; // 튜토리얼 완료 여부
+//     isAllRecordingCompleted: boolean; // 전체 녹음 작업 완료 여부
+//     allRecordingCompletedAt?: string; // 전체 녹음 완료 시점
+
+//     // 진행 상황 요약 (쿼리 최적화용)
+//     progress: {
+//       totalAssigned: number; // 할당된 총 스크립트 수
+//       tutorialCompleted: number; // 완료된 튜토리얼 수
+//       mainSituationalCompleted: number; // 완료된 본 작업(상황)수
+//       mainFormalCompeted: number; //완료된 본 작업(정형) 수
+//       lastRecordedAt?: string; // 마지막 녹음 시점
+//     };
+//   };
+
+//   // 스크립트 관련 (기존 유지하되 확장)
+//   scriptAssignments: UserScriptAssignment[];
+
+//   // 기존 API 호환용 필드들
+//   completedScripts?: {
+//     [scriptType: string]: string[];
+//   };
+//   totalCompleted?: number;
+// }
+
+// types/firebase.ts - 실제 요구사항 반영
+
+// 개별 녹음 작업 타입
+export interface RecordingTask {
+  taskKey: string; // "건강-건강정보-1"
+  taskType: "situational" | "formal";
+  setId?: number; // 정형발화만 세트 ID 보유
+  recordingId?: string; // 실제 녹음 파일 ID
+
+  // 녹음 상태
+  status:
+    | "not_started"
+    | "recording"
+    | "completed"
+    | "submitted"
+    | "approved"
+    | "rejected";
+
+  // 시간 정보
+  assignedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  submittedAt?: string;
+
+  // 녹음 품질 정보
+  quality?: {
+    duration: number; // 초 단위
+    volumeLevel: number; // 평균 음량
+    silenceRatio: number; // 무음 비율
+    isValidRecording: boolean; // 기본 품질 체크 통과 여부
+  };
+
+  // 승인/반려 정보
+  approval?: {
+    status: "pending" | "approved" | "rejected";
+    checkedBy?: "auto" | string; // "auto" 또는 관리자 ID
+    checkedAt?: string;
+    reason?: string; // 반려 시 사유
+    autoCheckResults?: {
+      durationOk: boolean;
+      volumeOk: boolean;
+      silenceOk: boolean;
+    };
+  };
+}
+
+// 진행 방식 타입
+export type ProgressMode = "mixed" | "separated";
+// mixed: 상황발화 → 정형발화 → 상황발화 → 정형발화...
+// separated: 상황발화 전체 → 정형발화 전체
+
+// 참가 세트 정보
+export interface ParticipationSet {
+  setNumber: number; // 1, 2, 3...
+  setId: number; // 정형발화 세트 ID (1, 2)
+
+  // 진행 설정
+  progressMode: ProgressMode;
+
+  // 할당된 작업들
+  tasks: {
+    situational: RecordingTask[]; // 26개 고정
+    formal: RecordingTask[]; // 세트별로 다름
+  };
+
+  // 진행 상태
+  progress: {
+    totalTasks: number; // 상황발화 26 + 정형발화 수
+    completedTasks: number;
+    submittedTasks: number;
+    approvedTasks: number;
+
+    // 타입별 진행상황
+    situational: {
+      total: number;
+      completed: number;
+      submitted: number;
+      approved: number;
+    };
+    formal: {
+      total: number;
+      completed: number;
+      submitted: number;
+      approved: number;
+    };
+
+    // 현재 진행 지점 (mixed mode용)
+    currentTaskIndex?: number;
+    currentTaskType?: "situational" | "formal";
+  };
+
+  // 세트 상태
+  status:
+    | "assigned"
+    | "in_progress"
+    | "completed"
+    | "submitted"
+    | "approved"
+    | "rejected";
+  assignedAt: string;
+  startedAt?: string;
+  completedAt?: string; // 모든 녹음 완료
+  submittedAt?: string; // 제출 완료
+  approvedAt?: string; // 승인 완료
+
+  // 최종 승인 정보
+  finalApproval?: {
+    status: "pending" | "approved" | "rejected";
+    checkedBy?: string; // 관리자 ID
+    checkedAt?: string;
+    notes?: string;
+
+    // 자동 체크 결과
+    autoCheckSummary?: {
+      totalTasks: number;
+      autoApprovedTasks: number;
+      manualReviewRequired: number;
+      overallQualityScore: number; // 0-100
+    };
+  };
+}
+
+// 메인 User 타입
+export interface User {
+  // 기본 정보
+  id: string;
+  authorizedUserId: string;
+  userName?: string;
   gender: "남성" | "여성";
   ageGroup: string;
   hasConsented: boolean;
 
   // 시간 정보
-  createdAt: string; // 계정 생성 시간
-  completedAt?: string; // 온보딩 완료 시간
-  lastAccessAt: string; // 최종 접속 시간
+  createdAt: string;
+  completedAt?: string; // 온보딩 완료
+  lastAccessAt: string;
 
-  // 스크립트 관련
-  scriptAssignments: UserScriptAssignment[];
+  // 🎯 참가 관리
+  participation: {
+    // 현재 상태
+    currentSetNumber: number; // 현재 진행 중인 세트
+    totalCompletedSets: number; // 완료된 세트 수
+    maxAllowedSets: number; // 최대 참가 가능 횟수
 
-  //
-  userName?: string;
-  authorizedUserId:string;
-}
+    // 진행 방식 설정 (사용자가 선택 가능)
+    preferredMode: ProgressMode;
 
-// 통계를 위한 타입
-export interface ScriptUsage {
-  [scriptId: number]: boolean; // "0": true, "1": false 형태
-}
+    // 세트별 데이터
+    sets: ParticipationSet[];
 
-interface ScriptTypeStats {
-  total: number; // 전체 스크립트 개수
-  available: number; // 사용 가능한 개수 (status: "Unassigned")
-  used: number; // 사용된 개수 (status: "assigned" or "completed")
-}
-
-export interface ScriptStats {
-  formal: ScriptTypeStats;
-  qaScenario: ScriptTypeStats;
-  situational: ScriptTypeStats;
-}
-
-// 오디오 통계 타입
-export interface AudioStats {
-  totalRecordings: number; // 전체 녹음 개수
-  totalDuration: number; // 전체 녹음 시간 (초)
-  averageDuration: number; // 평균 녹음 시간 (초)
-  totalFileSize: number; // 전체 파일 크기 (bytes)
-  statusBreakdown: {
-    [key in AudioStatus]: number; // 상태별 개수
+    // 전체 통계
+    stats: {
+      totalRecordings: number;
+      totalApprovedRecordings: number;
+      averageQualityScore: number;
+      firstParticipationAt?: string;
+      lastParticipationAt?: string;
+    };
   };
-  formatBreakdown: {
-    [key in AudioFormat]: number; // 포맷별 개수
+
+  // 🎯 현재 세트의 빠른 접근용 (쿼리 최적화)
+  currentStatus: {
+    isTutorialCompleted: boolean; // 튜토리얼 완료 여부
+    canStartRecording: boolean; // 녹음 시작 가능 여부
+
+    // 현재 진행 지점
+    nextTask?: {
+      taskKey: string;
+      taskType: "situational" | "formal";
+      index: number;
+    };
+
+    // 현재 세트 진행률
+    progress: {
+      completedPercentage: number;
+      submittedPercentage: number;
+      approvedPercentage: number;
+    };
+
+    // 대기 상태
+    pendingApproval: boolean; // 승인 대기 중
+    canStartNextSet: boolean; // 다음 세트 시작 가능
   };
+
+  // 설정
+  settings: {
+    autoSubmitAfterRecording: boolean; // 녹음 완료 후 자동 제출
+    requireManualReview: boolean; // 수동 검토 필요 여부
+    allowAutoApproval: boolean; // 자동 승인 허용 여부
+  };
+
+  // 레거시 호환용 (기존 코드와의 호환성)
+  recordingStatus?: {
+    isTutorialCompleted: boolean;
+    isAllRecordingCompleted: boolean;
+    allRecordingCompletedAt?: string;
+    progress: {
+      totalAssigned: number;
+      tutorialCompleted: number;
+      mainSituationalCompleted: number;
+      mainFormalCompleted: number;
+      lastRecordedAt?: string;
+    };
+  };
+  scriptAssignments?: any[]; // 기존 호환용
 }
 
-// 녹음 완료 후 관련 (스크립트 완료 처리용)
-export interface CompleteScriptRequest {
-  userId: string; // 사용자 ID
-  scriptId: string; // 스크립트 ID (0, 1, 2...)
-  scriptType: ScriptType; // "formal" | "qaScenario" | "situational"
-  recordingId: string; // 오디오 녹음 기록 ID
-  audioUrl: string; // 녹음된 오디오 파일 URL
-  sttText: string; // google-transcribe 변환된 텍스트
+// 상황발화 데이터 타입 (고정 26개)
+export interface SituationalScript {
+  service_name: string;
+  service_target: string;
+  task_name: string;
+  task_key: string;
+  main_content: string;
+  detailed_instruction: string;
+  id: number;
 }
 
-// 스크립트 정보 (저장을 위해)
-export interface ScriptInfo {
-  scriptId: string;
-  category: string;
-  intent: string;
-  title: string;
-  description: string;
-  type: string;
+// 정형발화 데이터 타입 (세트별로 다름)
+export interface FormalScript {
+  service_name: string;
+  formal_script: string;
+  "set-id": number;
+  service_target: string;
+  task_name: string;
+  task_key: string;
+  id: string;
 }
 
-// 사용자 등록 요청
-export interface RegisterUserRequest {
-  userId: string;
-  gender: "남성" | "여성";
-  ageGroup: string;
-  hasConsented: boolean;
-}
+// 정형발화 세트 맵핑 타입
+export type FormalScriptSets = {
+  [taskKey: string]: {
+    [setId: string]: FormalScript[];
+  };
+};
+// 스크립트 원본 데이터 유니온 타입
+export type ScriptData = FormalScript | SituationalScript;

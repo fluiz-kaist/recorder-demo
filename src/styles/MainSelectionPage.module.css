@@ -7,7 +7,7 @@
 }
 
 .content {
-  max-width: 480px;
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
 }
@@ -31,17 +31,6 @@
   color: var(--color-text-muted);
   margin: 0;
   line-height: var(--line-height-normal);
-}
-
-/* 카드 컨테이너 */
-.cardContainer {
-  display: grid;
-  grid-template-columns: 1fr; /* 1열 */
-  grid-template-rows: repeat(3, 1fr); /* 3행 */
-  gap: var(--space-lg);
-  margin-bottom: var(--space-3xl);
-  /* 필요하다면 최소 높이 설정 */
-  min-height: 600px; /* 옵션: 전체 높이 조정 */
 }
 
 /* 카드 공통 스타일 - Grid 아이템 조정 */
@@ -317,5 +306,305 @@
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+/* MainSelectionPage.module.css에 추가할 스타일들 */
+
+/* 전체 진행률 표시 */
+.overallProgress {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background-color: #e5e7eb;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  transition: width 0.5s ease;
+}
+
+.progressText {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #374151;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* 카드 컨테이너 그리드 레이아웃 */
+.cardContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* 카드 컨테이너 */
+.cardContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-3xl);
+  min-height: 200px; /* 필요시 유지 */
+}
+
+/* 서비스별 카드 색상 */
+.cardTutorial {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+}
+
+.cardYellow {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+}
+
+.cardPurple {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border: 2px solid #8b5cf6;
+}
+
+.cardRed {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #ef4444;
+}
+
+.cardTeal {
+  background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+  border: 2px solid #14b8a6;
+}
+
+.cardIndigo {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border: 2px solid #6366f1;
+}
+
+/* 카드 상태별 스타일 */
+.cardCompleted {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border: 2px solid #10b981 !important;
+}
+
+.cardCompleted .cardTitle {
+  color: #065f46 !important;
+}
+
+.cardCompleted .cardDescription {
+  color: #047857 !important;
+}
+
+.cardInProgress {
+  position: relative;
+}
+
+.cardInProgress::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  background: #f59e0b;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.cardDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%) !important;
+  border: 2px solid #e5e7eb !important;
+}
+
+.cardDisabled:hover {
+  transform: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.cardDisabled .cardTitle {
+  color: #6b7280 !important;
+}
+
+.cardDisabled .cardDescription {
+  color: #9ca3af !important;
+}
+
+/* 서비스별 진행률 바 */
+.serviceProgress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.5rem 0;
+}
+
+.serviceProgressBar {
+  flex: 1;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.serviceProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  transition: width 0.3s ease;
+}
+
+.serviceProgressText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* 카드 호버 효과 개선 */
+.card:not(.cardDisabled):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.cardTutorial:hover {
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+}
+
+.cardGreen:hover {
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+}
+
+.cardBlue:hover {
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.cardYellow:hover {
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+}
+
+.cardPurple:hover {
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+}
+
+.cardRed:hover {
+  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+}
+
+.cardTeal:hover {
+  box-shadow: 0 10px 25px rgba(20, 184, 166, 0.3);
+}
+
+.cardIndigo:hover {
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+}
+
+/* 완료 축하 메시지 */
+.congratulationsMessage {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.congratulationsMessage h3 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-size: 1.5rem;
+}
+
+.congratulationsMessage p {
+  margin: 0;
+  color: #047857;
+  font-size: 1.1rem;
+}
+
+/* 경고 메시지 스타일 개선 */
+.warningMessage {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.warningMessage p {
+  margin: 0;
+  color: #92400e;
+  font-weight: 500;
+}
+
+/* 펄스 애니메이션 */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  /* .cardContainer {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  } */
+
+  .overallProgress {
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .congratulationsMessage {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .congratulationsMessage h3 {
+    font-size: 1.25rem;
+  }
+
+  .congratulationsMessage p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardContainer {
+    gap: 0.75rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .cardTitle {
+    font-size: 1rem;
+  }
+
+  .cardDescription {
+    font-size: 0.85rem;
+  }
+
+  .serviceProgress {
+    margin: 0.5rem 0;
   }
 }

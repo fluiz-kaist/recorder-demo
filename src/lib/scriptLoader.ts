@@ -1,16 +1,11 @@
 // lib/scriptLoader.ts
-import {
-  SituationalScript,
-  FormalScript,
-  QAScenarioScript,
-} from "@/types/firebase";
+import { SituationalScript, FormalScript } from "@/types/firebase";
 import fs from "fs";
 import path from "path";
 
 // 서버 메모리 캐시
 let situationalScriptsCache: SituationalScript[] | null = null;
 let formalScriptsCache: FormalScript[] | null = null;
-let qaScenarioScriptsCache: QAScenarioScript[] | null = null;
 
 function getDataFilePath(filename: string): string {
   // 여러 가능한 경로를 시도
@@ -70,30 +65,10 @@ export async function loadFormalScripts(): Promise<FormalScript[]> {
   }
 }
 
-export async function loadQAScenarioScripts(): Promise<QAScenarioScript[]> {
-  if (qaScenarioScriptsCache) {
-    return qaScenarioScriptsCache;
-  }
-
-  try {
-    const filePath = getDataFilePath("qaScenarioScripts.json");
-    const fileContent = fs.readFileSync(filePath, "utf8");
-    const parsedData = JSON.parse(fileContent) as QAScenarioScript[];
-    qaScenarioScriptsCache = parsedData;
-    console.log(
-      `✅ Loaded ${parsedData.length} QA scenario scripts from: ${filePath}`
-    );
-    return parsedData;
-  } catch (error) {
-    console.error("❌ Error loading QA scenario scripts:", error);
-    throw new Error("Failed to load QA scenario scripts");
-  }
-}
 export async function loadAllScripts() {
   const [situational, formal, qaScenario] = await Promise.all([
     loadSituationalScripts(),
     loadFormalScripts(),
-    loadQAScenarioScripts(),
   ]);
 
   return {
@@ -111,7 +86,7 @@ export function getRandomItems<T>(items: T[], count: number): T[] {
 
 // 스크립트 ID로 특정 스크립트 찾기
 export function findScriptById(
-  scripts: (SituationalScript | FormalScript | QAScenarioScript)[],
+  scripts: (SituationalScript | FormalScript)[],
   id: number
 ) {
   return scripts.find((script) => script.id === id);

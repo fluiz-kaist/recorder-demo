@@ -8,18 +8,17 @@ import {
   ScriptType,
   SituationalScript,
   FormalScript,
-  QAScenarioScript,
   AudioFormat,
   TutorialScript,
 } from "@/types/firebase";
 import { useMobileOptimizedRecorder } from "@/hooks/useMobileOptimizedRecorder";
 import SuccessPopup from "@/components/SuccessPopup";
 import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
-import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
+import { useCompleteScriptMutation } from "../../useScriptMutations";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
 import SttWhisper from "@/components/stt/SttWhisper";
-import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
+import { useAssignScriptsMutation } from "../../useScriptMutations";
+import { useAllLocalScriptsQuery } from "../../useScriptQueries";
 // 🎯 간단한 품질 검증 결과 인터페이스
 interface SimpleQualityResult {
   isGoodQuality: boolean;
@@ -33,11 +32,7 @@ interface SimpleQualityResult {
 // Props 인터페이스 수정
 interface VoiceRecorderProps {
   scriptType: ScriptType;
-  scriptData:
-    | SituationalScript
-    | FormalScript
-    | QAScenarioScript
-    | TutorialScript;
+  scriptData: SituationalScript | FormalScript | TutorialScript;
   onRecordingComplete?: () => void;
   isCompltedScript?: boolean;
   isTutorial?: boolean;

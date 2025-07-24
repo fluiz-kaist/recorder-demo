@@ -9,8 +9,6 @@ import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
 import {
   useAuthStatusQuery,
-  // useUserQuery,
-  useIsAuthenticated,
   useLocalUserQuery,
 } from "@/hooks/queries/useUserQueries";
 import {
@@ -19,12 +17,9 @@ import {
 } from "@/hooks/mutations/useUserMutations";
 
 import { useHybridAuthMutation } from "@/hooks/mutations/useHybridAuth";
-import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-import {
-  generateUserHash,
-  generateSecureUserId,
-  maskPersonalInfo,
-} from "@/utils/hash";
+import { useAssignScriptsMutation } from "../../useScriptMutations";
+import { generateUserHash, generateSecureUserId } from "@/utils/hash";
+
 const ageGroups = [
   "55-59세",
   "60-64세",
@@ -50,9 +45,7 @@ ConsentPageProps) {
 
   // 🟢 쿠키 기반 인증 상태 확인
   const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
-  // const { data: user, isLoading: userLoading } = useUserQuery();
   const { data: localUser } = useLocalUserQuery();
-  const isAuthenticated = useIsAuthenticated();
 
   // 뮤테이션 훅들
   const verifyUserMutation = useHybridAuthMutation();
@@ -79,7 +72,7 @@ ConsentPageProps) {
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
   // 🟢 로컬에서 저장된 사용자 이름 가져오기
-  const userName = localUser?.name || "";
+  const userName = localUser?.userName || "";
   // 🟢 기존 사용자 처리 함수 추가
   const handleCompleteExistingUser = async (authData: any) => {
     try {
@@ -101,8 +94,11 @@ ConsentPageProps) {
 
       console.log("🍪 기존 사용자 쿠키 생성 완료");
 
+      console.log("여기서 authData?", authData);
+      // saveUserToLocal(authData.userId, authData.name);
+
       // React Query 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["authStatus"] });
+      // queryClient.invalidateQueries({ queryKey: ["authStatus"] });
 
       localStorage.removeItem("pendingAuth");
       router.push("/main");
@@ -147,7 +143,7 @@ ConsentPageProps) {
             <div className={styles.loadingSpinner}></div>
             <p>
               {verifyUserMutation.isPending
-                ? "인증 처리 중입니다..."
+                ? "입력한 정보를 확인하고 있습니다..."
                 : "인증 상태를 확인하고 있습니다..."}
             </p>
           </div>
@@ -213,6 +209,7 @@ ConsentPageProps) {
     }
 
     try {
+      console.group();
       console.log("사용자 등록/로그인 시작");
 
       // 🆕 세션에서 인증 데이터 가져오기
@@ -244,28 +241,28 @@ ConsentPageProps) {
         }),
       });
 
-      console.log("🍪 쿠키 생성 완료");
-
-      // 🟢 React Query 캐시 무효화 추가
-
-      queryClient.invalidateQueries({ queryKey: ["authStatus"] });
+      console.log("🍪 🍪🍪🍪 쿠키 생성 완료");
 
       // 사용자 등록
       const registeredUser = await registerUserMutation.mutateAsync({
         userId,
         gender: userInput.gender,
         ageGroup: userInput.ageGroup,
-        hasConsented: userInput.hasConsented,         
+        hasConsented: userInput.hasConsented,
         userName: authData.name || "noName",
         authorizedUserId: userHash,
       });
 
-      // 스크립트 할당
-      await assignScriptsMutation.mutateAsync({ userId });
+      console.log("사용자 등록됨", registeredUser);
 
+      // 스크립트 할당
+      // await assignScriptsMutation.mutateAsync({ userId });
+      // 🟢 React Query 캐시 무효화 추가
+      queryClient.invalidateQueries({ queryKey: ["authStatus"] });
       // 세션 정리
       localStorage.removeItem("pendingAuth");
 
+      console.groupEnd();
       console.log("✅ 모든 등록 완료");
       setIsRedirecting(true);
       router.push("/main");

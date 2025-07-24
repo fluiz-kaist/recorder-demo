@@ -36,10 +36,16 @@ export default async function handler(
       scriptType,
       recordingId,
       audioUrl,
-      // sttText,
-    }: CompleteScriptRequest = req.body;
+    }: // sttText,
+    CompleteScriptRequest = req.body;
 
-    if (!userId || scriptId === undefined || !scriptType || !recordingId || !audioUrl) {
+    if (
+      !userId ||
+      scriptId === undefined ||
+      !scriptType ||
+      !recordingId ||
+      !audioUrl
+    ) {
       return res.status(400).json({
         success: false,
         message: "필수 필드가 누락되었습니다.",
@@ -58,14 +64,16 @@ export default async function handler(
     }
 
     const userData = userDoc.data() as User;
-    
+
     // 2. scriptAssignments 업데이트
-    const updatedAssignments = userData.scriptAssignments.map(assignment => {
+    const updatedAssignments = userData.scriptAssignments.map((assignment) => {
       if (assignment.scriptType === scriptType) {
         // assignedScriptIds에서 제거하고 completedScriptIds에 추가
-        const newAssignedIds = assignment.assignedScriptIds.filter(id => id !== scriptId);
-        const newCompletedIds = assignment.completedScriptIds.includes(scriptId) 
-          ? assignment.completedScriptIds 
+        const newAssignedIds = assignment.assignedScriptIds.filter(
+          (id) => id !== scriptId
+        );
+        const newCompletedIds = assignment.completedScriptIds.includes(scriptId)
+          ? assignment.completedScriptIds
           : [...assignment.completedScriptIds, scriptId];
 
         return {
@@ -92,7 +100,7 @@ export default async function handler(
     // 4. scripts 컬렉션의 해당 스크립트 상태 업데이트
     const scriptKey = `${scriptType}_${scriptId}`;
     const scriptRef = doc(db, "scripts", scriptKey);
-    
+
     await updateDoc(scriptRef, {
       status: ScriptStatus.COMPLETED,
       completedAt: serverTimestamp(),
@@ -111,7 +119,6 @@ export default async function handler(
       message: "스크립트가 성공적으로 완료되었습니다.",
       user: finalUserData,
     });
-
   } catch (error) {
     console.error("스크립트 완료 처리 중 오류:", error);
     return res.status(500).json({

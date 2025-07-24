@@ -1,57 +1,43 @@
-// hooks/queries/useUserQueries.ts - 개선된 사용자 데이터 조회 훅
+// hooks/queries/useUserQueries.ts - localStorage 변경사항 반영
+
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { User } from "@/types/firebase";
 import { getCookie } from "@/utils/auth";
-import { getLocalUserInfo } from "@/utils/localStorage";
 
 /**
- * 인증 상태 확인 쿼리 (쿠키 기반)
- * 미들웨어에서 이미 검증했으므로 클라이언트에서는 쿠키 존재만 확인
- */
-export const useAuthStatusQuery = (): UseQueryResult<
-  { isAuthenticated: boolean; userId: string | null },
-  Error
-> => {
-  return useQuery({
-    queryKey: ["authStatus"],
-    queryFn: async (): Promise<{
-      isAuthenticated: boolean;
-      userId: string | null;
-    }> => {
-      // 서버 요청 없이 쿠키만 확인
-      const authToken = getCookie("auth-token");
-
-      return {
-        isAuthenticated: !!authToken,
-        userId: authToken || null, // 쿠키 값이 userId
-      };
-    },
-    staleTime: Infinity, // 무한 캐시 (쿠키가 변경되지 않는 한)
-    gcTime: Infinity,
-    retry: false,
-    refetchOnWindowFocus: false, // 포커스 시 재검증 안함
-    refetchOnMount: true, // 새 탭에서만 한 번 확인
-  });
-};
-
-/**
- * 로컬 스토리지에서 사용자 정보 조회 (민감하지 않은 정보만)
- * 완료 상태, 스크립트 할당 정보 등만 저장
+ * 🔄 최소한의 로컬 사용자 정보만 조회
+ * localStorage에서는 id, userName, completedAt만 가져옴
+ * main에서 로딩을 위해 사용함
  */
 export const useLocalUserQuery = (): UseQueryResult<
-  | (Pick<User, "completedAt" | "scriptAssignments"> & {
-      name?: string;
-      gender?: string;
-      ageGroup?: string;
-    })
-  | null,
+  {
+    id: string;
+    userName?: string;
+    completedAt?: string;
+  } | null,
   Error
 > => {
+  const { data: fullUser, isLoading, isError, error } = useUserQuery();
+
   return useQuery({
-    queryKey: ["localUser"],
+    queryKey: ["minimalUserInfo"], // 🔄 queryKey를 'minimalUserInfo'로 변경했습니다.
     queryFn: async () => {
-      return getLocalUserInfo();
+      if (fullUser) {
+        console.log(
+          "useLocalUserQuery (derived): useUserQuery 데이터에서 추출",
+          {
+            id: fullUser.id,
+            userName: fullUser.userName,
+          }
+        );
+        return {
+          id: fullUser.id,
+          userName: fullUser.userName,
+        };
+      }
+      return null;
     },
+    enabled: !!fullUser,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,
@@ -61,11 +47,13 @@ export const useLocalUserQuery = (): UseQueryResult<
 };
 
 /**
- * 사용자 정보 조회 쿼리 (쿠키 기반)
+ * 🆕 전체 사용자 정보 조회 (서버에서)
+ * 진행 상태 등 모든 정보 포함
  */
 export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
+  // const { data: localUser } = useLocalUserQuery();
+  // const localUser = getUserFromLocal();
 
   return useQuery({
     queryKey: ["user", userId || authStatus?.userId],
@@ -82,7 +70,7 @@ export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
 
       const response = await fetch(`/api/users/${targetUserId}`, {
         method: "GET",
-        credentials: "include", // 쿠키 포함
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -94,87 +82,66 @@ export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
       return data.user as User;
     },
     enabled:
-      !!authStatus?.isAuthenticated &&
-      !!(userId || authStatus?.userId) &&
-      !!localUser?.completedAt,
+      // !!localUser?.completedAt && // 온보딩 완료된 사용자만
+      !!authStatus?.isAuthenticated && !!(userId || authStatus?.userId),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 };
 
 /**
- * 현재 인증된 사용자 ID 조회 (쿠키 기반)
+ * 🔄 튜토리얼 완료 여부 확인 (서버 데이터 기반)
  */
-export const useCurrentUserIdQuery = (): UseQueryResult<
-  string | null,
+export const useIsTutorialCompleted = (): boolean => {
+  const { data: fullUser } = useUserQuery();
+
+  // 서버 데이터에서 확인 (localStorage에는 없음)
+  return (
+    fullUser?.currentStatus?.isTutorialCompleted ||
+    fullUser?.recordingStatus?.isTutorialCompleted ||
+    false
+  );
+};
+
+/**
+ * 🔄 현재 세트 번호 조회 (서버 데이터 기반)
+ */
+export const useCurrentSetNumber = (): number => {
+  const { data: fullUser } = useUserQuery();
+
+  return fullUser?.participation?.currentSetNumber || 1;
+};
+
+/**
+ * 인증 상태 확인 쿼리 (기존 유지)
+ */
+export const useAuthStatusQuery = (): UseQueryResult<
+  { isAuthenticated: boolean; userId: string | null },
   Error
 > => {
-  const { data: authStatus } = useAuthStatusQuery();
-
   return useQuery({
-    queryKey: ["currentUserId"],
-    queryFn: async (): Promise<string | null> => {
-      return authStatus?.userId || null;
+    queryKey: ["authStatus"],
+    queryFn: async (): Promise<{
+      isAuthenticated: boolean;
+      userId: string | null;
+    }> => {
+      const authToken = getCookie("auth-token");
+
+      return {
+        isAuthenticated: !!authToken,
+        userId: authToken || null,
+      };
     },
-    enabled: !!authStatus?.isAuthenticated,
     staleTime: Infinity,
+    gcTime: Infinity,
     retry: false,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
   });
 };
 
 /**
- * 사용자의 할당된 스크립트 정보 조회 (로컬 우선)
- */
-export const useUserScriptAssignmentsQuery = (
-  userId?: string
-): UseQueryResult<User["scriptAssignments"], Error> => {
-  const { data: authStatus } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
-
-  return useQuery({
-    queryKey: ["userScriptAssignments", userId || authStatus?.userId],
-    queryFn: async (): Promise<User["scriptAssignments"]> => {
-      const targetUserId = userId || authStatus?.userId;
-
-      if (!targetUserId) {
-        throw new Error("사용자 ID가 없습니다.");
-      }
-
-      // 로컬 우선 확인
-      if (localUser && localUser.scriptAssignments) {
-        return localUser.scriptAssignments;
-      }
-
-      if (!authStatus?.isAuthenticated) {
-        throw new Error("인증이 필요합니다.");
-      }
-
-      const response = await fetch(`/api/users/${targetUserId}`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "스크립트 할당 정보를 불러올 수 없습니다."
-        );
-      }
-
-      const user = data.user as User;
-      return user.scriptAssignments || [];
-    },
-    enabled: !!authStatus?.isAuthenticated && !!(userId || authStatus?.userId),
-    staleTime: 2 * 60 * 1000,
-    retry: 1,
-  });
-};
-
-/**
- * 사용자 등록 완료 상태 확인
+ * 사용자 등록(온보딩) 완료 상태 확인
  */
 export const useUserCompletionStatusQuery = (
   userId?: string
@@ -191,12 +158,11 @@ export const useUserCompletionStatusQuery = (
         return false;
       }
 
-      // 먼저 로컬에서 확인
-      if (localUser && localUser.completedAt) {
+      // 🔄 로컬에서 온보딩 완료 여부 확인 (localStorage에 있음)
+      if (localUser?.completedAt) {
         return true;
       }
 
-      // 인증되지 않은 경우 서버 호출 안함
       if (!authStatus?.isAuthenticated) {
         return false;
       }
@@ -214,7 +180,7 @@ export const useUserCompletionStatusQuery = (
         }
 
         const user = data.user as User;
-        return !!user.completedAt;
+        return !!user.completedAt; // 온보딩 완료 여부
       } catch (error) {
         console.error("사용자 완료 상태 확인 오류:", error);
         return false;
@@ -227,11 +193,43 @@ export const useUserCompletionStatusQuery = (
 };
 
 /**
+ * 🆕 전체 녹음 작업 완료 상태 확인 (서버 데이터 기반)
+ */
+export const useAllRecordingCompletionQuery = (
+  userId?: string
+): UseQueryResult<boolean, Error> => {
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: fullUser } = useUserQuery(userId);
+
+  return useQuery({
+    queryKey: ["allRecordingCompletion", userId || authStatus?.userId],
+    queryFn: async (): Promise<boolean> => {
+      // 🔄 서버 데이터에서 모든 녹음 완료 여부 확인
+      if (fullUser?.currentStatus?.progress?.completedPercentage === 100) {
+        return true;
+      }
+
+      // 레거시 구조도 확인
+      if (fullUser?.recordingStatus?.isAllRecordingCompleted) {
+        return true;
+      }
+
+      return false;
+    },
+    enabled: !!fullUser, // fullUser가 로드된 후에만 실행
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
  * 인증 상태 확인 유틸리티
  */
 export const useIsAuthenticated = (): boolean => {
   const { data: authStatus } = useAuthStatusQuery();
-
-  // console.log("❤️❤️❤️❤️❤️data?", authStatus);
   return !!authStatus?.isAuthenticated;
 };
+
+// 🔄 삭제된 훅들 (더 이상 사용하지 않음)
+// - useUserParticipationQuery: useUserQuery로 대체
+// - useUserCurrentStatusQuery: useUserQuery로 대체

@@ -7,12 +7,11 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { storage, db } from "@/lib/firebase/config";
 import {
   AudioRecording,
-  AudioUploadResponse,
   AudioStatus,
   AudioFormat,
   ScriptType,
 } from "@/types/firebase";
-
+import { AudioUploadResponse } from "@/types/api";
 // Next.js API Route의 body parser 비활성화 (formidable 사용)
 export const config = {
   api: {
@@ -162,6 +161,7 @@ export default async function handler(
       // 시간 정보
       recordedAt: now,
       uploadedAt: now,
+      createdAt: now,
       processedAt: sttText ? now : undefined,
 
       // 상태 정보

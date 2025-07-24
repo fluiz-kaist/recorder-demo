@@ -1,7 +1,6 @@
 // utils/queryCache.ts - 쿼리 캐시 관리 공통 유틸리티
 import { QueryClient } from "@tanstack/react-query";
 import { User } from "@/types/firebase";
-import { updateLocalUserInfo } from "./localStorage";
 
 /**
  * 사용자 관련 모든 캐시 업데이트
@@ -16,7 +15,7 @@ export const updateUserRelatedCache = (
 
   // 로컬 사용자 정보로 변환하여 캐시 업데이트
   const localUserInfo = {
-    name: user.name || "",
+    name: user.userName || "",
     gender: user.gender || "",
     ageGroup: user.ageGroup || "",
     completedAt: user.completedAt,
@@ -37,9 +36,6 @@ export const updateUserRelatedCache = (
       user.scriptAssignments
     );
   }
-
-  // 로컬스토리지도 동시에 업데이트
-  updateLocalUserInfo(user);
 };
 
 /**

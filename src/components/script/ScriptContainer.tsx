@@ -3,26 +3,21 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/ScriptRecording.module.css";
 import VoiceRecorder from "@/components/voiceRecorder";
-import {
-  ScriptType,
-  SituationalScript,
-  FormalScript,
-  QAScenarioScript,
-} from "@/types/firebase";
+import { ScriptType, SituationalScript, FormalScript } from "@/types/firebase";
 import {
   useLocalScriptsByTypeQuery,
   useScriptProgressByType,
-} from "@/hooks/queries/useScriptQueries";
+} from "../../../useScriptQueries";
 import {
   useAuthStatusQuery,
   useUserScriptAssignmentsQuery,
 } from "@/hooks/queries/useUserQueries";
-import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
+import { useAssignScriptsMutation } from "../../../useScriptMutations";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 // 유니온 타입 정의
-type AnyScript = SituationalScript | FormalScript | QAScenarioScript;
+type AnyScript = SituationalScript | FormalScript;
 
 interface ScriptContainerProps {
   scriptType: ScriptType;
