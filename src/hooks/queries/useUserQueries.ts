@@ -20,6 +20,7 @@ export const useAuthStatusQuery = (): UseQueryResult<
     }> => {
       // 서버 요청 없이 쿠키만 확인
       const authToken = getCookie("auth-token");
+      console.log("❤️❤️❤️❤️❤️authToken?", authToken);
 
       return {
         isAuthenticated: !!authToken,
@@ -231,5 +232,7 @@ export const useUserCompletionStatusQuery = (
  */
 export const useIsAuthenticated = (): boolean => {
   const { data: authStatus } = useAuthStatusQuery();
+
+  // console.log("❤️❤️❤️❤️❤️data?", authStatus);
   return !!authStatus?.isAuthenticated;
 };

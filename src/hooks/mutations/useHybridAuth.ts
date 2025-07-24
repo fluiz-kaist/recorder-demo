@@ -8,6 +8,7 @@ import {
   updateUserRelatedCache,
   updateAuthStatusCache,
 } from "@/utils/queryCache";
+import { generateUserHash } from "@/utils/hash";
 
 interface AuthRequest {
   name: string;
@@ -23,6 +24,7 @@ interface AuthResponse {
     userId: string;
     isExistingUser: boolean;
     existingData?: any;
+    userHash: string;
   };
 }
 
@@ -61,6 +63,7 @@ export const useHybridAuthMutation = (): UseMutationResult<
           return {
             ...hashData,
             method: "hash-based" as const,
+            socialNumber: socialNumber,
           };
         }
 
@@ -103,13 +106,13 @@ export const useHybridAuthMutation = (): UseMutationResult<
       if (!data.user) return;
 
       console.log(`🎯 인증 성공 (${data.method} 방식):`, data.user.name);
-
-      //  세션 스토리지에 임시 저장 (쿠키 대신)
-      sessionStorage.setItem(
+      // 🟢 localStorage에 저장 (모든 사용자)
+      localStorage.setItem(
         "pendingAuth",
         JSON.stringify({
           userId: data.user.userId,
           name: data.user.name,
+          userHash: data.user.userHash,
           method: data.method,
           timestamp: Date.now(),
           isExistingUser: data.user.isExistingUser,
@@ -117,39 +120,53 @@ export const useHybridAuthMutation = (): UseMutationResult<
         })
       );
 
-      // 기존 사용자인지 확인
-
-      // 기존 사용자 처리는 그대로 (동의 과정 건너뛰고 바로 완료)
+      // 🟢 기존 사용자는 바로 쿠키 생성하고 main으로 이동
       if (data.user.isExistingUser) {
-        console.log("기존 사용자 - 바로 쿠키 생성 및 메인 이동");
-        // 기존 사용자는 바로 완료 처리 (별도 API 호출 필요)
+        console.log("✅ 기존 사용자 - 바로 쿠키 생성하고 main으로 이동");
+        // 🟢 바로 리다이렉트
+        window.location.href = "/main";
+
+        // 🟢 백그라운드에서 쿠키 생성 (응답 기다리지 않음)
         fetch("/api/auth/completeAuth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ userId: data.user.userId }),
-        }).then(() => {
-          console.log("✅ 기존 사용자 로그인 성공:", data.user);
-
-          window.location.href = "/main";
+          body: JSON.stringify({
+            userId: data.user.userId,
+            userHash: data.user.userHash,
+          }),
         });
+
         return;
       }
 
-      console.log("✅ 신규 사용자 - 동의 화면으로 진행");
+      // 🟢 신규 사용자만 localStorage 저장
+      localStorage.setItem(
+        "pendingAuth",
+        JSON.stringify({
+          userId: data.user.userId,
+          name: data.user.name,
+          userHash: data.user.userHash,
+          method: data.method,
+          timestamp: Date.now(),
+          isExistingUser: false, // 신규 사용자
+        })
+      );
 
-      // 신규 사용자 처리
-      const userInfo = {
-        name: data.user.name,
-        completedAt: null,
-        scriptAssignments: [],
-      };
+      console.log("✅ 신규 사용자 - localStorage 저장 완료");
 
-      // 신규 사용자 캐시 업데이트
-      updateAuthStatusCache(queryClient, true, data.user.userId);
-      queryClient.setQueryData(["localUser"], userInfo);
+      // // 신규 사용자 처리
+      // const userInfo = {
+      //   name: data.user.name,
+      //   completedAt: null,
+      //   scriptAssignments: [],
+      // };
+      // // 신규 사용자는 미인증 상태 유지
+      // updateAuthStatusCache(queryClient, false, null);
+      // // ✅ 로컬 사용자 정보만 업데이트
+      // queryClient.setQueryData(["localUser"], userInfo);
 
-      console.log("✅ 신규 사용자 인증 성공:", data.user.name);
+      // console.log("✅ 신규 사용자 인증 성공:", data.user.name);
     },
     onError: (error) => {
       console.error("❌ 하이브리드 인증 실패:", error);

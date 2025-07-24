@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { GetStaticProps } from "next";
+import { useQueryClient } from "@tanstack/react-query";
 import fs from "fs";
 import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
@@ -45,6 +46,7 @@ export default function ConsentPage({
 }: // serviceDescription,
 ConsentPageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient(); // 상단에 추가
 
   // 🟢 쿠키 기반 인증 상태 확인
   const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
@@ -78,18 +80,50 @@ ConsentPageProps) {
 
   // 🟢 로컬에서 저장된 사용자 이름 가져오기
   const userName = localUser?.name || "";
+  // 🟢 기존 사용자 처리 함수 추가
+  const handleCompleteExistingUser = async (authData: any) => {
+    try {
+      setIsRedirecting(true);
 
+      console.log("authData.userId?", authData.userId);
+      console.log("authdat?", authData);
+
+      // 바로 쿠키 생성 (동의는 이미 완료됨)
+      await fetch("/api/auth/completeAuth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          userId: authData.userId,
+          userHash: authData.userHash, // 🟢 localStorage에서 받은 해시 사용
+        }),
+      });
+
+      console.log("🍪 기존 사용자 쿠키 생성 완료");
+
+      // React Query 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ["authStatus"] });
+
+      localStorage.removeItem("pendingAuth");
+      router.push("/main");
+    } catch (error) {
+      console.error("기존 사용자 로그인 실패:", error);
+      localStorage.removeItem("pendingAuth");
+      setError("로그인에 실패했습니다. 다시 시도해주세요.");
+      setIsRedirecting(false);
+    }
+  };
   // 🟢 세션 스토리지 기반 인증 상태 확인으로 변경
   useEffect(() => {
-    // 🆕 세션 스토리지 체크
-    const pendingAuth = sessionStorage.getItem("pendingAuth");
+    const pendingAuth = localStorage.getItem("pendingAuth");
+    console.log("pendingAuth?", pendingAuth);
     if (pendingAuth) {
       try {
         const authData = JSON.parse(pendingAuth);
+        console.log("authData?", authData);
         if (authData.isExistingUser) {
-          console.log("기존 사용자 감지, 메인 페이지로 이동");
-          setIsRedirecting(true);
-          router.push("/main");
+          console.log("기존 사용자 감지, 쿠키 생성 후 메인으로 이동");
+          handleCompleteExistingUser(authData); // 🟢 함수 호출로 변경
         }
       } catch (error) {
         console.error("세션 데이터 파싱 오류:", error);
@@ -98,7 +132,7 @@ ConsentPageProps) {
   }, [router]);
 
   // 🟢 인증 상태 확인 중이거나 리다이렉트 중일 때는 로딩 표시
-  if (authLoading || isRedirecting) {
+  if (authLoading || isRedirecting || verifyUserMutation.isPending) {
     return (
       <>
         <Head>
@@ -111,7 +145,11 @@ ConsentPageProps) {
         <div className={styles.container}>
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
-            <p>인증 상태를 확인하고 있습니다...</p>
+            <p>
+              {verifyUserMutation.isPending
+                ? "인증 처리 중입니다..."
+                : "인증 상태를 확인하고 있습니다..."}
+            </p>
           </div>
         </div>
       </>
@@ -173,35 +211,45 @@ ConsentPageProps) {
       setError("모든 항목을 선택하고 동의해주세요.");
       return;
     }
-  
+
     try {
       console.log("사용자 등록/로그인 시작");
-  
+
       // 🆕 세션에서 인증 데이터 가져오기
-      const pendingAuth = sessionStorage.getItem('pendingAuth');
+      const pendingAuth = localStorage.getItem("pendingAuth");
       if (!pendingAuth) {
         setError("인증 정보가 없습니다. 다시 인증해주세요.");
         return;
       }
-  
+
       const authData = JSON.parse(pendingAuth);
       const userId = generateSecureUserId();
-  
+
       // 🆕 authorizedUsersV2에 userId 저장
-      const userHash = generateUserHash(authData.name, userInput.socialNumber || authData.name);
-      
-      await fetch('/api/auth/completeAuth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ 
+      const userHash = generateUserHash(
+        authData.name,
+        userInput.socialNumber || authData.name
+      );
+
+      console.log("인덱스에서 생성하는 userHash", userHash);
+      console.log("여기서 userId?", userId);
+
+      await fetch("/api/auth/completeAuth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           userId: userId,
-          userHash: userHash  // 해시도 함께 전달
-        })
+          userHash: userHash, // 해시도 함께 전달
+        }),
       });
-  
+
       console.log("🍪 쿠키 생성 완료");
-  
+
+      // 🟢 React Query 캐시 무효화 추가
+
+      queryClient.invalidateQueries({ queryKey: ["authStatus"] });
+
       // 사용자 등록
       const registeredUser = await registerUserMutation.mutateAsync({
         userId,
@@ -209,44 +257,62 @@ ConsentPageProps) {
         ageGroup: userInput.ageGroup,
         hasConsented: userInput.hasConsented,
       });
-  
+
       // 스크립트 할당
       await assignScriptsMutation.mutateAsync({ userId });
-  
+
       // 세션 정리
-      sessionStorage.removeItem("pendingAuth");
-  
+      localStorage.removeItem("pendingAuth");
+
       console.log("✅ 모든 등록 완료");
       setIsRedirecting(true);
       router.push("/main");
-  
     } catch (error) {
       console.error("등록 처리 중 오류:", error);
-      setError(error instanceof Error ? error.message : "등록 중 오류가 발생했습니다.");
+      setError(
+        error instanceof Error ? error.message : "등록 중 오류가 발생했습니다."
+      );
     }
-  }
+  };
 
-  // 제출 가능 여부 확인
+  // 제출 가능 여부 확인 함수 수정
   const isSubmitEnabled = (): boolean => {
-    if (isAuthenticated) {
-      return (
-        !!userInput.gender &&
-        !!userInput.ageGroup &&
-        userInput.hasConsented &&
-        !registerUserMutation.isPending &&
-        !assignScriptsMutation.isPending
-      );
-    } else {
-      return (
-        !!userInput.name &&
-        !!userInput.socialNumber &&
-        !!userInput.gender &&
-        !!userInput.ageGroup &&
-        userInput.hasConsented &&
-        !registerUserMutation.isPending &&
-        !assignScriptsMutation.isPending
-      );
+    return (
+      !!userInput.gender &&
+      !!userInput.ageGroup &&
+      userInput.hasConsented &&
+      !registerUserMutation.isPending &&
+      !assignScriptsMutation.isPending
+    );
+  };
+
+  // 버튼 텍스트 생성 함수 추가
+  const getButtonText = (): React.ReactNode => {
+    if (isLoading) {
+      if (registerUserMutation.isPending) return "처리 중...";
+      if (updateScriptsMutation.isPending) return "스크립트 할당 중...";
+      return "처리 중...";
     }
+
+    if (!userInput.hasConsented) {
+      return "동의 체크가 빠졌어요!";
+    }
+
+    if (!userInput.gender) {
+      return "성별 선택이 빠졌어요!";
+    }
+
+    if (!userInput.ageGroup) {
+      return "연령대 선택이 빠졌어요!";
+    }
+
+    return (
+      <>
+        시작하려면 여기를 눌러주세요
+        <br />
+        <span>동의하고 시작하기</span>
+      </>
+    );
   };
 
   // 로딩 상태 통합
@@ -263,7 +329,7 @@ ConsentPageProps) {
     updateScriptsMutation.error?.message;
 
   // 🟢 인증되지 않은 사용자를 위한 인증 폼
-  const pendingAuth = sessionStorage.getItem("pendingAuth");
+  const pendingAuth = localStorage.getItem("pendingAuth");
   if (!pendingAuth) {
     // 세션에 인증 데이터가 없으면 인증 폼 표시
     return (
@@ -293,7 +359,8 @@ ConsentPageProps) {
 
           {/* 인증 정보 입력 */}
           <div className={styles.infoSection}>
-            <h2>본인 확인</h2>
+            <h2>신청자 확인</h2>
+            <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
             {/* 이름 입력 필드 */}
             <div className={styles.inputGroup}>
               <h3>이름</h3>
@@ -336,10 +403,18 @@ ConsentPageProps) {
                 }`}
                 onClick={handleVerifyUser}
                 disabled={
-                  !userInput.name || !userInput.socialNumber || isLoading
+                  !userInput.name ||
+                  userInput.socialNumber.length !== 6 ||
+                  isLoading
                 }
               >
-                {verifyUserMutation.isPending ? "인증 확인 중..." : "본인 확인"}
+                {!userInput.name ||
+                userInput.socialNumber.length !== 6 ||
+                isLoading
+                  ? "이름과 주민번호를 먼저 입력해주세요"
+                  : verifyUserMutation.isPending
+                  ? "인증 확인 중..."
+                  : "여기를 눌러주세요!"}
               </button>
             </div>
           </div>
@@ -357,6 +432,26 @@ ConsentPageProps) {
               <p>승인된 이름과 주민번호를 입력하세요.</p>
             </div>
           )}
+        </div>
+      </>
+    );
+  }
+
+  const aaa = localStorage.getItem("pendingAuth");
+  const authData = aaa ? JSON.parse(aaa) : null;
+
+  // 🟢 기존 사용자면 로딩 화면만 표시
+  if (authData?.isExistingUser) {
+    return (
+      <>
+        <Head>
+          <title>서비스 이용 동의</title>
+        </Head>
+        <div className={styles.container}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingSpinner}></div>
+            <p>로그인 처리 중입니다...</p>
+          </div>
         </div>
       </>
     );
@@ -483,13 +578,7 @@ ConsentPageProps) {
             onClick={handleCompleteRegistration}
             disabled={!isSubmitEnabled() || isLoading}
           >
-            {isLoading
-              ? registerUserMutation.isPending
-                ? "처리 중..."
-                : updateScriptsMutation.isPending
-                ? "스크립트 할당 중..."
-                : "처리 중..."
-              : "동의하고 시작하기"}
+            {getButtonText()}
           </button>
         </div>
       </div>

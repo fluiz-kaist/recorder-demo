@@ -85,6 +85,8 @@ export default async function handler(
 
     // 1. 해시 생성
     const userHash = generateUserHash(cleanName, cleanSocialNumber);
+
+    console.log("veryV2에서 생성하는 userHash", userHash);
     console.log(`🔒 생성된 해시: ${userHash.substring(0, 8)}...`);
 
     // 2. 해시 기반 직접 조회 (O(1) 시간복잡도)
@@ -190,8 +192,9 @@ export default async function handler(
       method: "hash-based", // 구분을 위한 필드
       user: {
         name: cleanName, // 클라이언트에서 필요한 실제 이름
-        // userId: userId,
+        userId: userId,
         isExistingUser: isExistingUser,
+        userHash: userHash, // 🟢 userHash도 함께 반환
         ...(isExistingUser && { existingData }),
       },
     });

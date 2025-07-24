@@ -2,22 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/MainSelectionPage.module.css";
 import Head from "next/head";
-import {
-  useAuthStatusQuery,
-  useIsAuthenticated,
-  useLocalUserQuery,
-} from "@/hooks/queries/useUserQueries";
+import { useLocalUserQuery } from "@/hooks/queries/useUserQueries";
 
 const MainSelectionPage = () => {
   const router = useRouter();
 
   // 🟢 쿠키 기반 인증 상태 확인
-  const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
-  const isAuthenticated = useIsAuthenticated();
+  const { data: localUser, isLoading } = useLocalUserQuery();
 
   // 로컬 상태
-  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
   // 상황별 스크립트 녹음
   const handleSituationScript = () => {
@@ -53,24 +46,8 @@ const MainSelectionPage = () => {
   // 🟢 인증된 사용자 이름 가져오기
   const userName = localUser?.name || "";
 
-  // 🟢 인증 상태 및 완료 상태 확인
-  useEffect(() => {
-    if (authLoading) return;
-
-    // 1. 쿠키 인증이 되어있고 동의도 완료된 경우 → 정상 진입
-    if (isAuthenticated && localUser?.completedAt) {
-      console.log("✅ 인증 및 동의 완료된 사용자");
-      return;
-    }
-
-    // 2. 그 외 모든 경우 → index로 리다이렉트
-    console.log("🔐 미인증 또는 동의 미완료, index로 이동");
-    setIsRedirecting(true);
-    router.push("/");
-  }, [authLoading, isAuthenticated, localUser, router]);
-
-  // 🟢 로딩 중일 때만 로딩 표시, 그 외에는 메인 페이지 렌더링
-  if (authLoading || isRedirecting) {
+  if (isLoading) {
+    // localUser 로딩만 체크
     return (
       <>
         <Head>
@@ -202,14 +179,9 @@ const MainSelectionPage = () => {
           {/* 디버깅 정보 */}
           {process.env.NODE_ENV === "development" && (
             <div className={styles.debugInfo}>
-              <h4>🐛 디버그 정보 (메인 페이지)</h4>
-              <p>
-                인증 상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
-              </p>
-              <p>사용자 ID: {authStatus?.userId}</p>
-              <p>로컬 사용자: {localUser ? "있음" : "없음"}</p>
-              <p>완료 상태: {localUser?.completedAt ? "완료" : "미완료"}</p>
-              <p>사용자명: {userName}</p>
+              <h4>🐛 디버그 정보 (미들웨어 보호)</h4>
+              <p>✅ 미들웨어를 통과한 인증된 사용자</p>
+              <p>사용자명: {localUser?.name || "로딩 중..."}</p>
             </div>
           )}
 
