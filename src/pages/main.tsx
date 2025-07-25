@@ -12,6 +12,10 @@ import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
 const LOCK_ICON =
   "M12,17A1.5,1.5 0 0,0 13.5,15.5A1.5,1.5 0 0,0 12,14A1.5,1.5 0 0,0 10.5,15.5A1.5,1.5 0 0,0 12,17M17,8H16V6.5C16,4.57 14.43,3 12.5,3A3.5,3.5 0 0,0 9,6.5V8H8A2,2 0 0,0 6,10V20A2,2 0 0,0 8,22H17A2,2 0 0,0 19,20V10A2,2 0 0,0 17,8M11,6.5C11,5.67 11.67,5 12.5,5A1.5,1.5 0 0,1 14,6.5V8H11V6.5Z";
 
+// 1. ✅ 서비스 순서 정의 (컴포넌트 상단에 추가)
+// SERVICE_CONFIG에서 키 순서를 그대로 사용
+const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
+
 const MainSelectionPage = () => {
   const router = useRouter();
 
@@ -118,17 +122,74 @@ const MainSelectionPage = () => {
   // 서비스별 녹음 페이지로 이동
   const handleServiceSelect = (serviceName: ServiceName) => {
     console.log("여기서 말하는 serviceName?", serviceName);
+
     if (!isTutorialCompleted) {
       alert("먼저 사용법 익히기를 완료해주세요.");
       return;
     }
 
-    // 서비스별 녹음 페이지로 이동 (예: /recording/건강)
+    if (!isServiceUnlocked(serviceName)) {
+      const serviceIndex = SERVICE_ORDER.indexOf(serviceName);
+      const previousService = SERVICE_ORDER[serviceIndex - 1];
+      alert(`'${previousService}' 주제의 녹음을 먼저 완료해주세요.`);
+      return;
+    }
+
+    // 서비스별 녹음 페이지로 이동
     const slug = toSlug(serviceName);
     router.push(`/recording/${slug}`);
   };
 
-  console.log("minimalUserInfo?", minimalUserInfo);
+  // 2. ✅ 서비스 해금 상태 확인 함수 (기존 함수들 아래에 추가)
+  const isServiceUnlocked = (serviceName: string): boolean => {
+    // 튜토리얼이 완료되지 않으면 모든 서비스 잠금
+    if (!isTutorialCompleted) {
+      return false;
+    }
+
+    const serviceIndex = SERVICE_ORDER.indexOf(serviceName);
+    if (serviceIndex === -1) return false;
+
+    // 첫 번째 서비스(건강)는 항상 해금
+    if (serviceIndex === 0) {
+      return true;
+    }
+
+    // 이전 서비스가 완료되었는지 확인
+    const previousService = SERVICE_ORDER[serviceIndex - 1];
+    const previousStatus = getServiceCompletionStatus(previousService);
+
+    return previousStatus === "completed";
+  };
+
+  // 3. ✅ 해금된 서비스 개수 계산 함수 (기존 함수들 아래에 추가)
+  const getUnlockedServicesCount = (): number => {
+    if (!isTutorialCompleted) return 0;
+
+    let unlockedCount = 0;
+    for (const serviceName of SERVICE_ORDER) {
+      if (isServiceUnlocked(serviceName)) {
+        unlockedCount++;
+      } else {
+        break; // 잠긴 서비스를 만나면 중단
+      }
+    }
+    return unlockedCount;
+  };
+
+  // 4. ✅ 다음 해금될 서비스 확인 함수 (기존 함수들 아래에 추가)
+  const getNextUnlockService = (): string | null => {
+    if (!isTutorialCompleted) return SERVICE_ORDER[0]; // 건강
+
+    for (const serviceName of SERVICE_ORDER) {
+      if (!isServiceUnlocked(serviceName)) {
+        return serviceName;
+      }
+    }
+    return null; // 모든 서비스 해금됨
+  };
+
+  // console.log("minimalUserInfo?", minimalUserInfo);
   if (!minimalUserInfo) {
     // minimalUserInfo 로드되지 않았으면 로딩 스피너 표시
     return (
@@ -150,16 +211,15 @@ const MainSelectionPage = () => {
     );
   }
 
-  // 전체 진행률 계산
+  // 6. ✅ 전체 진행률 계산 수정 (기존 코드 교체)
   const serviceNames = Object.keys(SERVICE_CONFIG);
   const totalServices = serviceNames.length;
-  // 실제 데이터 기반으로 완료된 서비스 계산
   const completedServices = serviceNames.filter(
     (name) => getServiceCompletionStatus(name) === "completed"
   ).length;
+  const unlockedServices = getUnlockedServicesCount();
   const overallProgress =
     fullUser?.currentStatus?.progress?.completedPercentage || 0;
-
   // fullUser 로딩 중일 때 처리
   if (isUserLoading || !fullUser) {
     return (
@@ -207,8 +267,19 @@ const MainSelectionPage = () => {
                   />
                 </div>
                 <p className={styles.progressText}>
-                  전체 진행률: {overallProgress}% ({completedServices}/
-                  {totalServices} 서비스 완료)
+                  전체 진행률: {totalServices}개 중 {completedServices}개 완료(
+                  {overallProgress}% )
+                </p>
+                <p className={styles.unlockText}>
+                  녹음 가능한 주제: {unlockedServices}/{totalServices}
+                  {getNextUnlockService() && (
+                    <>
+                      <br />
+                      <span className={styles.nextUnlock}>
+                        다음 주제: {getNextUnlockService()}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
             )}
@@ -252,10 +323,13 @@ const MainSelectionPage = () => {
             </div>
 
             {/* 서비스별 카드들 */}
-            {Object.entries(SERVICE_CONFIG).map(([serviceName, config]) => {
+            {SERVICE_ORDER.map((serviceName) => {
+              const config = SERVICE_CONFIG[serviceName];
+              if (!config) return null;
+
               const completionStatus = getServiceCompletionStatus(serviceName);
               const progress = getServiceProgress(serviceName);
-              const isAccessible = isTutorialCompleted;
+              const isUnlocked = isServiceUnlocked(serviceName);
 
               return (
                 <div
@@ -270,17 +344,15 @@ const MainSelectionPage = () => {
                       : completionStatus === "in-progress"
                       ? styles.cardInProgress
                       : ""
-                  } ${!isAccessible ? styles.cardDisabled : ""}`}
+                  } ${!isUnlocked ? styles.cardLocked : ""}`} // ⭐ cardDisabled → cardLocked 변경
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) =>
                     handleKeyDown(e, () => handleServiceSelect(serviceName))
                   }
                 >
-                  <div
-                    className={`${styles.cardIcon} ${styles[config.iconColor]}`}
-                  >
-                    {!isAccessible ? (
+                  <div className={`${styles.cardIcon}`}>
+                    {!isUnlocked ? (
                       <svg viewBox="0 0 24 24">
                         <path d={LOCK_ICON} />
                       </svg>
@@ -294,16 +366,17 @@ const MainSelectionPage = () => {
                   <h2 className={styles.cardTitle}>
                     {serviceName}
                     {completionStatus === "completed" && " ✓"}
+                    {/* {!isUnlocked && " 🔒"} */}
                   </h2>
 
                   <p className={styles.cardDescription}>
-                    {!isAccessible
-                      ? "사용법을 먼저 완료해주세요"
+                    {!isUnlocked
+                      ? `이전 주제 녹음 완료 후 시작할 수 있습니다`
                       : config.description}
                   </p>
 
                   {/* 진행률 표시 */}
-                  {isAccessible && progress > 0 && (
+                  {isUnlocked && progress > 0 && (
                     <div className={styles.serviceProgress}>
                       <div className={styles.serviceProgressBar}>
                         <div
@@ -319,15 +392,15 @@ const MainSelectionPage = () => {
 
                   <div className={styles.cardAction}>
                     <span>
-                      {!isAccessible
-                        ? ""
+                      {!isUnlocked
+                        ? "잠김"
                         : completionStatus === "completed"
                         ? "완료됨"
                         : completionStatus === "in-progress"
                         ? "계속하기"
                         : "시작하기"}
                     </span>
-                    {isAccessible && <span className={styles.arrow}>→</span>}
+                    {isUnlocked && <span className={styles.arrow}>→</span>}
                   </div>
                 </div>
               );
@@ -356,21 +429,30 @@ const MainSelectionPage = () => {
               <p>사용자명: {userName || "로딩 중..."}</p>
               <p>튜토리얼 완료: {isTutorialCompleted ? "✅" : "❌"}</p>
               <p>전체 진행률: {overallProgress}%</p>
+              <p>
+                해금된 서비스: {unlockedServices}/{totalServices}
+              </p>
+              <p>
+                다음 해금 서비스: {getNextUnlockService() || "모든 주제 해금됨"}
+              </p>
               <p>현재 세트: {fullUser?.participation?.currentSetNumber || 0}</p>
               <p>
                 할당된 세트 수: {fullUser?.participation?.sets?.length || 0}
               </p>
-              <p>
-                상황발화 진행:{" "}
-                {fullUser?.participation?.sets?.[0]?.progress?.situational
-                  ?.completed || 0}
-                /
-                {fullUser?.participation?.sets?.[0]?.progress?.situational
-                  ?.total || 0}
-              </p>
+
+              {/* 각 서비스별 상태 표시 */}
+              <div style={{ marginTop: "8px", fontSize: "12px" }}>
+                {SERVICE_ORDER.map((service, index) => (
+                  <div key={service}>
+                    {index + 1}. {service}:{" "}
+                    {isServiceUnlocked(service)
+                      ? `🔓 ${getServiceCompletionStatus(service)}`
+                      : "🔒 잠김"}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-
           {/* 하단 정보 */}
           <footer className={styles.footer}>
             <p className={styles.footerText}>

@@ -1,5 +1,5 @@
 // components/script/ScriptContainer.tsx - 리팩터링 버전 (상황→정형 순차 진행)
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/ScriptRecording.module.css";
 import VoiceRecorder from "@/components/voiceRecorder";
@@ -28,17 +28,18 @@ interface FlatScript {
 interface ScriptContainerProps {
   scripts: MergedScript[];
 }
-
 export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   scripts,
 }) => {
   const router = useRouter();
   const [scriptIndex, setScriptIndex] = useState(0);
   const [showRecorder, setShowRecorder] = useState(false);
-
+  const [reRecordingScripts, setReRecordingScripts] = useState<Set<string>>(
+    new Set()
+  );
   const { data: authStatus } = useAuthStatusQuery();
   const { data: minimalUser } = useMinimalUserQuery();
-  const { data: fullUser } = useUserQuery();
+  const { data: fullUser, isLoading: isUserLoading } = useUserQuery();
   const scrollToTop = useScrollToTop();
 
   const flatScriptList: FlatScript[] = useMemo(() => {
@@ -55,23 +56,172 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   }, [scripts]);
 
   const current = flatScriptList[scriptIndex];
-  const userId = authStatus?.userId;
 
-  const getCurrentScriptId = (script: AnyScript): string | number => {
-    return "id" in script ? script.id : script.task_key;
-  };
-
+  // 🎯 핵심 함수: 실제 tasks 배열에서 직접 상태 확인
   const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
-    if (!fullUser?.participation?.sets?.[0]) return false;
+    if (!fullUser?.participation?.sets?.[0]) {
+      return false;
+    }
+
     const set = fullUser.participation.sets[0];
-    const taskKey = getCurrentScriptId(script);
+
+    // task_key 우선, 없으면 id 사용
+    const taskKey = String(
+      "task_key" in script && script.task_key
+        ? script.task_key
+        : "id" in script && script.id
+        ? script.id
+        : ""
+    );
+
+    if (!taskKey) {
+      console.warn("⚠️ taskKey를 찾을 수 없음:", script);
+      return false;
+    }
+
+    // 해당 타입의 tasks 배열에서 직접 찾기
     const tasks =
       type === ScriptType.SITUATIONAL
-        ? set.tasks.situational
-        : set.tasks.formal;
-    const match = tasks.find((t) => t.taskKey === taskKey);
-    return ["completed", "submitted", "approved"].includes(match?.status || "");
+        ? set.tasks?.situational || []
+        : set.tasks?.formal || [];
+
+    // 매칭되는 task 찾기
+    const matchedTask = tasks.find((task) => String(task.taskKey) === taskKey);
+
+    if (!matchedTask) {
+      console.log(`❌ [${type}] Task not found: ${taskKey}`);
+      console.log(
+        "Available tasks:",
+        tasks.map((t) => t.taskKey)
+      );
+      return false;
+    }
+
+    // 완료 상태 체크
+    const completedStatuses = ["completed", "submitted", "approved"];
+    const isCompleted = completedStatuses.includes(matchedTask.status || "");
+
+    console.log(`🎯 [${type}] ${taskKey}:`, {
+      status: matchedTask.status,
+      isCompleted,
+      hasAudioRecord: !!matchedTask.audioRecordId,
+    });
+
+    return isCompleted;
   };
+
+  // 전체 진행률 계산 (실제 tasks 배열 기반)
+  const getProgressPercentage = (): number => {
+    if (!fullUser?.participation?.sets?.[0] || flatScriptList.length === 0) {
+      return 0;
+    }
+
+    const completedCount = flatScriptList.filter(({ script, type }) =>
+      isScriptCompleted(script, type)
+    ).length;
+
+    const percentage = Math.round(
+      (completedCount / flatScriptList.length) * 100
+    );
+
+    console.log(
+      `📊 Progress: ${completedCount}/${flatScriptList.length} = ${percentage}%`
+    );
+
+    return percentage;
+  };
+
+  // 로딩 상태 처리
+  if (isUserLoading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingText}>사용자 데이터 로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (flatScriptList.length === 0) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingText}>
+          아직 녹음할 스크립트가 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  const completed = isScriptCompleted(current.script, current.type);
+
+  // 2. ✅ 함수 추가 (isScriptCompleted 함수 아래에)
+  const handleStartReRecording = () => {
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
+
+    const scriptKey = `${current.type}-${taskKey}`;
+    setReRecordingScripts((prev) => new Set(prev.add(scriptKey)));
+  };
+
+  const handleRecordingComplete = () => {
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
+
+    const scriptKey = `${current.type}-${taskKey}`;
+    setReRecordingScripts((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(scriptKey);
+      return newSet;
+    });
+    setShowRecorder(false);
+  };
+
+  // 3. ✅ 재녹음 모드 확인 함수 추가
+  const isInReRecordingMode = (): boolean => {
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
+
+    const scriptKey = `${current.type}-${taskKey}`;
+    return reRecordingScripts.has(scriptKey);
+  };
+
+  // 🎯 다음 버튼 활성화 조건 함수
+  const canGoToNext = (): boolean => {
+    // 마지막 스크립트면 항상 비활성화
+    if (scriptIndex === flatScriptList.length - 1) {
+      return false;
+    }
+
+    // 현재 스크립트가 완료되지 않았으면 다음으로 못감
+    const currentCompleted = isScriptCompleted(current.script, current.type);
+
+    if (!currentCompleted) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // 디버깅용 로그
+  console.log("🔍 현재 스크립트 정보:", {
+    index: scriptIndex,
+    taskKey: current.script.task_key || current.script.id,
+    type: current.type,
+    completed,
+  });
 
   const handleNextScript = () => {
     if (scriptIndex < flatScriptList.length - 1) {
@@ -90,26 +240,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   };
 
   const goBack = () => router.push("/");
-
-  const getProgressPercentage = (): number => {
-    const total = flatScriptList.length;
-    const completed = flatScriptList.filter(({ script, type }) =>
-      isScriptCompleted(script, type)
-    ).length;
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  };
-
-  if (flatScriptList.length === 0) {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingText}>
-          아직 녹음할 스크립트가 없습니다.
-        </div>
-      </div>
-    );
-  }
-
-  const completed = isScriptCompleted(current.script, current.type);
 
   return (
     <div className={styles.container}>
@@ -131,7 +261,9 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             </svg>
             뒤로가기
           </button>
-          <div className={styles.headerTitle}>스크립트 녹음</div>
+          <div className={styles.headerTitle}>
+            {current.script.service_name}
+          </div>
           <div className={styles.progressIndicator}>
             {scriptIndex + 1} / {flatScriptList.length}
           </div>
@@ -158,15 +290,33 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             scriptType={current.type}
             isCompleted={completed}
           />
-
           <div className={styles.recordingSection}>
-            <VoiceRecorder
-              key={`voice-recorder-${scriptIndex}`}
-              scriptType={current.type}
-              scriptData={current.script}
-              isCompltedScript={completed}
-              onRecordingComplete={() => setShowRecorder(false)}
-            />
+            {completed && !isInReRecordingMode() ? (
+              <div className={styles.completedSection}>
+                <div className={styles.completedIcon}>🎉</div>
+                <div className={styles.completedMessage}>
+                  제출을 완료했습니다!
+                  <br />
+                  다음으로 넘어가주세요
+                </div>
+                <button
+                  className={styles.reRecordButton}
+                  onClick={handleStartReRecording}
+                >
+                  다시 녹음하기
+                </button>
+              </div>
+            ) : (
+              <VoiceRecorder
+                key={`voice-recorder-${scriptIndex}-${
+                  isInReRecordingMode() ? "rerecord" : "normal"
+                }`}
+                scriptType={current.type}
+                scriptData={current.script}
+                isCompltedScript={completed}
+                onRecordingComplete={handleRecordingComplete}
+              />
+            )}
           </div>
 
           <div className={styles.navigation}>
@@ -196,16 +346,31 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
             <button
               onClick={handleNextScript}
-              disabled={scriptIndex === flatScriptList.length - 1}
+              disabled={!canGoToNext()}
               className={`${styles.navButton} ${
-                scriptIndex === flatScriptList.length - 1
+                !canGoToNext()
                   ? styles.navButtonDisabled
                   : styles.navButtonEnabled
               }`}
+              title={
+                !completed && scriptIndex < flatScriptList.length - 1
+                  ? "현재 스크립트를 완료하고 제출해주세요"
+                  : ""
+              }
             >
-              다음
+              {scriptIndex === flatScriptList.length - 1 ? "완료" : "다음"}
             </button>
           </div>
+
+          {/* 🎯 진행 안내 메시지 추가 */}
+          {!completed && (
+            <div className={styles.progressHint}>
+              <div className={styles.hintIcon}>📝</div>
+              <div className={styles.hintText}>
+                녹음을 완료하고 제출해야 다음으로 넘어갈 수 있습니다.
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@
 /* 헤더 영역 */
 .header {
   text-align: center;
-  margin-bottom: var(--space-3xl);
+  margin-bottom: var(--space-sm);
 }
 
 .title {
@@ -65,48 +65,6 @@
 }
 
 /* 카드 색상 테마 */
-.cardBlue {
-  border-left: 6px solid var(--color-primary);
-}
-
-.cardBlue:hover,
-.cardBlue:focus {
-  border-color: var(--color-primary);
-  background: var(--color-primary-bg);
-}
-
-.cardGreen {
-  border-left: 6px solid var(--color-secondary);
-}
-
-.cardGreen:hover,
-.cardGreen:focus {
-  border-color: var(--color-secondary);
-  background: var(--color-secondary-bg);
-}
-
-.cardPurple {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-light) 0%,
-    var(--color-primary) 100%
-  );
-  border-color: var(--color-primary);
-}
-
-.cardPurple:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-hover) 100%
-  );
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.cardPurple:active {
-  transform: translateY(-2px);
-}
 
 /* 카드 아이콘 */
 .cardIcon {
@@ -117,18 +75,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.cardGreen .cardIcon {
-  color: var(--color-secondary);
-}
-
-.cardBlue .cardIcon {
-  color: var(--color-primary);
-}
-
-.cardPurple .cardIcon {
-  color: var(--color-primary-light);
 }
 
 .cardIcon svg {
@@ -348,7 +294,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  margin-top: 2rem;
+  margin-top: 0.5rem;
 }
 
 /* 카드 컨테이너 */
@@ -607,4 +553,56 @@
   .serviceProgress {
     margin: 0.5rem 0;
   }
+}
+.cardLocked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border: 2px solid #ddd;
+}
+
+.cardLocked:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cardLocked .cardIcon {
+  color: #999;
+}
+
+.cardLocked .cardTitle {
+  color: #666;
+}
+
+.cardLocked .cardDescription {
+  color: #888;
+}
+
+.unlockText {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.nextUnlock {
+  color: #2196f3;
+  font-weight: 500;
+}
+
+@keyframes unlockAnimation {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cardJustUnlocked {
+  animation: unlockAnimation 0.6s ease-in-out;
+  border: 2px solid #4caf50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
 }

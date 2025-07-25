@@ -39,21 +39,17 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
   const renderSituationalScript = (script: SituationalScript) => (
     <>
       <div className={styles.titleSection}>
-        {/* {isCompleted && (
-          <div className={styles.completedBadge}>✅ 제출완료</div>
-        )} */}
-
         {/* 서비스 정보 표시 */}
-        <div className={styles.serviceInfo}>
+        {/* <div className={styles.serviceInfo}>
           <span className={styles.serviceName}>{script.service_name}</span>
           <span className={styles.serviceTarget}>
             {" "}
             • {script.service_target}
           </span>
-        </div>
+        </div> */}
 
         {/* 태스크 이름 */}
-        <h2 className={styles.taskName}>{script.task_name}</h2>
+        {/* <h2 className={styles.taskName}>{script.task_name}</h2> */}
 
         {/* 메인 콘텐츠 */}
         <div
@@ -62,17 +58,17 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
           }`}
         >
           {script.main_content}
+          {/* 상세 지침 */}
+          {script.detailed_instruction && (
+            <div className={styles.detailedInstruction}>
+              <div className={styles.instructionLabel}>💡추가 안내</div>
+              <div className={styles.instructionText}>
+                {script.detailed_instruction}
+              </div>
+            </div>
+          )}
           {isCompleted && <div className={styles.completedText}>제출 완료</div>}
         </div>
-        {/* 상세 지침 */}
-        {script.detailed_instruction && (
-          <div className={styles.detailedInstruction}>
-            <div className={styles.instructionLabel}>💡추가 안내</div>
-            <div className={styles.instructionText}>
-              {script.detailed_instruction}
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

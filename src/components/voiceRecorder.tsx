@@ -517,7 +517,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         status: "completed", // 또는 "in_progress", "not_started"
-        audioRecordId: uploadResult.recordingId
+        audioRecordId: uploadResult.recordingId,
       });
       console.log("스크립트 완료 처리 완료:", completeResult);
 
@@ -811,10 +811,14 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               src={audioUrl}
               preload="none"
               playsInline
-              onEnded={() => setIsPlaying(false)}
               onError={() => setIsPlaying(false)}
               onCanPlayThrough={() => console.log("Audio ready")}
               style={{ display: "none" }}
+              onEnded={() => {
+                setTimeout(() => {
+                  setIsPlaying(false);
+                }, 1500);
+              }}
             />
             <button
               className={styles.playButton}

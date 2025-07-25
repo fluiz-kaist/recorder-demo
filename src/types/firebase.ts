@@ -188,6 +188,7 @@ export interface RecordingTask {
   taskType: "situational" | "formal";
   setId?: number; // 정형발화만 세트 ID 보유
   recordingId?: string; // 실제 녹음 파일 ID
+  audioRecordId?:string;
 
   // 녹음 상태
   status:

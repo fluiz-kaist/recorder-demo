@@ -13,8 +13,11 @@ const Layout = ({ children }: LayoutProps) => {
   const logoutMutation = useLogoutUserMutation();
 
   // 특정 경로에서만 "처음 화면으로" 버튼을 보여줄 경로들
-  const showHomeButtonPaths = ["/tutorial", "/scripts"];
-  const shouldShowHomeButton = showHomeButtonPaths.includes(router.pathname);
+  const showHomeButtonPaths = ["/tutorial", "/scripts", "/recording"];
+  const shouldShowHomeButton = showHomeButtonPaths.some((path) =>
+    router.asPath.startsWith(path)
+  );
+  console.log("router.pathname?", router.pathname);
 
   // 인증 상태 확인
   const isAuthenticated = useIsAuthenticated();
