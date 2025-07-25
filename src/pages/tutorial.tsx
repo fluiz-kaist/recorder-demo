@@ -312,7 +312,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               ) : (
                 <>
                   {" "}
-                  <p className={styles.detailedInstruction}>
+                  <p className={styles.tutorialDetailedInstruction}>
                     녹음이 끝나고 <br />
                     제출이 정상적으로 되면,
                     <br />
@@ -344,7 +344,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     return (
       <div className={styles.container}>
         <div className={styles.wrapper}>
-          <p className={styles.detailedInstruction}>
+          <p className={styles.tutorialDetailedInstruction}>
             사용자 정보를 불러오는 중입니다...
           </p>
         </div>
@@ -356,7 +356,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     return (
       <div className={styles.container}>
         <div className={styles.wrapper}>
-          <p className={styles.detailedInstruction}>
+          <p className={styles.tutorialDetailedInstruction}>
             사용자 정보를 불러오는 데 문제가 발생했습니다. <br />
             다시 로그인하거나, 처음 화면으로 돌아가 주세요.
           </p>
@@ -412,7 +412,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
                   }}
                 ></div>
               </div>
-              <div className={styles.detailedInstruction}>
+              <div className={styles.tutorialDetailedInstruction}>
                 전체 녹음 진행도를 보여줍니다.
               </div>
             </div>
@@ -469,7 +469,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
 
         {currentStep === TutorialStep.FORMAL && showTutorialComplete && (
           <div>
-            <div className={styles.detailedInstruction}>
+            <div className={styles.tutorialDetailedInstruction}>
               🎉 축하합니다! 모든 연습이 끝났습니다! <br />
               이제 본격적인 녹음을 시작해 주세요!
             </div>

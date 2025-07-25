@@ -231,3 +231,11 @@ export const useIsAuthenticated = (): boolean => {
 // 🔄 삭제된 훅들 (더 이상 사용하지 않음)
 // - useUserParticipationQuery: useUserQuery로 대체
 // - useUserCurrentStatusQuery: useUserQuery로 대체
+export const useCurrentSetId = (): number => {
+  const { data: fullUser } = useUserQuery();
+  const currentSetNumber = fullUser?.participation?.currentSetNumber || 1;
+  const currentSet = fullUser?.participation?.sets?.find(
+    (set) => set.setNumber === currentSetNumber
+  );
+  return currentSet?.setId || 1;
+};

@@ -1,9 +1,9 @@
 // queries/useScriptQueries.ts - 스크립트 관련 쿼리들
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useMinimalUserQuery } from "@/hooks/queries/useUserQueries";
 import { ScriptDataManager } from "@/utils/scriptDataManager";
-
+import { FormalScript, SituationalScript } from "@/types/firebase";
 // 타입 정의
 interface ServiceCompletion {
   situationalCompleted: number;
@@ -185,7 +185,6 @@ export const useAllLocalScriptsQuery = (): UseQueryResult<
       try {
         return {
           formal: formal ? JSON.parse(formal) : [],
-          qaScenario: qaScenario ? JSON.parse(qaScenario) : [],
           situational: situational ? JSON.parse(situational) : [],
         };
       } catch (error) {
@@ -201,5 +200,92 @@ export const useAllLocalScriptsQuery = (): UseQueryResult<
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+  });
+};
+/**
+ * 특정 서비스의 모든 상황발화 스크립트 조회
+ */
+export const useSituationalScriptsByServiceQuery = (
+  serviceName: string,
+  setNumber: number,
+  setId: number = 1
+) => {
+  console.log("저기?-5");
+  const scriptDataQuery = useScriptDataQuery(setNumber, setId);
+
+  return useQuery({
+    queryKey: ["situationalScriptsByService", serviceName, setNumber, setId],
+    queryFn: (): SituationalScript[] => {
+      const scriptData = scriptDataQuery.data;
+      if (!scriptData) return [];
+
+      // 전체 상황발화 스크립트에서 해당 서비스명으로 필터링
+      return scriptData.situationalScripts.filter(
+        (script) => script.service_name === serviceName
+      );
+    },
+    enabled: !!scriptDataQuery.data && !!serviceName,
+    staleTime: 10 * 60 * 1000, // 10분간 캐시
+  });
+};
+
+/**
+ * 특정 서비스의 모든 정형발화 스크립트 조회
+ */
+export const useFormalScriptsByServiceQuery = (
+  serviceName: string,
+  setNumber: number,
+  setId: number = 1
+) => {
+  console.log("저기?-6");
+  const scriptDataQuery = useScriptDataQuery(setNumber, setId);
+
+  return useQuery({
+    queryKey: ["formalScriptsByService", serviceName, setNumber, setId],
+    queryFn: (): FormalScript[] => {
+      const scriptData = scriptDataQuery.data;
+      if (!scriptData) return [];
+
+      // 전체 정형발화 스크립트에서 해당 서비스명으로 필터링
+      return scriptData.formalScripts.filter(
+        (script) => script.service_name === serviceName
+      );
+    },
+    enabled: !!scriptDataQuery.data && !!serviceName,
+    staleTime: 10 * 60 * 1000, // 10분간 캐시
+  });
+};
+
+/**
+ * 특정 서비스의 모든 스크립트 조회 (상황발화 + 정형발화)
+ */
+export const useAllScriptsByServiceQuery = (
+  serviceName: string,
+  setNumber: number,
+  setId: number = 1
+) => {
+  console.log("저기?-7");
+  const scriptDataQuery = useScriptDataQuery(setNumber, setId);
+
+  return useQuery({
+    queryKey: ["allScriptsByService", serviceName, setNumber, setId],
+    queryFn: (): {
+      situational: SituationalScript[];
+      formal: FormalScript[];
+    } => {
+      const scriptData = scriptDataQuery.data;
+      if (!scriptData) return { situational: [], formal: [] };
+
+      return {
+        situational: scriptData.situationalScripts.filter(
+          (script) => script.service_name === serviceName
+        ),
+        formal: scriptData.formalScripts.filter(
+          (script) => script.service_name === serviceName
+        ),
+      };
+    },
+    enabled: !!scriptDataQuery.data && !!serviceName,
+    staleTime: 10 * 60 * 1000, // 10분간 캐시
   });
 };

@@ -67,7 +67,7 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         {/* 상세 지침 */}
         {script.detailed_instruction && (
           <div className={styles.detailedInstruction}>
-            <div className={styles.instructionLabel}>💡 추가 안내</div>
+            <div className={styles.instructionLabel}>💡추가 안내</div>
             <div className={styles.instructionText}>
               {script.detailed_instruction}
             </div>
@@ -150,7 +150,7 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
           </div>
         ) : (
           <>
-            <p className={styles.detailedInstruction}>
+            <p className={styles.tutorialDetailedInstruction}>
               아래와 같은 상황이 주어집니다.
             </p>
             <div
@@ -170,7 +170,7 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
               )}
             </div>
 
-            <div className={styles.detailedInstruction}>
+            <div className={styles.tutorialDetailedInstruction}>
               🎤
               <br />
               <span style={{ color: "green", fontWeight: "bold" }}>

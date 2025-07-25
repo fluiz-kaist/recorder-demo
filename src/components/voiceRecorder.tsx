@@ -64,7 +64,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isSTTProcessing, setIsSTTProcessing] = useState(false);
   const [isSTTSuccess, setIsSTTSuccess] = useState(false);
-  const [shouldSTTOnUpload, setShouldSTTOnUpload] = useState(false);
   // 스크롤 훅 사용
   const scrollToTop = useScrollToTop();
   // STT 관련 상태
@@ -134,7 +133,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       .padStart(2, "0")}`;
   };
 
-  // 🎯 파일 크기 기반 간단한 품질 검증 (1-5ms 완료)
+  // 파일 크기 기반 간단한 품질 검증 (1-5ms 완료)
   const validateAudioQualitySimple = (
     blob: Blob,
     recordingDuration: number
@@ -323,7 +322,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     }
   };
 
-  // 🔥 녹음 중지
+  // 녹음 중지
   const stopRecording = async () => {
     try {
       console.log("🛑 녹음 종료 요청");
@@ -470,7 +469,12 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       // STT가 아직 안된 경우 업로드 시 STT 수행
 
-      // 1. 오디오 업로드
+      console.log(
+        "업로드하려고 하는데, 여기서 지금 스크립트 데이터 형태가?,",
+        scriptData
+      );
+
+      // // 1. 오디오 업로드
       const uploadResult = await uploadAudioMutation.mutateAsync({
         userId: authToken.userId,
         scriptId: scriptData.id,
@@ -482,23 +486,23 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         browserInfo: navigator.userAgent,
       });
 
-      console.log("오디오 업로드 완료:", uploadResult);
+      // console.log("오디오 업로드 완료:", uploadResult);
 
-      // 2. 스크립트 완료 처리
-      const completeResult = await completeScriptMutation.mutateAsync({
-        userId: authToken.userId,
-        scriptId: scriptData.id,
-        scriptType,
-        recordingId: uploadResult.recordingId,
-        audioUrl: uploadResult.audioUrl,
-        sttText: sttText,
-      });
+      // // 2. 스크립트 완료 처리
+      // const completeResult = await completeScriptMutation.mutateAsync({
+      //   userId: authToken.userId,
+      //   scriptId: scriptData.id,
+      //   scriptType,
+      //   recordingId: uploadResult.recordingId,
+      //   audioUrl: uploadResult.audioUrl,
+      //   sttText: sttText,
+      // });
 
-      console.log("스크립트 완료 처리 완료:", completeResult);
+      // console.log("스크립트 완료 처리 완료:", completeResult);
 
-      // 3. 성공 처리
-      setShowSuccessPopup(true);
-      console.log("전체 처리 성공");
+      // // 3. 성공 처리
+      // setShowSuccessPopup(true);
+      // console.log("전체 처리 성공");
     } catch (error) {
       console.error("처리 실패:", error);
 
@@ -626,33 +630,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           onClose={handleCloseSuccessPopup}
         />
       )}
-
-      {/*  녹음 안내 (품질 향상을 위한 팁) */}
-      {/* {!audioUrl && !isRecording && !isCompltedScript && (
-        <div className={styles.recordingGuide}>
-          <h4>음성 녹음 안내</h4>
-          <ul>
-            <li>
-              <b>조용한 곳에서</b> 녹음해 주세요
-            </li>
-            <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
-            <li>최소 3초 이상 말씀해 주세요</li>
-          </ul>
-        </div>
-      )} */}
-
-      {/* {!audioUrl && !isCompltedScript && (
-        <div className={styles.recordingGuide}>
-          <h4>음성 녹음 안내</h4>
-          <ul>
-            <li>
-              <b>조용한 곳에서</b> 녹음해 주세요
-            </li>
-            <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
-            <li>최소 3초 이상 말씀해 주세요</li>
-          </ul>
-        </div>
-      )} */}
 
       {/* 카운트다운 표시 */}
       {isCountingDown && countdown && (
@@ -825,46 +802,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             </button>
           </div>
           {isTutorial ? (
-            <p className={styles.detailedInstruction}>
+            <p className={styles.tutorialDetailedInstruction}>
               녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요
             </p>
           ) : (
             <></>
           )}
           <div className={styles.actionButtons}>
-            {/* STT가 성공했을 때만 제출하기 버튼 표시, stt true로 쓸때만 사용용 */}
-            {/* {isSTTSuccess && (
-              <button
-                className={styles.uploadButton}
-                onClick={handleUpload}
-                disabled={isUploading || isSTTProcessing}
-              >
-                {isSTTProcessing
-                  ? "음성 분석 중..."
-                  : isUploading
-                  ? "제출 중..."
-                  : "제출하기"}
-              </button>
-            )} */}
-
-            {/* {audioBlob && (
-              <button
-                className={styles.uploadButton}
-                onClick={handleUpload}
-                disabled={isUploading || isSTTProcessing}
-              >
-                {isSTTProcessing
-                  ? "음성 분석 중..."
-                  : isUploading
-                  ? isTutorial
-                    ? "완료 중..."
-                    : "제출 중..."
-                  : isTutorial
-                  ? "연습 완료"
-                  : "제출하기"}
-              </button>
-            )} */}
-
             {audioBlob && (
               <button
                 className={styles.uploadButton}
@@ -883,7 +827,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               </button>
             )}
             {isTutorial ? (
-              <p className={styles.detailedInstruction}>
+              <p className={styles.tutorialDetailedInstruction}>
                 녹음한 음성은 제출하기 버튼을 눌러서 제출해주세요
               </p>
             ) : (
@@ -898,7 +842,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               {isSTTProcessing ? "분석 중..." : "새로 녹음하기"}
             </button>
             {isTutorial ? (
-              <p className={styles.detailedInstruction}>
+              <p className={styles.tutorialDetailedInstruction}>
                 다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
               </p>
             ) : (
@@ -938,7 +882,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             )}
 
             {isTutorial ? (
-              <p className={styles.detailedInstruction}>
+              <p className={styles.tutorialDetailedInstruction}>
                 녹음한 음성을 글자로 바꿔보고 싶으시다면, 여기를 눌러보세요
               </p>
             ) : (

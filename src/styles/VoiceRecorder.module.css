@@ -937,7 +937,7 @@
 }
 
 /* 상세 지침 영역 */
-.detailedInstruction {
+.tutorialDetailedInstruction {
   background: var(--color-warning-bg);
   border: 2px solid var(--color-warning-light);
   border-radius: var(--radius-lg);

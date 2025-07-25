@@ -787,7 +787,7 @@
   }
 
   .mainContent,
-  .detailedInstruction {
+  .tutorialDetailedInstruction .detailedInstruction {
     border: 2px solid var(--color-text-primary);
   }
 
@@ -869,7 +869,7 @@
 }
 
 /* 상세 지침 영역 */
-.detailedInstruction {
+.tutorialDetailedInstruction {
   background: var(--color-warning-bg);
   border: 2px solid var(--color-warning-light);
   border-radius: var(--radius-lg);
@@ -879,7 +879,15 @@
   /* item-align: center; */
 }
 
-.instructionLabel {
+.detailedInstruction {
+  background: var(--color-gray-100);
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin: var(--space-sm);
+  text-align: center;
+}
+.tutoriaInstructionLabel {
   font-size: var(--font-sm);
   color: var(--color-warning);
   font-weight: var(--font-weight-bold);
@@ -888,10 +896,25 @@
   align-items: center;
   gap: var(--space-xs);
 }
+.instructionLabel {
+  font-size: var(--font-sm);
+  color: var(--color-primary-hover);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.tutorialInstructionText {
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+  word-break: keep-all;
+}
 
 .instructionText {
   font-size: var(--font-base);
-  color: var(--color-text-secondary);
+  color: var(--color-gray-600);
   line-height: var(--line-height-normal);
   word-break: keep-all;
 }
@@ -951,15 +974,16 @@
     padding: var(--space-sm);
   }
 
-  .detailedInstruction {
+  .tutorialDetailedInstruction .detailedInstruction {
     padding: var(--space-sm);
   }
 
+  .tutoriaInstructionLabel,
   .instructionLabel {
     font-size: var(--font-xs);
   }
 
-  .instructionText {
+  .tutorialInstructionText .instructionText {
     font-size: var(--font-sm);
   }
 
@@ -973,7 +997,7 @@
   }
 }
 
-.recordingInstructionLabel {
+.recordingtutoriaInstructionLabel {
   font-size: var(--font-md);
   color: var(--color-warning);
   font-weight: var(--font-weight-bold);

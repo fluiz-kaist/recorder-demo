@@ -645,7 +645,7 @@
   /* 모달 내용은 각 컴포넌트 스타일 사용 */
 }
 
-.detailedInstruction {
+.tutorialDetailedInstruction {
   background: var(--color-warning-bg);
   border: 2px solid var(--color-warning-light);
   border-radius: var(--radius-lg);
@@ -705,7 +705,7 @@
     padding: var(--space-sm);
   }
 
-  .detailedInstruction {
+  .tutorialDetailedInstruction {
     padding: var(--space-sm);
   }
 }
@@ -713,7 +713,7 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .mainContent,
-  .detailedInstruction {
+  .tutorialDetailedInstruction {
     border: 2px solid var(--color-text-primary);
   }
 }
