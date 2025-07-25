@@ -217,6 +217,7 @@ export default async function handler(
     } else if (req.method === "PATCH") {
       // 🔄 사용자 정보 수정
       console.log("🔄 사용자 정보 수정:", userId);
+      console.log("🔄 수정 데이터:", req.body);
 
       // 사용자 존재 여부 확인
       const userSnap = await getDoc(userDocRef);
@@ -238,9 +239,19 @@ export default async function handler(
       };
 
       // 업데이트할 필드들 추가
-      const { gender, ageGroup, hasConsented, completedAt, scriptAssignments } =
-        req.body;
+      const {
+        gender,
+        ageGroup,
+        hasConsented,
+        completedAt,
+        scriptAssignments,
+        currentStatus, // 🆕 추가
+        participation, // 🆕 추가
+        settings, // 🆕 추가
+        recordingStatus, // 레거시 호환용
+      } = req.body;
 
+      // 기본 필드 업데이트
       if (gender) updateData.gender = gender;
       if (ageGroup) updateData.ageGroup = ageGroup;
       if (hasConsented !== undefined) updateData.hasConsented = hasConsented;
@@ -251,6 +262,42 @@ export default async function handler(
         updateData.scriptAssignments = scriptAssignments;
       }
 
+      // 🆕 새로운 구조 필드들 업데이트
+      if (currentStatus !== undefined) {
+        updateData.currentStatus = {
+          ...currentUserData.currentStatus,
+          ...currentStatus,
+        };
+        console.log("🔄 currentStatus 업데이트:", updateData.currentStatus);
+      }
+
+      if (participation !== undefined) {
+        updateData.participation = {
+          ...currentUserData.participation,
+          ...participation,
+        };
+        console.log("🔄 participation 업데이트:", updateData.participation);
+      }
+
+      if (settings !== undefined) {
+        updateData.settings = {
+          ...currentUserData.settings,
+          ...settings,
+        };
+        console.log("🔄 settings 업데이트:", updateData.settings);
+      }
+
+      // 🔄 레거시 호환용
+      if (recordingStatus !== undefined) {
+        updateData.recordingStatus = {
+          ...currentUserData.recordingStatus,
+          ...recordingStatus,
+        };
+        console.log("🔄 recordingStatus 업데이트:", updateData.recordingStatus);
+      }
+
+      console.log("🔄 최종 업데이트 데이터:", updateData);
+
       // Firestore 문서 업데이트
       await updateDoc(userDocRef, updateData);
 
@@ -259,6 +306,8 @@ export default async function handler(
         ...currentUserData,
         ...updateData,
       };
+
+      console.log("🔄 업데이트 완료:", updatedUserData);
 
       return res.status(200).json({
         success: true,

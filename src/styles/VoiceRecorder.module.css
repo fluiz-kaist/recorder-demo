@@ -66,7 +66,7 @@
 .recordButton {
   min-width: 200px;
   min-height: var(--button-height-xl);
-  padding: 2rem 3rem;
+  padding: 1rem 1rem;
   font-size: var(--font-4xl);
   font-weight: var(--font-weight-bold);
   background: var(--color-secondary);
@@ -127,6 +127,7 @@
 
 .audioHeader {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
@@ -460,10 +461,10 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* 변환 결과 스타일도 심플하게 */
+/* 변환 결과 스타일 */
 .GoogleTranscriptionResult {
   background-color: var(--color-bg-primary);
-  padding: var(--space-md);
+  /* padding: var(--space-md); */
   border-radius: var(--radius-md);
   border: 2px solid var(--color-border);
   margin-bottom: var(--space-md);
@@ -474,10 +475,10 @@
 }
 
 .transcriptContent {
-  background-color: var(--color-bg-secondary);
+  /* background-color: var(--color-bg-secondary); */
   padding: var(--space-md);
   border-radius: var(--radius);
-  border-left: 4px solid var(--color-primary);
+  /* border-left: 4px solid var(--color-primary); */
   font-size: var(--font-lg); /* 글자 크게 */
   line-height: var(--line-height-relaxed);
   margin: var(--space-base) 0;
@@ -558,7 +559,7 @@
   }
 
   .audioHeader {
-    flex-direction: column;
+    /* flex-direction: column; */
     align-items: flex-start;
     gap: 0.5rem;
   }
@@ -892,4 +893,176 @@
     flex-direction: column;
     gap: var(--space-sm);
   }
+}
+
+.countdownText {
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-dark);
+  text-align: center;
+  padding: var(--space-sm);
+  margin-top: var(--space-md);
+  background-color: var(--color-warning-bg);
+}
+
+.countdownNumber {
+  font-size: var(--font-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  text-align: center;
+  line-height: 1.2;
+  margin-top: var(--space-xs);
+}
+
+@media screen and (max-width: 480px) {
+  .countdownText {
+    font-size: var(--font-base);
+  }
+
+  .countdownNumber {
+    font-size: var(--font-2xl);
+  }
+}
+
+.recordingNotice {
+  font-size: var(--font-sm);
+  color: var(--color-text-dark);
+  text-align: center;
+  margin-top: var(--space-sm);
+}
+
+.redText {
+  color: red;
+  font-weight: bold;
+}
+
+/* 상세 지침 영역 */
+.detailedInstruction {
+  background: var(--color-warning-bg);
+  border: 2px solid var(--color-warning-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin: var(--space-sm);
+  text-align: center;
+  /* item-align: center; */
+}
+.recordingStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.recordingTopRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recordingIndicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: red;
+  animation: blink 1s infinite;
+}
+
+.recordingTime {
+  font-size: 16px;
+  font-weight: bold;
+  color: #222;
+}
+
+.minimumTimeNotice {
+  font-size: 14px;
+  color: #888;
+}
+
+.recordButtonTextWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.3;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.recordIcon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.recordMainText {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--color-bg-primary);
+}
+
+.recordSubText {
+  font-size: 14px;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* 공통 버튼 스타일 */
+.recordButton {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  color: white;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  transition: background-color 0.3s ease;
+}
+
+/* 초록색 상태 (준비/기다림) */
+.readyButton {
+  background-color: var(--color-secondary);
+}
+
+/* 빨간색 상태 (녹음 중) */
+.recordingButton {
+  background-color: #d63031; /* 빨간색 */
+}
+
+/* 비활성화 (5초 안 됨 등) */
+.recordingDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.customAudioPlayer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+/* 재생/정지 버튼 스타일 */
+.playButton {
+  background-color: var(--color-primary); /* 시원한 파란색 */
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 버튼 hover 시 */
+.playButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* 버튼 비활성화 시 */
+.playButton:disabled {
+  background-color: #dfe6e9;
+  color: #b2bec3;
+  cursor: not-allowed;
 }

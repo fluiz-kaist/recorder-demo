@@ -53,8 +53,6 @@ export interface TutorialScript {
 //   description: string;
 // }
 
-
-
 // 스크립트 단위 타입 (사용자 진행 상황 관리용)
 export interface Script {
   id: number; // JSON 파일의 id (0, 1, 2...)
@@ -115,6 +113,12 @@ export interface AudioRecording {
 
   //호환용?
   filePath?: string;
+
+  // 학습 고려
+  originalScriptContent: string; // 사용자가 녹음한 당시의 스크립트 원본 텍스트
+  scriptCategory?: string; // 스크립트 카테고리 (예: '건강', '금융')
+  scriptIntent?: string; // 스크립트 의도
+  scriptTitle?: string; // 스크립트 제목
 }
 
 // 통계를 위한 타입

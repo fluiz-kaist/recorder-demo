@@ -178,7 +178,7 @@ export const useUpdateUserMutation = (): UseMutationResult<
       if (!response.ok) {
         throw new Error(data.message || "사용자 정보 업데이트에 실패했습니다.");
       }
-
+      console.log("서버 응답 확인:", data.user); // 디버깅용
       return data.user as User;
     },
     onSuccess: (updatedUser, variables) => {

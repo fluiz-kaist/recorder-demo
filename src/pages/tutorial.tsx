@@ -6,13 +6,14 @@ import VoiceRecorder from "@/components/voiceRecorder";
 import { ScriptType, TutorialScript } from "@/types/firebase";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-
+import { useQueryClient } from "@tanstack/react-query";
 // 독립 컴포넌트들 임포트
 import TutorialWelcome from "@/components/guide/TutorialWelcome";
 import AssistantIntro from "@/components/guide/AssistantIntro";
 import VoiceGuide from "@/components/guide/VoiceGuide";
 import MicPermission from "@/components/guide/MicPermission";
-
+import { useUserQuery } from "@/hooks/queries/useUserQueries";
+import { useUpdateUserMutation } from "@/hooks/mutations/useUserMutations";
 interface TutorialComponentProps {
   scriptType: ScriptType;
 }
@@ -32,19 +33,22 @@ const tutorialScripts = [
     id: 0,
     category: "tutorial",
     type: "situational",
-    title: "상황 녹음 연습하기",
-    description: "시청으로 가는 택시를 부르고 싶을 때, 어떻게 말씀하시겠어요?",
+    title: "상황에 따라 말해보기",
+    description:
+      "다음 주 병원 예약이 있어 까먹지 않도록 달력에 기록하고 싶습니다.<br /><br />비서에게 캘린더 앱을 열고 병원 일정을 등록해달라고 할 때, 뭐라고 말씀하시겠어요?",
     explain:
-      "예를 들어, 택시를 부르고 싶다면 '시청 가는 택시 불러줘'처럼 자연스럽게 말씀하시면 됩니다. 편한 말투로 이야기해보세요!",
+      "비서가 대신 캘린더 앱을 열고 병원 일정을 등록한다고 생각해보세요. <br />그때 어떤 말로 부탁할까요?",
   },
+
   {
     id: 1,
     category: "tutorial",
     type: "formal",
-    title: "정형 발화 연습하기",
-    description: "서울역에서 부산역 가는 기차를 예매해줘",
+    title: "주어진 문장을 읽어보기",
+    description:
+      "다음 주에 병원에 가야 하는데 자꾸 까먹을까 봐 그래. 캘린더 좀 열어서 날짜랑 시간 등록해줄래?",
     explain:
-      "위 문장을 평소처럼 자연스럽게 읽어주세요. \n한 말투로 말씀하셔도 괜찮습니다.",
+      "위 문장을 평소처럼 자연스럽게 읽어주세요. \n한 말투로 말씀하셔도 괜찮습니다. ",
   },
 ];
 
@@ -63,10 +67,29 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
   const [guideModalType, setGuideModalType] = useState<
     "assistant" | "voice" | "method"
   >("assistant");
-
+  const [showTutorialComplete, setShowTutorialComplete] = useState(false);
+  const { mutateAsync: updateUser } = useUpdateUserMutation();
   const totalSteps = 6;
   const scrollToTop = useScrollToTop();
+  const { data: user, isLoading, error } = useUserQuery();
+  const queryClient = useQueryClient();
+  // 튜토리얼 완료 시 호출
+  const handleTutorialComplete = (userId: string) => {
+    if (user) {
+      updateUser({
+        userId,
+        updates: {
+          currentStatus: {
+            ...user.currentStatus, // 기존 값 유지
+            isTutorialCompleted: true,
+            canStartRecording: true,
+          },
+        },
+      });
+    }
+  };
 
+  console.log("currentStep?", currentStep);
   // 햅틱 피드백
   const triggerHapticFeedback = () => {
     if ("vibrate" in navigator) {
@@ -83,15 +106,54 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
   };
 
   const handlePrev = () => {
-    if (currentStep > TutorialStep.ASSISTANT_INTRO) {
+    // WELCOME 단계가 아닐 때만 이전 단계로 이동
+    if (currentStep > TutorialStep.WELCOME) {
+      // 수정된 부분
       triggerHapticFeedback();
       setCurrentStep((prev) => prev - 1);
       scrollToTop();
     }
   };
 
-  const goBack = () => {
+  const goToMain = async () => {
+    console.group("유저가 튜토리얼을 완료함");
+    if (!user?.id) {
+      console.warn(
+        "유저 정보가 없어서 tutorial 완료 상태를 저장할 수 없습니다."
+      );
+    } else {
+      try {
+        const updatedUser = await updateUser({
+          // await 추가
+          userId: user.id,
+          updates: {
+            currentStatus: {
+              ...user.currentStatus,
+              isTutorialCompleted: true,
+              canStartRecording: true,
+            },
+          },
+        });
+        console.log("튜토리얼 완료!");
+        // mutation이 반환한 최신 데이터 사용
+        console.log(
+          "mutation 반환값:",
+          updatedUser.currentStatus.isTutorialCompleted
+        );
+
+        // 잠시 기다린 후 캐시에서 다시 확인
+        setTimeout(() => {
+          const cachedUser = queryClient.getQueryData(["user", user.id]);
+
+          console.log("캐시에서 가져온 user:", cachedUser);
+        }, 100);
+      } catch (error) {
+        console.error("업데이트 실패:", error);
+      }
+    }
     triggerHapticFeedback();
+    console.log("메인 화면으로 이동 합니다. ");
+    console.groupEnd();
     router.push("/");
   };
 
@@ -128,6 +190,11 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
 
   const getCompletionRate = (): number => {
     return Math.round((completedScripts.size / tutorialScripts.length) * 100);
+  };
+
+  //튜토 완료 핸들러
+  const handleAllTutorialComplete = () => {
+    setShowTutorialComplete(true);
   };
 
   const getPageTitle = (): string => {
@@ -205,6 +272,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
 
   // 실제 녹음 연습 페이지 렌더링
   const renderPracticeCard = (script: TutorialScript) => {
+    console.log("여기서 스클비트?", script);
     const isCompleted = isCurrentScriptCompleted(script.id);
 
     return (
@@ -232,10 +300,28 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
                 key={`voice-recorder-${script.id}`}
                 scriptType={ScriptType.TUTORIAL}
                 scriptData={script}
-                isCompltedScript={isCompleted}
                 isTutorial={true}
                 onRecordingComplete={() => handleRecordingComplete(script.id)}
+                onAllScriptsComplete={handleAllTutorialComplete} // 새로 추가
+                totalScriptsCount={tutorialScripts.length} // 새로 추가
+                completedScriptsCount={completedScripts.size} // 새로 추가
               />
+
+              {currentStep === TutorialStep.FORMAL && showTutorialComplete ? (
+                <></>
+              ) : (
+                <>
+                  {" "}
+                  <p className={styles.detailedInstruction}>
+                    녹음이 끝나고 <br />
+                    제출이 정상적으로 되면,
+                    <br />
+                    이렇게 완료 화면이 나옵니다. <br /> <br /> 이제 아래의{" "}
+                    <br />
+                    <strong>‘다음’</strong> 버튼을 눌러주세요.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <VoiceRecorder
@@ -244,6 +330,9 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               scriptData={script}
               isTutorial={true}
               onRecordingComplete={() => handleRecordingComplete(script.id)}
+              onAllScriptsComplete={handleAllTutorialComplete} // 새로 추가
+              totalScriptsCount={tutorialScripts.length} // 새로 추가
+              completedScriptsCount={completedScripts.size} // 새로 추가
             />
           )}
         </div>
@@ -251,12 +340,40 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.wrapper}>
+          <p className={styles.detailedInstruction}>
+            사용자 정보를 불러오는 중입니다...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.wrapper}>
+          <p className={styles.detailedInstruction}>
+            사용자 정보를 불러오는 데 문제가 발생했습니다. <br />
+            다시 로그인하거나, 처음 화면으로 돌아가 주세요.
+          </p>
+          <button onClick={goToMain} className={styles.returnHomeButton}>
+            처음 화면으로
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
         {/* 헤더 */}
         {/* <div className={styles.header}>
-          <button onClick={goBack} className={styles.backButton}>
+          <button onClick={goToMain} className={styles.backButton}>
             <svg
               className={styles.backIcon}
               fill="none"
@@ -277,32 +394,30 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
         </div> */}
 
         {/* 진행률 카드 */}
-        <div className={styles.progressCard}>
-          <div className={styles.progressHeader}>
-            <span className={styles.progressLabel}>
-              {/* {currentStep >= TutorialStep.SITUATIONAL
-                ? "연습 진행률"
-                : "튜토리얼 단계"} */}
-              연습 진행률
-            </span>
-            <span className={styles.progressPercentage}>
-              {currentStep >= TutorialStep.SITUATIONAL
-                ? `${getCompletionRate()}%`
-                : `${currentStep + 1} / ${totalSteps}`}
-            </span>
+        {(currentStep === TutorialStep.SITUATIONAL ||
+          currentStep === TutorialStep.FORMAL) && (
+          <div>
+            <div className={styles.progressCard}>
+              <div className={styles.progressHeader}>
+                <span className={styles.progressLabel}>연습 진행률</span>
+                <span className={styles.progressPercentage}>
+                  {getCompletionRate()}%
+                </span>
+              </div>
+              <div className={styles.progressBarTrack}>
+                <div
+                  className={styles.progressBarFill}
+                  style={{
+                    width: `${getCompletionRate()}%`,
+                  }}
+                ></div>
+              </div>
+              <div className={styles.detailedInstruction}>
+                전체 녹음 진행도를 보여줍니다.
+              </div>
+            </div>
           </div>
-          <div className={styles.progressBarTrack}>
-            <div
-              className={styles.progressBarFill}
-              style={{
-                width:
-                  currentStep >= TutorialStep.SITUATIONAL
-                    ? `${getCompletionRate()}%`
-                    : `${((currentStep + 1) / totalSteps) * 100}%`,
-              }}
-            ></div>
-          </div>
-        </div>
+        )}
 
         {/* 단계별 카드 렌더링 */}
         <div className={styles.cardContainer}>
@@ -352,13 +467,26 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
             renderPracticeCard(tutorialScripts[1])}
         </div>
 
+        {currentStep === TutorialStep.FORMAL && showTutorialComplete && (
+          <div>
+            <div className={styles.detailedInstruction}>
+              🎉 축하합니다! 모든 연습이 끝났습니다! <br />
+              이제 본격적인 녹음을 시작해 주세요!
+            </div>
+            <button onClick={goToMain} className={styles.returnHomeButton}>
+              <span>처음 화면으로</span>
+            </button>
+          </div>
+        )}
+
         {/* 네비게이션 */}
         <div className={styles.navigation}>
           <button
             onClick={handlePrev}
-            disabled={currentStep === TutorialStep.WELCOME}
+            // WELCOME 단계일 때만 비활성화
+            disabled={currentStep === TutorialStep.WELCOME} // 수정된 부분
             className={`${styles.navButton} ${
-              currentStep === TutorialStep.ASSISTANT_INTRO
+              currentStep === TutorialStep.WELCOME // 수정된 부분: WELCOME 단계일 때만 비활성화 스타일 적용
                 ? styles.navButtonDisabled
                 : styles.navButtonEnabled
             }`}
@@ -393,7 +521,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
             }`}
           >
             {currentStep === TutorialStep.FORMAL
-              ? "연습하기 완료" // 마지막 버튼 문구 변경
+              ? "연습완료!" // 마지막 버튼 문구 변경
               : currentStep === TutorialStep.MIC_PERMISSION &&
                 !micPermissionGranted
               ? "권한 필요" // 마이크 권한 없으면 '권한 필요' 표시

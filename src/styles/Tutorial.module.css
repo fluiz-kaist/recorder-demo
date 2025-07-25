@@ -645,6 +645,16 @@
   /* 모달 내용은 각 컴포넌트 스타일 사용 */
 }
 
+.detailedInstruction {
+  background: var(--color-warning-bg);
+  border: 2px solid var(--color-warning-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin: var(--space-sm);
+  text-align: center;
+  /* item-align: center; */
+}
+
 /* 모바일 최적화 */
 @media (max-width: 480px) {
   .card {
@@ -690,4 +700,50 @@
   .modalHeader h2 {
     font-size: var(--font-lg);
   }
+
+  .tutorialInstruction {
+    padding: var(--space-sm);
+  }
+
+  .detailedInstruction {
+    padding: var(--space-sm);
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .mainContent,
+  .detailedInstruction {
+    border: 2px solid var(--color-text-primary);
+  }
+}
+
+.returnHomeButton {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 100%
+  );
+  color: var(--color-bg-primary);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition);
+  margin-top: var(--space-md);
+  text-align: center;
+  width: 100%;
+}
+
+.returnHomeButton:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-secondary) 0%,
+    var(--color-primary) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }

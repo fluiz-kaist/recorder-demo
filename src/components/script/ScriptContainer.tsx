@@ -144,12 +144,28 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
         return "정형 녹음";
       case ScriptType.QA_SCENARIO:
         return "질의응답 녹음";
-
       case ScriptType.TUTORIAL:
         return "녹음 연습";
       default:
         return "스크립트 녹음";
     }
+  };
+
+  // 현재 스크립트의 고유 ID 가져오기 함수
+  const getCurrentScriptId = (script: AnyScript): string | number => {
+    // 새로운 데이터 구조에서는 id 또는 task_key를 사용
+    if ("id" in script && script.id !== undefined) {
+      return script.id;
+    }
+    if ("task_key" in script && script.task_key !== undefined) {
+      return script.task_key;
+    }
+    // Formal Script의 경우 id 속성 사용
+    if ("id" in script && typeof script.id === "string") {
+      return script.id;
+    }
+    // fallback으로 인덱스 사용
+    return scriptIndex;
   };
 
   // 로딩 중일 때
@@ -206,15 +222,16 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     (assignment) => assignment.scriptType === scriptType
   );
 
-  // 현재 스크립트가 완료되었는지 확인하는 함수
-  const isCurrentScriptCompleted = (scriptId: number): boolean => {
+  // 현재 스크립트가 완료되었는지 확인하는 함수 (새 데이터 구조 적용)
+  const isCurrentScriptCompleted = (script: AnyScript): boolean => {
     if (!currentAssignment) return false;
+    const scriptId = getCurrentScriptId(script);
     return currentAssignment.completedScriptIds.includes(scriptId);
   };
 
   // 현재 스크립트의 완료 상태
   const currentScriptCompleted = currentScript
-    ? isCurrentScriptCompleted(currentScript.id)
+    ? isCurrentScriptCompleted(currentScript)
     : false;
 
   return (
@@ -245,6 +262,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             {scriptIndex + 1} / {scripts.length}
           </div>
         </div>
+
         {/* 전체 진행률 */}
         <div className={styles.progressCard}>
           <div className={styles.progressHeader}>
@@ -344,11 +362,12 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                 >
                   {/* 이전 스크립트 완료 상태 표시 */}
                   {scriptIndex > 0 &&
-                    isCurrentScriptCompleted(scripts[scriptIndex - 1].id) && (
+                    isCurrentScriptCompleted(scripts[scriptIndex - 1]) && (
                       <span className={styles.navCompletedIcon}>✅</span>
                     )}
                   이전
                 </button>
+
                 <div className={styles.statsSection}>
                   <div className={styles.statsLabel}>완료한 녹음</div>
                   <div className={styles.statsValue}>
@@ -369,7 +388,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                   다음
                   {/* 다음 스크립트 완료 상태 표시 */}
                   {scriptIndex < scripts.length - 1 &&
-                    isCurrentScriptCompleted(scripts[scriptIndex + 1].id) && (
+                    isCurrentScriptCompleted(scripts[scriptIndex + 1]) && (
                       <span className={styles.navCompletedIcon}>✅</span>
                     )}
                 </button>

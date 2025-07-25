@@ -39,7 +39,13 @@ interface VoiceRecorderProps {
   onRecordingComplete?: () => void;
   isCompltedScript?: boolean;
   isTutorial?: boolean;
+  onAllScriptsComplete?: () => void; // 새로 추가
+  totalScriptsCount?: number; // 새로 추가
+  completedScriptsCount?: number; // 새로 추가
 }
+
+//  최소 녹음 시간 설정 (초 단위)
+const MINIMUM_RECORDING_SECONDS = 5;
 
 const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   scriptType,
@@ -47,6 +53,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   onRecordingComplete,
   isCompltedScript,
   isTutorial = false,
+  onAllScriptsComplete,
+  totalScriptsCount,
+  completedScriptsCount,
 }) => {
   console.log("VoiceRecorder props:", { scriptType, scriptData });
 
@@ -83,6 +92,14 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const completeScriptMutation = useCompleteScriptMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
   const { data: localScripts } = useAllLocalScriptsQuery();
+  //녹음 정지 강제 관리
+  const [canStopRecording, setCanStopRecording] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(
+    null
+  );
+  //녹음 파일 다시듣기 상태
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
 
   // MobileOptimizedRecorder hook 사용
   const {
@@ -287,6 +304,16 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       // MobileOptimizedRecorder의 startRecording 호출
       await startMobileRecording();
 
+      // 추가: 녹음 시작 시간 기록 및 5초 타이머 시작
+      const startTime = Date.now();
+      setRecordingStartTime(startTime);
+      setCanStopRecording(false);
+
+      // 5초 후에 정지 가능하도록 설정
+      setTimeout(() => {
+        setCanStopRecording(true);
+      }, MINIMUM_RECORDING_SECONDS * 1000);
+
       console.log("✅ 녹음 시작 완료");
     } catch (err) {
       console.error("❌ 녹음 시작 실패:", err);
@@ -315,8 +342,24 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         type: audioBlob.type,
       });
 
-      // Blob URL 생성
-      const url = URL.createObjectURL(audioBlob);
+      let url = "";
+
+      // iOS 호환성을 위한 오디오 URL 생성
+      if (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+        audioBlob.type.includes("webm")
+      ) {
+        // iOS에서 WebM 문제 시 Data URL 사용
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          url = reader.result as string;
+          // setAudioUrl(reader.result as string);
+        };
+        reader.readAsDataURL(audioBlob);
+      } else {
+        // 일반적인 경우
+        url = URL.createObjectURL(audioBlob);
+      }
       setAudioUrl(url);
       setAudioDuration(recordingTime);
 
@@ -388,6 +431,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     if (isTutorial) {
       console.log("튜토리얼 녹음 완료:", transcription?.transcript);
       setShowSuccessPopup(true);
+      // 새로 추가: 모든 스크립트 완료 체크
+      if (onAllScriptsComplete && totalScriptsCount && completedScriptsCount) {
+        // 현재 스크립트까지 포함해서 완료된 개수가 전체와 같은지 체크
+        if (completedScriptsCount + 1 >= totalScriptsCount) {
+          onAllScriptsComplete();
+        }
+      }
       return;
     }
 
@@ -508,6 +558,19 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     setCountdown(null);
     setIsCountingDown(false);
     scrollToTop();
+
+    // 녹음 강제 변수들 초기화
+    setCanStopRecording(false);
+    setRecordingStartTime(null);
+
+    // 오디오 플레이어 상태 초기화
+    setIsPlaying(false);
+    if (audioRef) {
+      audioRef.pause();
+      audioRef.currentTime = 0;
+    }
+    setAudioRef(null);
+
     console.log("✅ 새 녹음 준비 완료");
   };
 
@@ -523,6 +586,27 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       </div>
     );
   }
+  //녹음한 음성 다시듣기
+  // 오디오 재생/정지 함수
+  const togglePlayback = () => {
+    if (!audioRef) return;
+
+    if (isPlaying) {
+      audioRef.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.play().catch(console.error);
+      setIsPlaying(true);
+    }
+  };
+
+  //버튼 스타일
+  const getButtonStyle = () => {
+    if (isRecording) {
+      return styles.recordingButton; // 빨간색
+    }
+    return styles.readyButton; // 초록색
+  };
 
   return (
     <div>
@@ -531,8 +615,8 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         <SuccessPopup
           message={
             isTutorial
-              ? "연습 녹음이 완료되었습니다!"
-              : "음성 녹음 파일이 성공적으로 제출되었습니다!"
+              ? "녹음 음성(연습용)이 성공적으로 제출되었습니다!"
+              : "녹음한 음성이 성공적으로 제출되었습니다!"
           }
           details={
             transcription
@@ -581,35 +665,68 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       {/* 녹음 시간 표시 */}
       {isRecording && (
         <div className={styles.recordingStatus}>
-          <div className={styles.recordingIndicator}></div>
-          <span className={styles.recordingTime}>
-            녹음 중: {formatTime(recordingTime)}
-          </span>
+          <div className={styles.recordingTopRow}>
+            <div className={styles.recordingIndicator}></div>
+            <span className={styles.recordingTime}>
+              녹음 중: {formatTime(recordingTime)}
+            </span>
+          </div>
+
+          {!canStopRecording && (
+            <div className={styles.minimumTimeNotice}>
+              최소 {MINIMUM_RECORDING_SECONDS}초 이상 녹음해주세요 (남은 시간:{" "}
+              {Math.max(0, MINIMUM_RECORDING_SECONDS - recordingTime)}초)
+            </div>
+          )}
         </div>
       )}
 
       {/* 녹음 결과가 없을 때만 메인 녹음 버튼 표시 */}
       {!audioUrl && (
         <button
-          className={`${styles.recordButton} ${
-            isRecording ? styles.recordingButton : ""
+          className={`${styles.recordButton} ${getButtonStyle()} ${
+            isRecording && !canStopRecording ? styles.recordingDisabled : ""
           }`}
           onClick={isRecording ? stopRecording : startRecording}
-          //  튜토리얼 스크립트 할당 중일 때도 비활성화
           disabled={
-            isUploading || isCountingDown || assignScriptsMutation.isPending
+            isUploading ||
+            isCountingDown ||
+            assignScriptsMutation.isPending ||
+            (isRecording && !canStopRecording)
           }
         >
-          {isCountingDown
-            ? "준비 중..."
-            : assignScriptsMutation.isPending
-            ? "준비 중..."
-            : isRecording
-            ? "녹음 종료"
-            : isCompltedScript
-            ? "다시 녹음하기"
-            : "녹음 시작하기"}
+          <div className={styles.recordButtonTextWrapper}>
+            {!isRecording ? (
+              <>
+                <span className={styles.recordIcon}>🎤</span>
+                <span className={styles.recordMainText}>녹음을 시작하려면</span>
+                <span className={styles.recordMainText}>
+                  여기를 눌러주세요!
+                </span>
+              </>
+            ) : canStopRecording ? (
+              <span className={styles.recordMainText}>녹음 종료</span>
+            ) : (
+              <>
+                <span className={styles.recordMainText}>녹음 중...</span>
+                <span className={styles.recordSubText}>
+                  ({Math.max(0, MINIMUM_RECORDING_SECONDS - recordingTime)}초 후
+                  종료 가능)
+                </span>
+              </>
+            )}
+          </div>
         </button>
+      )}
+
+      {isRecording && (
+        <div className={styles.recordingNotice}>
+          🎤{" "}
+          {canStopRecording
+            ? "녹음을 끝내려면 "
+            : `최소 ${MINIMUM_RECORDING_SECONDS}초 이상 녹음 후 `}
+          <span className={styles.redText}>빨간 버튼</span>을 눌러주세요
+        </div>
       )}
 
       {/* 🎯 품질 경고 표시 */}
@@ -676,61 +793,44 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       {audioUrl && !showQualityWarning && (
         <div className={styles.audioSection}>
           <div className={styles.audioHeader}>
-            <p className={styles.audioLabel}>🔉 녹음된 파일</p>
+            <p className={styles.audioLabel}>🔉 녹음</p>
             {audioDuration && (
               <span className={styles.audioDuration}>
                 길이: {formatTime(audioDuration)}
               </span>
             )}
-            {qualityResult && (
+            {/* {qualityResult && (
               <span className={styles.qualityBadge}>
                 품질: {qualityResult.score}/100 ✅
               </span>
-            )}
+            )} */}
           </div>
-          <audio className={styles.audioPlayer} src={audioUrl} controls />
-
-          {/* STT 컴포넌트 */}
-          {/* {showSTT && (
-            <SttGoogle
-              audioBlob={audioBlob}
-              onTranscriptionComplete={handleTranscriptionComplete}
-              onError={handleTranscriptionError}
-              onTranscribingStateChange={handleSTTStateChange}
-              autoTranscribe={true}
+          <div className={styles.customAudioPlayer}>
+            <audio
+              ref={setAudioRef}
+              src={audioUrl}
+              preload="none"
+              playsInline
+              onEnded={() => setIsPlaying(false)}
+              onError={() => setIsPlaying(false)}
+              onCanPlayThrough={() => console.log("Audio ready")}
+              style={{ display: "none" }}
             />
-          )} */}
-          {showSTT && (
-            <SttWhisper
-              audioBlob={audioBlob}
-              onTranscriptionComplete={handleTranscriptionComplete}
-              onError={handleTranscriptionError}
-              onTranscribingStateChange={handleSTTStateChange}
-              autoTranscribe={false}
-            />
+            <button
+              className={styles.playButton}
+              onClick={togglePlayback}
+              disabled={!audioUrl}
+            >
+              {isPlaying ? "⏸️ 재생 멈추기" : "▶️ 녹음한 음성 확인하기"}
+            </button>
+          </div>
+          {isTutorial ? (
+            <p className={styles.detailedInstruction}>
+              녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요
+            </p>
+          ) : (
+            <></>
           )}
-
-          {/* STT 에러 표시 */}
-          {transcriptionError && (
-            <div className={styles.errorMessage}>
-              ❌ 변환 실패: {transcriptionError}
-              <p className={styles.errorGuidance}>
-                음성 변환에 실패했습니다. 새로 녹음해주세요.
-              </p>
-            </div>
-          )}
-
-          {/* STT 변환 결과 */}
-          {transcription && (
-            <div className={styles.GoogleTranscriptionResult}>
-              <div className={styles.transcriptionText}>
-                <p className={styles.transcriptContent}>
-                  {transcription.transcript}
-                </p>
-              </div>
-            </div>
-          )}
-
           <div className={styles.actionButtons}>
             {/* STT가 성공했을 때만 제출하기 버튼 표시, stt true로 쓸때만 사용용 */}
             {/* {isSTTSuccess && (
@@ -782,6 +882,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                   : "제출하기"}
               </button>
             )}
+            {isTutorial ? (
+              <p className={styles.detailedInstruction}>
+                녹음한 음성은 제출하기 버튼을 눌러서 제출해주세요
+              </p>
+            ) : (
+              <></>
+            )}
 
             <button
               className={styles.newRecordingButton}
@@ -790,6 +897,53 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             >
               {isSTTProcessing ? "분석 중..." : "새로 녹음하기"}
             </button>
+            {isTutorial ? (
+              <p className={styles.detailedInstruction}>
+                다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
+              </p>
+            ) : (
+              <></>
+            )}
+
+            {/* STT 컴포넌트 */}
+            {showSTT && (
+              <SttWhisper
+                audioBlob={audioBlob}
+                onTranscriptionComplete={handleTranscriptionComplete}
+                onError={handleTranscriptionError}
+                onTranscribingStateChange={handleSTTStateChange}
+                autoTranscribe={false}
+              />
+            )}
+
+            {/* STT 에러 표시 */}
+            {transcriptionError && (
+              <div className={styles.errorMessage}>
+                ❌ 변환 실패: {transcriptionError}
+                <p className={styles.errorGuidance}>
+                  음성 변환에 실패했습니다. 새로 녹음해주세요.
+                </p>
+              </div>
+            )}
+
+            {/* STT 변환 결과 */}
+            {transcription && (
+              <div className={styles.GoogleTranscriptionResult}>
+                <div className={styles.transcriptionText}>
+                  <p className={styles.transcriptContent}>
+                    {transcription.transcript}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isTutorial ? (
+              <p className={styles.detailedInstruction}>
+                녹음한 음성을 글자로 바꿔보고 싶으시다면, 여기를 눌러보세요
+              </p>
+            ) : (
+              <></>
+            )}
           </div>
 
           {/* 업로드 에러 */}

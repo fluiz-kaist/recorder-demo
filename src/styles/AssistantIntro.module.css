@@ -187,3 +187,15 @@
     transform: none;
   }
 }
+
+.next {
+  font-size: var(--font-normal);
+  font-weight: var(--font-weight-medium);
+  color: gray;
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+  white-space: pre-line;
+  padding: 0 var(--space-sm);
+  text-align: center;
+}

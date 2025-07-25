@@ -47,7 +47,7 @@
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  margin-bottom: var(--space-base);
+  margin-bottom: var(--space-sm);
   transition: all var(--transition);
 }
 
@@ -64,11 +64,7 @@
 }
 
 .stepIcon .stepNumber {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary),
-    var(--color-secondary)
-  );
+  background: linear-gradient(135deg, var(--color-primary), black);
   color: var(--color-bg-primary);
   width: 32px;
   height: 32px;
@@ -92,6 +88,7 @@
   color: var(--color-text-secondary);
   margin: 0 0 var(--space-sm) 0;
   line-height: var(--line-height-tight);
+  text-align: center;
 }
 
 .stepDescription {
@@ -100,6 +97,7 @@
   margin: 0;
   line-height: var(--line-height-normal);
   word-break: keep-all;
+  text-align: center;
 }
 
 .stepVisual {
@@ -223,4 +221,16 @@
   .stepCard:hover {
     transform: none;
   }
+}
+
+.next {
+  font-size: var(--font-normal);
+  font-weight: var(--font-weight-medium);
+  color: gray;
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+  white-space: pre-line;
+  padding: 0 var(--space-sm);
+  text-align: center;
 }

@@ -56,7 +56,7 @@
 
 /* 단계 섹션 */
 .stepsSection {
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-sm);
 }
 
 .permissionStep {
@@ -91,7 +91,8 @@
 
 /* 액션 섹션 */
 .actionSection {
-  margin-bottom: var(--space-xl);
+  /* margin-top: var(--space--xl); */
+  margin: var(--space-sm);
 }
 
 .permissionButton {
@@ -245,7 +246,7 @@
   }
 
   .additionalInfo {
-    padding: var(--space-base);
+    padding: var(--space-sm);
   }
 
   .infoTitle {

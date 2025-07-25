@@ -11,7 +11,7 @@
   padding: var(--space-2xl) var(--space-lg); /* 충분한 내부 여백 */
   margin-bottom: var(--space-base); /* 아래쪽 카드와의 간격 */
   text-align: center;
-  gap: var(--space-lg); /* 섹션 간 간격 */
+  gap: var(--space-sm); /* 섹션 간 간격 */
   width: 100%;
   box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
 }
@@ -131,8 +131,8 @@
 /* 태블릿 (768px 이하) - 기존 tutorial.css의 @media (max-width: 768px) 기준 */
 @media (max-width: 768px) {
   .container {
-    padding: var(--space-xl) var(--space-md); /* 패딩 조정 */
-    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md); /* 패딩 조정 */
+    gap: var(--space-sm);
   }
   .mainTitle {
     font-size: var(--font-2xl); /* 폰트 크기 조정 */
@@ -244,4 +244,16 @@
   border-radius: var(--radius-sm); /* 모서리 둥글게 */
   font-weight: var(--font-weight-bold); /* 굵게 */
   color: #92400e; /* 글자색 변경 (배경에 잘 보이도록) */
+}
+
+.next {
+  font-size: var(--font-normal);
+  font-weight: var(--font-weight-medium);
+  color: gray;
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+  white-space: pre-line;
+  padding: 0 var(--space-sm);
+  text-align: center;
 }

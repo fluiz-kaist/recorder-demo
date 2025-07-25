@@ -35,65 +35,160 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
     }
   };
 
-  // Situational Script 렌더링
+  // Situational Script 렌더링 (새 데이터 구조)
   const renderSituationalScript = (script: SituationalScript) => (
     <>
-      {/* <div className={styles.categoryBadge}>
-        {getTypeIcon(ScriptType.SITUATIONAL)} {script.category}/{script.intent}
-      </div> */}
       <div className={styles.titleSection}>
-        {/* <h1 className={styles.title}>{script.title}</h1> */}
-        {isCompleted && (
+        {/* {isCompleted && (
           <div className={styles.completedBadge}>✅ 제출완료</div>
+        )} */}
+
+        {/* 서비스 정보 표시 */}
+        <div className={styles.serviceInfo}>
+          <span className={styles.serviceName}>{script.service_name}</span>
+          <span className={styles.serviceTarget}>
+            {" "}
+            • {script.service_target}
+          </span>
+        </div>
+
+        {/* 태스크 이름 */}
+        <h2 className={styles.taskName}>{script.task_name}</h2>
+
+        {/* 메인 콘텐츠 */}
+        <div
+          className={`${styles.mainContent} ${
+            isCompleted ? styles.completedOverlay : ""
+          }`}
+        >
+          {script.main_content}
+          {isCompleted && <div className={styles.completedText}>제출 완료</div>}
+        </div>
+        {/* 상세 지침 */}
+        {script.detailed_instruction && (
+          <div className={styles.detailedInstruction}>
+            <div className={styles.instructionLabel}>💡 추가 안내</div>
+            <div className={styles.instructionText}>
+              {script.detailed_instruction}
+            </div>
+          </div>
         )}
-        <p className={styles.description}>{script.description}</p>
       </div>
     </>
   );
 
-  // Formal Script 렌더링
+  // Formal Script 렌더링 (새 데이터 구조)
   const renderFormalScript = (script: FormalScript) => (
     <>
-      {/* <div className={styles.categoryBadge}>
-        {getTypeIcon(ScriptType.FORMAL)} {script.category}/{script.intent}
-      </div> */}
       <div className={styles.titleSection}>
-        {/* <h1 className={styles.title}>{script.title}</h1> */}
-        {isCompleted && (
+        {/* {isCompleted && (
           <div className={styles.completedBadge}>✅ 제출완료</div>
-        )}
+        )} */}
+
+        {/* 서비스 정보 표시 */}
+        <div className={styles.serviceInfo}>
+          <span className={styles.serviceName}>{script.service_name}</span>
+          <span className={styles.serviceTarget}>
+            {" "}
+            • {script.service_target}
+          </span>
+        </div>
+
+        {/* 태스크 이름 */}
+        <h2 className={styles.taskName}>{script.task_name}</h2>
       </div>
-      <div className={styles.formalSentenceSection}>
-        {/* <div className={styles.formalSentenceLabel}>정형화 문장</div> */}
-        <div className={styles.formalSentence}>{script.formalSentence}</div>
+
+      <div
+        className={`${styles.formalSentenceSection} ${
+          isCompleted ? styles.completedOverlay : ""
+        }`}
+      >
+        <div className={styles.formalSentenceLabel}>정형화 문장</div>
+        <div className={styles.formalSentence}>{script.formal_script}</div>
         <div className={styles.formalInstruction}>위 문장을 읽어주세요</div>
+        {isCompleted && <div className={styles.completedText}>제출 완료</div>}
+        {/* Set ID 정보 (필요시) */}
+        <div className={styles.setInfo}>
+          <span className={styles.setId}>세트 {script["set-id"]}</span>
+        </div>
       </div>
     </>
   );
 
-  // 튜토리얼 렌더링
-  const renderTutorial = (script: TutorialScript) => (
-    <>
-      {/* <div className={styles.categoryBadge}>
-        {getTypeIcon(ScriptType.TUTORIAL)} 녹음 연습하기
-      </div> */}
-      <div className={styles.titleSection}>
-        <h1 className={styles.title}>{script.title}</h1>
-        {isCompleted && (
-          <div className={styles.completedBadge}>✅ 제출완료</div>
+  // 튜토리얼 렌더링 (기존과 동일)
+  const renderTutorial = (script: TutorialScript) => {
+    console.log("?", script);
+
+    return (
+      <>
+        <div className={styles.titleSection}>
+          <h1 className={styles.title}>{script.title}</h1>
+          {/* {isCompleted && (
+            <div className={styles.completedBadge}>✅ 제출완료</div>
+          )} */}
+        </div>
+
+        {script.type === ScriptType.FORMAL ? (
+          <div
+            className={`${styles.formalSentenceSection} ${
+              isCompleted ? styles.completedOverlay : ""
+            }`}
+          >
+            <div
+              className={styles.formal}
+              dangerouslySetInnerHTML={{ __html: script.description }}
+            ></div>
+
+            <div
+              className={styles.tutorialInstruction}
+              dangerouslySetInnerHTML={{ __html: script.explain }}
+            ></div>
+
+            {isCompleted && (
+              <div className={styles.completedText}>제출 완료</div>
+            )}
+          </div>
+        ) : (
+          <>
+            <p className={styles.detailedInstruction}>
+              아래와 같은 상황이 주어집니다.
+            </p>
+            <div
+              className={`${styles.mainContent} ${
+                isCompleted ? styles.completedOverlay : ""
+              }`}
+            >
+              <div
+                dangerouslySetInnerHTML={{ __html: script.description }}
+              ></div>
+              <div
+                className={styles.tutorialInstruction}
+                dangerouslySetInnerHTML={{ __html: script.explain }}
+              ></div>
+              {isCompleted && (
+                <div className={styles.completedText}>제출 완료</div>
+              )}
+            </div>
+
+            <div className={styles.detailedInstruction}>
+              🎤
+              <br />
+              <span style={{ color: "green", fontWeight: "bold" }}>
+                초록 버튼
+              </span>
+              을 누른 후{" "}
+              <span style={{ color: "red", fontWeight: "bold" }}>
+                빨간 버튼
+              </span>
+              이 보일 때
+              <br />
+              그때부터 말씀해주세요!
+            </div>
+          </>
         )}
-      </div>
-      <div className={styles.formalSentenceSection}>
-        {/* <div className={styles.situationLabel}>상황</div> */}
-        <div className={styles.situation}>{script.description}</div>
-        {/* <div className={styles.descriptionLabel}>상세 설명</div> */}
-        <div className={styles.tutorialInstruction}>{script.explain}</div>
-        {/* <div className={styles.qaInstruction}>
-          이 상황에서 어떻게 대답하시겠어요?
-        </div> */}
-      </div>
-    </>
-  );
+      </>
+    );
+  };
 
   // 타입에 따른 렌더링
   console.log("여기 스크립트 타입?", scriptType);
@@ -102,7 +197,6 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
       return renderSituationalScript(script as SituationalScript);
     case ScriptType.FORMAL:
       return renderFormalScript(script as FormalScript);
-
     case ScriptType.TUTORIAL:
       return renderTutorial(script as TutorialScript);
     default:

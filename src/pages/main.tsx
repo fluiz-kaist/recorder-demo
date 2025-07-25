@@ -77,6 +77,8 @@ const MainSelectionPage = () => {
     1 // setId
   );
 
+  console.log("fullUser?", fullUser);
+
   const [showContent, setShowContent] = useState(false);
 
   // 각 서비스별 완료 상태 (임시 데이터, 나중에 실제 데이터로 변경)
