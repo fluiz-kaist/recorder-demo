@@ -8,21 +8,28 @@
   width: 100%;
   background: linear-gradient(
     135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-light) 100%
+    var(--color-gray-800) 0%,
+    /* 아주 진한 회색 */ var(--color-gray-900) 80% /* 더 진한 회색 */
   );
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px);
 }
 
 .headerContainer {
-  max-width: 480px;
+  /* max-width: 480px; */
   margin: 0 auto;
   padding: 0 var(--space-base);
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 64px;
+}
+
+.buttonSection {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 5px;
 }
 
 /* 로고 영역 */

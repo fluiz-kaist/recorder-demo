@@ -1,0 +1,189 @@
+/* styles/AssistantIntro.module.css - 비서 소개 전용 스타일 */
+
+.container {
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+/* 아이콘 섹션 */
+.iconSection {
+  margin-bottom: var(--space-xl);
+  position: relative;
+}
+
+.assistantIcon {
+  font-size: 80px;
+  margin-bottom: var(--space-base);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 타이틀 섹션 */
+.titleSection {
+  margin-bottom: var(--space-xl);
+}
+
+.mainTitle {
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* 설명 섹션 */
+.descriptionSection {
+  margin-bottom: var(--space-xl);
+}
+
+.mainDescription {
+  font-size: var(--font-xl);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+}
+
+.highlight {
+  background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-bold);
+  color: #92400e;
+}
+
+/* 기능 섹션 */
+.featuresSection {
+  margin-bottom: var(--space-xl);
+}
+
+.featureCard {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-base);
+  transition: all var(--transition);
+  text-align: left;
+}
+
+.featureCard:hover {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.featureIcon {
+  font-size: 32px;
+  margin-right: var(--space-base);
+  flex-shrink: 0;
+}
+
+.featureContent {
+  flex: 1;
+}
+
+.featureTitle {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.featureDescription {
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: var(--line-height-normal);
+  word-break: keep-all;
+}
+
+/* 핵심 메시지 */
+.keyMessageSection {
+  background: var(--color-success-bg);
+  border: 2px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-base);
+}
+
+.keyMessage p {
+  font-size: var(--font-lg);
+  line-height: var(--line-height-normal);
+  margin: 0 0 var(--space-xs) 0;
+  word-break: keep-all;
+  color: var(--color-text-secondary);
+}
+
+.keyMessage strong {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success-hover);
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .container {
+    padding: var(--space-base);
+  }
+
+  .assistantIcon {
+    font-size: 64px;
+  }
+
+  .mainTitle {
+    font-size: var(--font-2xl);
+  }
+
+  .mainDescription {
+    font-size: var(--font-lg);
+  }
+
+  .featureCard {
+    padding: var(--space-base);
+  }
+
+  .featureIcon {
+    font-size: 28px;
+    margin-right: var(--space-sm);
+  }
+
+  .featureTitle {
+    font-size: var(--font-lg);
+  }
+
+  .featureDescription {
+    font-size: var(--font-base);
+  }
+
+  .keyMessage p {
+    font-size: var(--font-base);
+  }
+}
+
+/* 접근성 향상 */
+@media (prefers-reduced-motion: reduce) {
+  .assistantIcon {
+    animation: none;
+  }
+
+  .featureCard {
+    transition: none;
+  }
+
+  .featureCard:hover {
+    transform: none;
+  }
+}
