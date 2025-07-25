@@ -326,3 +326,63 @@ export const useLogoutUserMutation = (): UseMutationResult<
     },
   });
 };
+
+export interface CompleteScriptRequest {
+  userId: string;
+  taskKey: string;
+  taskType: "situational" | "formal";
+  status: "not_started" | "in_progress" | "completed";
+  audioRecordId: string;
+}
+
+export interface CompleteScriptResponse {
+  message: string;
+}
+
+export const useCompleteScriptMutation = (): UseMutationResult<
+  CompleteScriptResponse,
+  Error,
+  CompleteScriptRequest
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      taskKey,
+      taskType,
+      status,
+      audioRecordId,
+    }: CompleteScriptRequest): Promise<CompleteScriptResponse> => {
+      const response = await fetch("/api/scripts/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          taskKey,
+          taskType,
+          status,
+          audioRecordId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "스크립트 완료 처리에 실패했습니다.");
+      }
+
+      return data as CompleteScriptResponse;
+    },
+
+    onSuccess: (_, variables) => {
+      // 유저 participation 정보가 갱신되었으므로 관련 캐시 무효화 또는 갱신
+      queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
+      console.log("스크립트 완료 처리 성공:", variables.taskKey);
+    },
+
+    onError: (error) => {
+      console.error("스크립트 완료 처리 실패:", error);
+    },
+  });
+};

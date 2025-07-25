@@ -15,12 +15,12 @@ import { useMobileOptimizedRecorder } from "@/hooks/useMobileOptimizedRecorder";
 import SuccessPopup from "@/components/SuccessPopup";
 import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
 
-import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
+// import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
 import SttWhisper from "@/components/stt/SttWhisper";
 import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-
+import { useCompleteScriptMutation } from "@/hooks/mutations/useUserMutations";
 import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
 // 🎯 간단한 품질 검증 결과 인터페이스
 interface SimpleQualityResult {
@@ -88,7 +88,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   // React Query 훅들
   const { data: authToken } = useAuthStatusQuery();
   const uploadAudioMutation = useUploadAudioMutation();
-  const completeScriptMutation = useCompleteScriptMutation();
+  const completeUserScriptMutation = useCompleteScriptMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
   const { data: localScripts } = useAllLocalScriptsQuery();
   //녹음 정지 강제 관리
@@ -510,20 +510,20 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       console.log("오디오 업로드 완료:", uploadResult);
 
       // // 2. 스크립트 완료 처리
-      // const completeResult = await completeScriptMutation.mutateAsync({
-      //   userId: authToken.userId,
-      //   scriptId: scriptData.id,
-      //   scriptType,
-      //   recordingId: uploadResult.recordingId,
-      //   audioUrl: uploadResult.audioUrl,
-      //   sttText: sttText,
-      // });
-
-      // console.log("스크립트 완료 처리 완료:", completeResult);
+      // 2. 스크립트 완료 상태를 유저 정보에 반영 (Firestore participation.sets[].tasks 에 기록)
+      const completeResult = await completeUserScriptMutation.mutateAsync({
+        userId: authToken.userId,
+        taskKey: scriptData.task_key,
+        taskType:
+          scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
+        status: "completed", // 또는 "in_progress", "not_started"
+        audioRecordId: uploadResult.recordingId
+      });
+      console.log("스크립트 완료 처리 완료:", completeResult);
 
       // // 3. 성공 처리
-      // setShowSuccessPopup(true);
-      // console.log("전체 처리 성공");
+      setShowSuccessPopup(true);
+      console.log("전체 처리 성공");
     } catch (error) {
       console.error("처리 실패:", error);
 
@@ -600,9 +600,11 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   };
 
   // 로딩 상태 체크
-  const isUploading =
-    uploadAudioMutation.isPending || completeScriptMutation.isPending;
-  const uploadError = uploadAudioMutation.error || completeScriptMutation.error;
+  // const isUploading =
+  //   uploadAudioMutation.isPending || completeScriptMutation.isPending;
+  // const uploadError = uploadAudioMutation.error || completeScriptMutation.error;
+  const isUploading = uploadAudioMutation.isPending;
+  const uploadError = uploadAudioMutation.error;
 
   if (!isClient) {
     return (
@@ -645,7 +647,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           }
           details={
             transcription
-              ? `변환된 텍스트: "${transcription.transcript}"`
+              ? `녹음된 음성 내용: "${transcription.transcript}"`
               : undefined
           }
           onClose={handleCloseSuccessPopup}

@@ -1,129 +1,108 @@
-// pages/api/scripts/complete.ts
-import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { User, ScriptType, ScriptStatus } from "@/types/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { NextApiRequest, NextApiResponse } from "next";
+import { CompleteScriptRequest } from "@/hooks/mutations/useUserMutations";
+// 요청 body의 타입
+// interface CompleteScriptRequest {
+//   userId: string;
+//   taskKey: string;
+//   taskType: "situational" | "formal";
+//   audioRecordId: string;
+// }
 
-interface CompleteScriptRequest {
-  userId: string;
-  scriptId: number; // number로 변경
-  scriptType: ScriptType;
-  recordingId: string; // audioRecordings 컬렉션 참조
-  audioUrl: string;
-  sttText: string;
+// Firestore 내 개별 task의 타입
+interface TaskEntry {
+  taskKey: string;
+  taskType: "situational" | "formal";
+  status: "not_started" | "in_progress" | "completed";
+  assignedAt: string;
+  setId: number;
+  audioRecordId: string;
 }
 
-interface CompleteScriptResponse {
-  success: boolean;
-  message?: string;
-  user?: User; // 업데이트된 사용자 정보 반환
+// Firestore 내 set의 타입 (부분 정의)
+interface ParticipationSet {
+  setId: number;
+  tasks: {
+    situational?: TaskEntry[];
+    formal?: TaskEntry[];
+  };
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CompleteScriptResponse>
+  res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res
-      .status(405)
-      .json({ success: false, message: "Method not allowed" });
+    return res.status(405).json({ message: "Method Not Allowed" });
   }
 
+  const { userId, taskKey, taskType, status, audioRecordId } =
+    req.body as CompleteScriptRequest;
+
+  if (!userId || !taskKey || !taskType) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+  console.log("여기서 status", status);
   try {
-    const {
-      userId,
-      scriptId,
-      scriptType,
-      recordingId,
-      audioUrl,
-    }: // sttText,
-    CompleteScriptRequest = req.body;
-
-    if (
-      !userId ||
-      scriptId === undefined ||
-      !scriptType ||
-      !recordingId ||
-      !audioUrl
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "필수 필드가 누락되었습니다.",
-      });
-    }
-
-    // 1. 사용자 정보 조회
     const userRef = doc(db, "usersV2", userId);
-    const userDoc = await getDoc(userRef);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.data();
 
-    if (!userDoc.exists()) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자를 찾을 수 없습니다.",
-      });
+    console.log("?? userData?? ", userData);
+
+    if (!userData?.participation?.sets) {
+      return res
+        .status(404)
+        .json({ message: "User participation data not found" });
     }
 
-    const userData = userDoc.data() as User;
+    const sets: ParticipationSet[] = userData.participation.sets;
 
-    // 2. scriptAssignments 업데이트
-    const updatedAssignments = userData.scriptAssignments.map((assignment) => {
-      if (assignment.scriptType === scriptType) {
-        // assignedScriptIds에서 제거하고 completedScriptIds에 추가
-        const newAssignedIds = assignment.assignedScriptIds.filter(
-          (id) => id !== scriptId
-        );
-        const newCompletedIds = assignment.completedScriptIds.includes(scriptId)
-          ? assignment.completedScriptIds
-          : [...assignment.completedScriptIds, scriptId];
+    const updatedSets = sets.map((set) => {
+      const originalTasks = set.tasks?.[taskType] || [];
+      const tasks: TaskEntry[] = [...originalTasks];
+      const taskIndex = tasks.findIndex((t) => t.taskKey === taskKey);
 
-        return {
-          ...assignment,
-          assignedScriptIds: newAssignedIds,
-          completedScriptIds: newCompletedIds,
+      if (taskIndex !== -1) {
+        // 기존 task가 있는 경우: status만 갱신
+        tasks[taskIndex] = {
+          ...tasks[taskIndex],
+          status,
+          audioRecordId,
         };
+      } else {
+        // 없는 경우: 새로 추가
+        tasks.push({
+          taskKey,
+          taskType,
+          status,
+          assignedAt: new Date().toISOString(),
+          setId: set.setId,
+          audioRecordId,
+        });
       }
-      return assignment;
-    });
 
-    // 3. 사용자 정보 업데이트
-    const now = new Date().toISOString();
-    const updatedUserData: Partial<User> = {
-      scriptAssignments: updatedAssignments,
-      lastAccessAt: now,
-    };
+      return {
+        ...set,
+        tasks: {
+          ...set.tasks,
+          [taskType]: tasks,
+        },
+      };
+    });
 
     await updateDoc(userRef, {
-      ...updatedUserData,
-      lastAccessAt: serverTimestamp(), // Firestore 서버 시간 사용
+      "participation.sets": updatedSets,
     });
 
-    // 4. scripts 컬렉션의 해당 스크립트 상태 업데이트
-    const scriptKey = `${scriptType}_${scriptId}`;
-    const scriptRef = doc(db, "scripts", scriptKey);
-
-    await updateDoc(scriptRef, {
-      status: ScriptStatus.COMPLETED,
-      completedAt: serverTimestamp(),
-      recordingId, // audioRecordings 컬렉션 참조
-    });
-
-    // 5. 업데이트된 사용자 정보 반환
-    const finalUserData: User = {
-      ...userData,
-      ...updatedUserData,
-      lastAccessAt: now,
-    };
-
-    return res.status(200).json({
-      success: true,
-      message: "스크립트가 성공적으로 완료되었습니다.",
-      user: finalUserData,
-    });
-  } catch (error) {
-    console.error("스크립트 완료 처리 중 오류:", error);
-    return res.status(500).json({
-      success: false,
-      message: "서버 오류가 발생했습니다.",
-    });
+    return res
+      .status(200)
+      .json({ message: "Participation status updated successfully" });
+  } catch (err: any) {
+    console.error("Error updating participation:", err);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 }

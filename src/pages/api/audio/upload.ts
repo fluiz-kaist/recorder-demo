@@ -147,12 +147,6 @@ export default async function handler(
     const deviceInfo = Array.isArray(fields.deviceInfo)
       ? fields.deviceInfo[0]
       : fields.deviceInfo;
-    const browserInfo = Array.isArray(fields.browserInfo)
-      ? fields.browserInfo[0]
-      : fields.browserInfo;
-    const recordingEnvironment = Array.isArray(fields.recordingEnvironment)
-      ? fields.recordingEnvironment[0]
-      : fields.recordingEnvironment;
 
     // 필수 필드 검증
     if (
@@ -223,7 +217,7 @@ export default async function handler(
     // Firebase Storage에 업로드
     const storageRef = ref(
       storage,
-      `recordingsV2/${userId}/${taskKey}/${fileName}`
+      `recordingsV2/${domain}/${taskKey}/${userId}/${fileName}`
     );
     const uploadResult = await uploadBytes(storageRef, fileBuffer, {
       contentType: audioFile.mimetype || "audio/wav",
@@ -278,7 +272,14 @@ export default async function handler(
     };
 
     // Firestore에 AudioRecording 저장
-    const audioRecordingRef = doc(db, "audioRecordings", recordingId);
+    const audioRecordingRef = doc(
+      db,
+      "domains",
+      domain,
+      "recordings",
+      recordingId
+    );
+
     await setDoc(audioRecordingRef, {
       ...audioRecording,
       recordedAt: serverTimestamp(),
@@ -286,20 +287,20 @@ export default async function handler(
       processedAt: sttTranscription ? serverTimestamp() : null,
     });
 
-    // 사용자의 진행 상태 업데이트 (간단화)
-    try {
-      const userRef = doc(db, "users", userId);
-      const userDoc = await getDoc(userRef);
+    // // 사용자의 진행 상태 업데이트 (간단화)
+    // try {
+    //   const userRef = doc(db, "usersV2", userId);
+    //   const userDoc = await getDoc(userRef);
 
-      if (userDoc.exists()) {
-        // 실제로는 더 복잡한 로직으로 사용자의 RecordingTask 상태 업데이트
-        // 여기서는 간단하게 처리
-        console.log(`사용자 ${userId}의 태스크 ${taskKey} 완료 처리`);
-      }
-    } catch (updateError) {
-      console.error("사용자 상태 업데이트 실패:", updateError);
-      // 오디오 업로드는 성공했으므로 에러를 던지지 않음
-    }
+    //   if (userDoc.exists()) {
+    //     // 실제로는 더 복잡한 로직으로 사용자의 RecordingTask 상태 업데이트
+    //     // 여기서는 간단하게 처리
+    //     console.log(`사용자 ${userId}의 태스크 ${taskKey} 완료 처리`);
+    //   }
+    // } catch (updateError) {
+    //   console.error("사용자 상태 업데이트 실패:", updateError);
+    //   // 오디오 업로드는 성공했으므로 에러를 던지지 않음
+    // }
 
     console.log("오디오 업로드 완료:", {
       recordingId,
@@ -318,7 +319,7 @@ export default async function handler(
       audioUrl,
       fileName,
       fileSize,
-      sttText: sttTranscription || undefined,
+      sttText: sttTranscription || "stt_failed",
     });
   } catch (error) {
     console.error("오디오 업로드 중 오류:", error);
