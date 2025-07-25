@@ -71,7 +71,7 @@ export type ScriptKey = `${ScriptType}_${number}`; // 예: "formal_0", "qas_1", 
 // ===== 오디오 관련 타입 =====
 
 // 오디오 녹음 정보 (Firebase audioRecordings 컬렉션)
-export interface AudioRecording {
+interface AudioRecording {
   id: string; // 녹음 기록 고유 ID
   userId: string; // 녹음한 사용자 ID
   scriptId: number; // 스크립트 ID (0, 1, 2...)

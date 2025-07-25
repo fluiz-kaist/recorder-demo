@@ -18,7 +18,7 @@ import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
 import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
 import SttWhisper from "@/components/stt/SttWhisper";
-
+import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 
 import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
@@ -31,11 +31,11 @@ interface SimpleQualityResult {
   fileSize: number;
   fileSizeKB: number;
 }
-
+type AnyScript = SituationalScript | FormalScript;
 // Props 인터페이스 수정
 interface VoiceRecorderProps {
   scriptType: ScriptType;
-  scriptData: SituationalScript | FormalScript | TutorialScript;
+  scriptData: AnyScript;
   onRecordingComplete?: () => void;
   isCompltedScript?: boolean;
   isTutorial?: boolean;
@@ -99,7 +99,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   //녹음 파일 다시듣기 상태
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
-
+  const { data: fullUser } = useUserQuery();
   // MobileOptimizedRecorder hook 사용
   const {
     isRecording,
@@ -474,19 +474,40 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         scriptData
       );
 
-      // // 1. 오디오 업로드
+      // 1. 오디오 업로드 (새로운 구조에 맞춤)
+      const originalScript =
+        scriptType === ScriptType.SITUATIONAL && "main_content" in scriptData
+          ? scriptData.main_content
+          : "formal_script" in scriptData
+          ? scriptData.formal_script
+          : "";
+
+      const gender = fullUser ? fullUser.gender : "불명";
+      const ageGroup = fullUser ? fullUser.ageGroup : "불명";
+
       const uploadResult = await uploadAudioMutation.mutateAsync({
         userId: authToken.userId,
-        scriptId: scriptData.id,
-        scriptType,
+        taskKey: scriptData.task_key, // "건강-건강정보-1"
+        taskType:
+          scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         audioBlob,
-        duration: audioDuration,
+        originalScript, // 새로운 필드명
+
+        // 스크립트 메타데이터 (새로운 필수 필드들)
+        domain: scriptData.service_name, // service_name → domain
+        intent: scriptData.task_name, // task_name → intent
+        category: scriptData.service_target, // service_target → category
+
+        // 화자 정보
+        gender,
+        ageGroup,
+
+        // 선택적 정보
         audioFormat: AudioFormat.WAV,
         deviceInfo: navigator.userAgent,
         browserInfo: navigator.userAgent,
       });
-
-      // console.log("오디오 업로드 완료:", uploadResult);
+      console.log("오디오 업로드 완료:", uploadResult);
 
       // // 2. 스크립트 완료 처리
       // const completeResult = await completeScriptMutation.mutateAsync({
