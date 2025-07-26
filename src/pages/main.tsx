@@ -9,29 +9,26 @@ import {
 } from "@/hooks/queries/useUserQueries";
 import { useScriptLoader } from "@/hooks/useScriptUtils";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
+
 const LOCK_ICON =
   "M12,17A1.5,1.5 0 0,0 13.5,15.5A1.5,1.5 0 0,0 12,14A1.5,1.5 0 0,0 10.5,15.5A1.5,1.5 0 0,0 12,17M17,8H16V6.5C16,4.57 14.43,3 12.5,3A3.5,3.5 0 0,0 9,6.5V8H8A2,2 0 0,0 6,10V20A2,2 0 0,0 8,22H17A2,2 0 0,0 19,20V10A2,2 0 0,0 17,8M11,6.5C11,5.67 11.67,5 12.5,5A1.5,1.5 0 0,1 14,6.5V8H11V6.5Z";
 
-// 1. ✅ 서비스 순서 정의 (컴포넌트 상단에 추가)
-// SERVICE_CONFIG에서 키 순서를 그대로 사용
+// 서비스 순서 정의
 const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
 
 const MainSelectionPage = () => {
   const router = useRouter();
 
-  // 🟢 쿠키 기반 인증 상태 확인
+  // 쿠키 기반 인증 상태 확인
   const { data: minimalUserInfo, isLoading: isUserLoading } =
     useMinimalUserQuery();
-
-  // 🟢 인증된 사용자 이름 가져오기
   const userName = minimalUserInfo?.userName;
 
   // 진행 상태 (서버)
-  const { data: fullUser } = useUserQuery();
+  const { data: fullUser, isLoading: isFullUserLoading } = useUserQuery();
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
 
   const currentSetNumber = useCurrentSetNumber();
-  // 또는 스크립트 로더 사용 (더 간편함)
   const { loadScriptsFromServer, isLoading: isScriptLoading } = useScriptLoader(
     currentSetNumber,
     1 // setId
@@ -41,16 +38,19 @@ const MainSelectionPage = () => {
 
   const [showContent, setShowContent] = useState(false);
 
-  // 각 서비스별 완료 상태 (임시 데이터, 나중에 실제 데이터로 변경)
+  // 각 서비스별 완료 상태 (situational + formal 태스크 모두 확인)
   const getServiceCompletionStatus = (serviceName: string) => {
     if (!fullUser?.participation?.sets?.[0]) return "not-started";
 
-    const currentSet = fullUser.participation.sets[0]; // 현재 세트
+    const currentSet = fullUser.participation.sets[0];
     const situationalTasks = currentSet.tasks?.situational || [];
+    const formalTasks = currentSet.tasks?.formal || [];
 
-    // 해당 서비스의 상황발화 작업들 필터링
-    const serviceTasks = situationalTasks.filter(
-      (task) => task.taskKey.startsWith(serviceName) // "건강-건강정보-1" 형식에서 "건강"으로 시작하는 것들
+    // situational과 formal 태스크를 합친 전체 태스크
+    const allTasks = [...situationalTasks, ...formalTasks];
+
+    const serviceTasks = allTasks.filter((task) =>
+      task.taskKey.startsWith(serviceName)
     );
 
     if (serviceTasks.length === 0) return "not-started";
@@ -64,14 +64,18 @@ const MainSelectionPage = () => {
     return "not-started";
   };
 
-  // 서비스별 진행률 계산
+  // 서비스별 진행률 계산 (situational + formal 태스크 모두 확인)
   const getServiceProgress = (serviceName: string) => {
     if (!fullUser?.participation?.sets?.[0]) return 0;
 
     const currentSet = fullUser.participation.sets[0];
     const situationalTasks = currentSet.tasks?.situational || [];
+    const formalTasks = currentSet.tasks?.formal || [];
 
-    const serviceTasks = situationalTasks.filter((task) =>
+    // situational과 formal 태스크를 합친 전체 태스크
+    const allTasks = [...situationalTasks, ...formalTasks];
+
+    const serviceTasks = allTasks.filter((task) =>
       task.taskKey.startsWith(serviceName)
     );
 
@@ -83,7 +87,6 @@ const MainSelectionPage = () => {
 
     return Math.round((completedTasks.length / serviceTasks.length) * 100);
   };
-
   // 햅틱 피드백 (모바일)
   const triggerHapticFeedback = () => {
     if ("vibrate" in navigator) {
@@ -107,7 +110,7 @@ const MainSelectionPage = () => {
         console.error("사용자 정보가 없습니다.");
         return;
       }
-      //스크립트를 로드
+      // 스크립트를 로드
       await loadScriptsFromServer();
       console.log("✅ 스크립트 초기화 완료, 튜토리얼로 이동");
       router.push("/tutorial");
@@ -140,7 +143,7 @@ const MainSelectionPage = () => {
     router.push(`/recording/${slug}`);
   };
 
-  // 2. ✅ 서비스 해금 상태 확인 함수 (기존 함수들 아래에 추가)
+  // 서비스 해금 상태 확인 함수
   const isServiceUnlocked = (serviceName: string): boolean => {
     // 튜토리얼이 완료되지 않으면 모든 서비스 잠금
     if (!isTutorialCompleted) {
@@ -162,7 +165,7 @@ const MainSelectionPage = () => {
     return previousStatus === "completed";
   };
 
-  // 3. ✅ 해금된 서비스 개수 계산 함수 (기존 함수들 아래에 추가)
+  // 해금된 서비스 개수 계산 함수
   const getUnlockedServicesCount = (): number => {
     if (!isTutorialCompleted) return 0;
 
@@ -177,7 +180,7 @@ const MainSelectionPage = () => {
     return unlockedCount;
   };
 
-  // 4. ✅ 다음 해금될 서비스 확인 함수 (기존 함수들 아래에 추가)
+  // 다음 해금될 서비스 확인 함수
   const getNextUnlockService = (): string | null => {
     if (!isTutorialCompleted) return SERVICE_ORDER[0]; // 건강
 
@@ -189,9 +192,8 @@ const MainSelectionPage = () => {
     return null; // 모든 서비스 해금됨
   };
 
-  // console.log("minimalUserInfo?", minimalUserInfo);
+  // 사용자 인증 정보 로딩 중
   if (!minimalUserInfo) {
-    // minimalUserInfo 로드되지 않았으면 로딩 스피너 표시
     return (
       <>
         <Head>
@@ -211,7 +213,77 @@ const MainSelectionPage = () => {
     );
   }
 
-  // 6. ✅ 전체 진행률 계산 수정 (기존 코드 교체)
+  // fullUser 로딩 중일 때 처리 (하지만 튜토리얼은 접근 가능하게)
+  if (isFullUserLoading) {
+    return (
+      <>
+        <Head>
+          <title>녹음하기</title>
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=yes"
+          />
+        </Head>
+        <div className={styles.container}>
+          <div className={styles.content}>
+            {/* 헤더 */}
+            <header className={styles.header}>
+              <h1 className={styles.title}>
+                {userName ? `안녕하세요, ${userName}님!` : "음성 녹음하기"}
+              </h1>
+            </header>
+
+            {/* 튜토리얼 카드만 표시 */}
+            <main className={styles.cardContainer}>
+              <div
+                onClick={() => {
+                  triggerHapticFeedback();
+                  handleTutorial();
+                }}
+                className={`${styles.card} ${styles.cardTutorial}`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, handleTutorial)}
+              >
+                <div className={styles.cardIcon}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17C11.45,17 11,16.55 11,16C11,15.45 11.45,15 12,15C12.55,15 13,15.45 13,16C13,16.55 12.55,17 12,17M13,13H11V7H13V13Z" />
+                  </svg>
+                </div>
+
+                <h2 className={styles.cardTitle}>사용법 익히기</h2>
+
+                <p className={styles.cardDescription}>
+                  음성 녹음 방법을 쉽게 알려드립니다
+                </p>
+
+                <div className={styles.cardAction}>
+                  <span>시작하기</span>
+                  <span className={styles.arrow}>→</span>
+                </div>
+              </div>
+
+              {/* 로딩 중 메시지 */}
+              <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                <p>사용자 정보를 불러오는 중...</p>
+              </div>
+            </main>
+
+            {/* 안내 메시지 */}
+            <div className={styles.warningMessage}>
+              <p>
+                💡 먼저 사용법 익히기를 시작해주세요. 완료 후 녹음 작업이
+                할당됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 전체 진행률 계산
   const serviceNames = Object.keys(SERVICE_CONFIG);
   const totalServices = serviceNames.length;
   const completedServices = serviceNames.filter(
@@ -220,24 +292,6 @@ const MainSelectionPage = () => {
   const unlockedServices = getUnlockedServicesCount();
   const overallProgress =
     fullUser?.currentStatus?.progress?.completedPercentage || 0;
-  // fullUser 로딩 중일 때 처리
-  if (isUserLoading || !fullUser) {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner}></div>
-        <p>사용자 정보를 불러오는 중...</p>
-      </div>
-    );
-  }
-
-  // 세트가 할당되지 않은 경우
-  if (!fullUser.participation?.sets?.length) {
-    return (
-      <div className={styles.warningMessage}>
-        <p>⚠️ 아직 녹음 작업이 할당되지 않았습니다. 관리자에게 문의해주세요.</p>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -344,7 +398,7 @@ const MainSelectionPage = () => {
                       : completionStatus === "in-progress"
                       ? styles.cardInProgress
                       : ""
-                  } ${!isUnlocked ? styles.cardLocked : ""}`} // ⭐ cardDisabled → cardLocked 변경
+                  } ${!isUnlocked ? styles.cardLocked : ""}`}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) =>
@@ -366,7 +420,6 @@ const MainSelectionPage = () => {
                   <h2 className={styles.cardTitle}>
                     {serviceName}
                     {completionStatus === "completed" && " ✓"}
-                    {/* {!isUnlocked && " 🔒"} */}
                   </h2>
 
                   <p className={styles.cardDescription}>
@@ -410,7 +463,10 @@ const MainSelectionPage = () => {
           {/* 안내 메시지 */}
           {!isTutorialCompleted && (
             <div className={styles.warningMessage}>
-              <p>⚠️ 녹음 작업을 시작하려면 먼저 사용법을 완료해주세요.</p>
+              <p>
+                💡 먼저 사용법 익히기를 완료해주세요. 완료 후 녹음 작업이
+                할당됩니다.
+              </p>
             </div>
           )}
 
@@ -453,6 +509,7 @@ const MainSelectionPage = () => {
               </div>
             </div>
           )}
+
           {/* 하단 정보 */}
           <footer className={styles.footer}>
             <p className={styles.footerText}>

@@ -474,7 +474,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               이제 본격적인 녹음을 시작해 주세요!
             </div>
             <button onClick={goToMain} className={styles.returnHomeButton}>
-              <span>처음 화면으로</span>
+              <span>이곳을 눌러주세요!</span>
             </button>
           </div>
         )}

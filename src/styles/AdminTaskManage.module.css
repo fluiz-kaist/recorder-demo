@@ -1,0 +1,261 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.headerIcon {
+  font-size: 24px;
+}
+
+.headerTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #111827;
+}
+
+.badge {
+  font-size: 12px;
+  background-color: #fef3c7;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  color: #6b7280;
+}
+
+.inputSection {
+  background: linear-gradient(to right, #eff6ff, #e0e7ff);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.inputLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.inputField {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+}
+
+.button {
+  padding: 12px 24px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #1d4ed8;
+}
+
+.button:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.errorBox {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  color: #991b1b;
+  font-weight: 500;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.statTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #047857;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: bold;
+  color: #065f46;
+  margin-top: 4px;
+}
+
+.actionSection {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progressBarContainer {
+  width: 200px;
+  background-color: #e5e7eb;
+  height: 12px;
+  border-radius: 9999px;
+}
+
+.progressBar {
+  height: 12px;
+  background-color: #10b981;
+  border-radius: 9999px;
+  transition: width 0.5s;
+}
+.taskCard {
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.taskCard.completed {
+  background-color: #ecfdf5;
+}
+
+.taskCard.recording {
+  background-color: #fefce8;
+}
+
+.taskCard.in_progress {
+  background-color: #eff6ff;
+}
+
+.taskCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.taskCardMeta {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.taskCardTitle {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.taskCardFooter {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.taskCardCheckboxRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.taskCardActions {
+  display: flex;
+  gap: 4px;
+}
+.taskCard {
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.taskCard.completed {
+  background-color: #ecfdf5;
+  border-color: #86efac;
+}
+
+.taskCard.recording {
+  background-color: #fefce8;
+  border-color: #fde047;
+}
+
+.taskCard.in_progress {
+  background-color: #eff6ff;
+  border-color: #60a5fa;
+}
+
+.taskCardHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.taskCardCheckboxRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.taskCardActions {
+  display: flex;
+  gap: 4px;
+}
+
+.taskCardTitle {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.taskCardMeta {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.taskCardFooter {
+  font-size: 12px;
+  color: #9ca3af;
+}
+/* 전체 페이지 컨테이너 */
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #f9fafb;
+
+  box-sizing: border-box;
+}
+
+/* 흰색 카드 스타일 */
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Tailwind shadow-sm */
+  border: 1px solid #e5e7eb;
+  padding: 32px;
+}
