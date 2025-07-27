@@ -132,7 +132,7 @@ const AdminLogin = () => {
           </button>
         </form>
         {/* 테스트용 버튼 추가 */}
-        <div style={{ marginTop: "20px", textAlign: "center" }}>
+        {/* <div style={{ marginTop: "20px", textAlign: "center" }}>
           <button
             type="button"
             onClick={testFirebaseEnv}
@@ -148,7 +148,7 @@ const AdminLogin = () => {
           >
             🔥 Firebase 환경변수 테스트
           </button>
-        </div>
+        </div> */}
         <div className={styles.footer}>
           관리자 권한이 있는 계정만 접근 가능합니다.
         </div>
