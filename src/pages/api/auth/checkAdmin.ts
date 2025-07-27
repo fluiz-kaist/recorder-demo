@@ -48,26 +48,12 @@ export default async function handler(
 
     console.log("✅ 관리자 확인됨:", adminData.name);
 
-    // 세션 만료 확인 (4시간)
-    if (adminData.lastLogin) {
-      const lastLogin = new Date(adminData.lastLogin);
-      const now = new Date();
-      const fourHours = 4 * 60 * 60 * 1000; // 4시간을 밀리초로
-
-      if (now.getTime() - lastLogin.getTime() > fourHours) {
-        console.log("⏰ 관리자 세션 만료");
-        return res.status(401).json({
-          success: false,
-          message: "관리자 세션이 만료되었습니다.",
-        });
-      }
-    }
-
+    // 🔄 수정: name 대신 문서 ID 사용
     return res.status(200).json({
       success: true,
       message: "관리자 권한 확인됨",
       admin: {
-        name: adminData.name,
+        name: adminDoc.id, // 👈 문서 ID를 name으로 사용
       },
     });
   } catch (error) {

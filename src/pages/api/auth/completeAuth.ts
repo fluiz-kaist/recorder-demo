@@ -1,59 +1,48 @@
-// pages/api/auth/completeAuth.ts - 새로 생성 (동의 완료 후 쿠키 생성)
+// pages/api/auth/completeAuth.ts - 수정된 버전
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { serialize } from "cookie";
-import { updateDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      message: "POST 방식만 지원합니다.",
-    });
-  }
-
-  const { userId, userHash } = req.body;
-
-  // 입력 검증
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: "사용자 ID가 필요합니다.",
-    });
+    return res.status(405).json({ message: "POST 요청만 허용됩니다." });
   }
 
   try {
-    console.log(`🍪 쿠키 생성: ${userId}`);
+    const { userId, userHash } = req.body;
 
-    // 🆕 authorizedUsersV2에 userId 저장
-    await updateDoc(doc(db, "authorizedUsersV2", userHash), {
-      userId: userId,
-      lastLogin: new Date().toISOString(),
-    });
+    if (!userId || !userHash) {
+      return res.status(400).json({
+        message: "userId와 userHash가 필요합니다.",
+      });
+    }
 
-    // 쿠키 생성 (동의 완료 후)
+    // 🔧 쿠키 설정 - userId를 토큰으로 사용
     const cookie = serialize("auth-token", userId, {
-      httpOnly: false, // 클라이언트에서 접근 가능
-      secure: process.env.NODE_ENV === "production", // HTTPS에서만
-      sameSite: "lax", // CSRF 공격 방지
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 60 * 60 * 24 * 7, // 7일
       path: "/",
     });
 
     res.setHeader("Set-Cookie", cookie);
 
+    console.log(`🍪 쿠키 설정 완료 - userId: ${userId}`);
+    console.log("🍪 서버에서 쿠키 설정:", { userId, cookie });
     return res.status(200).json({
-      success: true,
-      message: "인증 완료 - 쿠키 생성됨",
+      message: "인증 완료",
       userId: userId,
     });
+
+    // 🔧 디버깅 추가
+    console.log("🍪 서버에서 쿠키 설정:", { userId, cookie });
   } catch (error) {
-    console.error("❌ 쿠키 생성 중 오류:", error);
+    console.error("completeAuth 오류:", error);
     return res.status(500).json({
-      success: false,
       message: "서버 오류가 발생했습니다.",
     });
   }

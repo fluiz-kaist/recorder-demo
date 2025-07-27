@@ -1,4 +1,5 @@
-// pages/index.tsx - 쿠키 기반 인증으로 수정
+// pages/index.tsx - 수정된 버전
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -10,6 +11,7 @@ import styles from "@/styles/ConsentPage.module.css";
 import {
   useAuthStatusQuery,
   useMinimalUserQuery,
+  useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
 import {
   useRegisterUserMutation,
@@ -37,16 +39,15 @@ interface ConsentPageProps {
   serviceDescription: string;
 }
 
-export default function ConsentPage({
-  consentText,
-}: // serviceDescription,
-ConsentPageProps) {
+export default function ConsentPage({ consentText }: ConsentPageProps) {
   const router = useRouter();
-  const queryClient = useQueryClient(); // 상단에 추가
+  const queryClient = useQueryClient();
 
   // 🟢 쿠키 기반 인증 상태 확인
   const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
-  const { minimalUserInfo } = useMinimalUserQuery();
+  const { data: minimalUserInfo } = useMinimalUserQuery();
+  const { data: userCompletionStatus, isLoading: completionLoading } =
+    useUserCompletionStatusQuery();
 
   // 뮤테이션 훅들
   const verifyUserMutation = useAuthMutation();
@@ -74,35 +75,64 @@ ConsentPageProps) {
 
   // 🟢 로컬에서 저장된 사용자 이름 가져오기
   const userName = minimalUserInfo?.userName || "";
-  // 🟢 기존 사용자 처리 함수 추가
+
+  // 🔧 인증된 사용자가 이미 등록 완료된 경우 메인으로 리다이렉트
+  useEffect(() => {
+    if (authStatus?.isAuthenticated && userCompletionStatus === true) {
+      console.log("이미 등록 완료된 사용자, 메인으로 리다이렉트");
+      setIsRedirecting(true);
+      router.push("/main");
+    }
+  }, [authStatus, userCompletionStatus, router]);
+
+  // 🟢 기존 사용자 처리 함수 수정
   const handleCompleteExistingUser = async (authData: any) => {
     try {
+      console.log("🔄 기존 사용자 처리 시작:", authData); // 추가된 로그
       setIsRedirecting(true);
 
-      // console.log("authData.userId?", authData.userId);
-      // console.log("authdat?", authData);
+      if (!authStatus?.isAuthenticated) {
+        console.log("🍪 쿠키 생성 시작..."); // 추가된 로그
 
-      // 바로 쿠키 생성 (동의는 이미 완료됨)
-      await fetch("/api/auth/completeAuth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          userId: authData.userId,
-          userHash: authData.userHash, // 🟢 localStorage에서 받은 해시 사용
-        }),
+        const response = await fetch("/api/auth/completeAuth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            userId: authData.userId,
+            userHash: authData.userHash,
+          }),
+        });
+        // 🔧 응답 상태 확인 추가
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "쿠키 생성 실패");
+        }
+        console.log("🍪 API 응답 상태:", response.status);
+        console.log("🍪 API 응답 헤더:", response.headers.get("set-cookie"));
+        console.log("🍪 기존 사용자 쿠키 생성 완료");
+        const data = await response.json();
+        console.log("🍪 API 응답 데이터:", data);
+      } else {
+        console.log("🍪 쿠키가 이미 존재함"); // 추가된 로그
+      }
+
+      console.log("📋 캐시 무효화 시작..."); // 추가된 로그
+
+      // 🔧 await 추가로 완료 대기
+      await queryClient.invalidateQueries({ queryKey: ["authStatus"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["userCompletionStatus"],
       });
 
-      console.log("🍪 기존 사용자 쿠키 생성 완료");
-
-      console.log("여기서 authData?", authData);
-      // saveUserToLocal(authData.userId, authData.name);
-
-      // React Query 캐시 무효화
-      // queryClient.invalidateQueries({ queryKey: ["authStatus"] });
-
+      console.log("📋 캐시 무효화 완료"); // 추가된 로그
+      console.log("🗑️ localStorage 정리..."); // 추가된 로그
       localStorage.removeItem("pendingAuth");
-      router.push("/main");
+
+      console.log("🚀 메인 페이지로 이동..."); // 추가된 로그
+      await router.push("/main"); // 🔧 await 추가
+
+      console.log("✅ 기존 사용자 처리 완료"); // 추가된 로그
     } catch (error) {
       console.error("기존 사용자 로그인 실패:", error);
       localStorage.removeItem("pendingAuth");
@@ -110,26 +140,45 @@ ConsentPageProps) {
       setIsRedirecting(false);
     }
   };
-  // 🟢 세션 스토리지 기반 인증 상태 확인으로 변경
+
+  // 🟢 pendingAuth 처리 로직 수정
   useEffect(() => {
     const pendingAuth = localStorage.getItem("pendingAuth");
-    // console.log("pendingAuth?", pendingAuth);
-    if (pendingAuth) {
+
+    // 🔧 추가된 상세 로그
+    console.log("🔍 pendingAuth 확인:", {
+      pendingAuth: !!pendingAuth,
+      authLoading,
+      completionLoading,
+      authStatus: authStatus?.isAuthenticated,
+      userCompletionStatus,
+    });
+
+    if (pendingAuth && !authLoading && !completionLoading) {
       try {
         const authData = JSON.parse(pendingAuth);
-        // console.log("authData?", authData);
+        console.log("📋 pendingAuth 데이터:", authData); // 추가된 로그
+
         if (authData.isExistingUser) {
-          console.log("기존 사용자 감지, 쿠키 생성 후 메인으로 이동");
-          handleCompleteExistingUser(authData); // 🟢 함수 호출로 변경
+          console.log("👤 기존 사용자 감지, 처리 시작"); // 개선된 로그
+          handleCompleteExistingUser(authData);
+        } else {
+          console.log("🆕 신규 사용자 - 동의 폼 표시 예정"); // 추가된 로그
         }
       } catch (error) {
-        console.error("세션 데이터 파싱 오류:", error);
+        console.error("pendingAuth 데이터 파싱 오류:", error);
+        localStorage.removeItem("pendingAuth");
       }
     }
-  }, [router]);
+  }, [authLoading, completionLoading]);
 
-  // 🟢 인증 상태 확인 중이거나 리다이렉트 중일 때는 로딩 표시
-  if (authLoading || isRedirecting || verifyUserMutation.isPending) {
+  // 🟢 로딩 상태 통합 및 조건 개선
+  if (
+    authLoading ||
+    completionLoading ||
+    isRedirecting ||
+    verifyUserMutation.isPending
+  ) {
     return (
       <>
         <Head>
@@ -145,6 +194,8 @@ ConsentPageProps) {
             <p>
               {verifyUserMutation.isPending
                 ? "입력한 정보를 확인하고 있습니다..."
+                : isRedirecting
+                ? "페이지를 이동하고 있습니다..."
                 : "인증 상태를 확인하고 있습니다..."}
             </p>
           </div>
@@ -153,7 +204,7 @@ ConsentPageProps) {
     );
   }
 
-  // 입력 핸들러들
+  // 입력 핸들러들 (기존과 동일)
   const handleNameChange = (name: string) => {
     setUserInput((prev) => ({ ...prev, name }));
     setError("");
@@ -179,7 +230,7 @@ ConsentPageProps) {
     setError("");
   };
 
-  // 🟢 사용자 인증 함수 (쿠키 자동 설정됨)
+  // 🟢 사용자 인증 함수 (기존과 동일)
   const handleVerifyUser = async () => {
     if (!userInput.name || !userInput.socialNumber) {
       setError("이름과 주민번호를 입력해주세요.");
@@ -187,12 +238,14 @@ ConsentPageProps) {
     }
 
     try {
-      await verifyUserMutation.mutateAsync({
+      const result = await verifyUserMutation.mutateAsync({
         name: userInput.name,
         socialNumber: userInput.socialNumber,
       });
-      // 성공 시 쿠키가 자동으로 설정되고 페이지가 새로고침됨
-      // 기존 catch 블록 전체를 이렇게 교체
+
+      if (result.user?.isExistingUser) {
+        await handleCompleteExistingUser(result.user);
+      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -202,7 +255,7 @@ ConsentPageProps) {
     }
   };
 
-  // 🟢 사용자 등록 및 스크립트 할당 통합 함수
+  // 🔧 사용자 등록 및 스크립트 할당 통합 함수 수정
   const handleCompleteRegistration = async () => {
     if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
       setError("모든 항목을 선택하고 동의해주세요.");
@@ -210,10 +263,9 @@ ConsentPageProps) {
     }
 
     try {
-      console.group();
-      console.log("사용자 등록/로그인 시작");
+      console.group("사용자 등록 프로세스 시작");
 
-      // 🆕 세션에서 인증 데이터 가져오기
+      // 🆕 pendingAuth에서 인증 데이터 가져오기
       const pendingAuth = localStorage.getItem("pendingAuth");
       if (!pendingAuth) {
         setError("인증 정보가 없습니다. 다시 인증해주세요.");
@@ -222,29 +274,27 @@ ConsentPageProps) {
 
       const authData = JSON.parse(pendingAuth);
       const userId = generateSecureUserId();
-
-      // 🆕 authorizedUsersV2에 userId 저장
       const userHash = generateUserHash(
         authData.name,
         userInput.socialNumber || authData.name
       );
 
-      console.log("인덱스에서 생성하는 userHash", userHash);
-      console.log("여기서 userId?", userId);
+      console.log("1. 생성된 정보:", { userId, userHash });
 
+      // 🔧 먼저 쿠키 생성 (DB 등록 전에)
       await fetch("/api/auth/completeAuth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           userId: userId,
-          userHash: userHash, // 해시도 함께 전달
+          userHash: userHash,
         }),
       });
 
-      console.log("🍪 🍪🍪🍪 쿠키 생성 완료");
+      console.log("2. 쿠키 생성 완료");
 
-      // 사용자 등록
+      // 🔧 사용자 등록 (쿠키 생성 후)
       const registeredUser = await registerUserMutation.mutateAsync({
         userId,
         gender: userInput.gender,
@@ -254,17 +304,18 @@ ConsentPageProps) {
         authorizedUserId: userHash,
       });
 
-      console.log("사용자 등록됨", registeredUser);
+      console.log("3. 사용자 등록 완료:", registeredUser);
 
-      // 스크립트 할당
-      // await assignScriptsMutation.mutateAsync({ userId });
-      // 🟢 React Query 캐시 무효화 추가
+      // 🔧 React Query 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["authStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] });
+
       // 세션 정리
       localStorage.removeItem("pendingAuth");
 
       console.groupEnd();
       console.log("✅ 모든 등록 완료");
+
       setIsRedirecting(true);
       router.push("/main");
     } catch (error) {
@@ -275,7 +326,7 @@ ConsentPageProps) {
     }
   };
 
-  // 제출 가능 여부 확인 함수 수정
+  // 제출 가능 여부 확인 함수 (기존과 동일)
   const isSubmitEnabled = (): boolean => {
     return (
       !!userInput.gender &&
@@ -286,7 +337,7 @@ ConsentPageProps) {
     );
   };
 
-  // 버튼 텍스트 생성 함수 추가
+  // 버튼 텍스트 생성 함수 (기존과 동일)
   const getButtonText = (): React.ReactNode => {
     if (isLoading) {
       if (registerUserMutation.isPending) return "처리 중...";
@@ -328,10 +379,13 @@ ConsentPageProps) {
     registerUserMutation.error?.message ||
     updateScriptsMutation.error?.message;
 
-  // 🟢 인증되지 않은 사용자를 위한 인증 폼
+  // 🔧 인증 단계 판별 로직 개선
   const pendingAuth = localStorage.getItem("pendingAuth");
-  if (!pendingAuth) {
-    // 세션에 인증 데이터가 없으면 인증 폼 표시
+  const isInAuthProcess = !!pendingAuth;
+  const isNewUser = pendingAuth && !JSON.parse(pendingAuth).isExistingUser;
+
+  // 🟢 인증되지 않은 사용자를 위한 인증 폼
+  if (!isInAuthProcess && !authStatus?.isAuthenticated) {
     return (
       <>
         <Head>
@@ -343,25 +397,10 @@ ConsentPageProps) {
         </Head>
 
         <div className={styles.container}>
-          {/* <div className={styles.header}>
-            <h1>서비스 이용 동의</h1>
-          </div> */}
-
-          {/* 서비스 설명 */}
-          {/* <div className={styles.serviceSection}>
-            <h2>서비스 소개</h2>
-            <div className={styles.serviceDescription}>
-              {serviceDescription.split("\n").map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
-            </div>
-          </div> */}
-
-          {/* 인증 정보 입력 */}
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
-            {/* 이름 입력 필드 */}
+
             <div className={styles.inputGroup}>
               <h3>이름</h3>
               <input
@@ -376,7 +415,6 @@ ConsentPageProps) {
               />
             </div>
 
-            {/* 주민번호 입력 필드 */}
             <div className={styles.inputGroup}>
               <h3>주민등록번호 앞자리</h3>
               <input
@@ -419,17 +457,19 @@ ConsentPageProps) {
             </div>
           </div>
 
-          {/* 에러 메시지 */}
           {displayError && (
             <div className={styles.errorMessage}>❌ {displayError}</div>
           )}
 
-          {/* 개발용 정보 */}
           {process.env.NODE_ENV === "development" && (
             <div className={styles.debugInfo}>
               <h4>🐛 개발 정보</h4>
-              <p>하이브리드 인증이 적용되었습니다. (해시 기반 → 기존 방식)</p>
+              <p>하이브리드 인증이 적용되었습니다.</p>
               <p>승인된 이름과 주민번호를 입력하세요.</p>
+              <p>
+                인증상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
+              </p>
+              <p>완료상태: {userCompletionStatus ? "완료" : "미완료"}</p>
             </div>
           )}
         </div>
@@ -437,149 +477,146 @@ ConsentPageProps) {
     );
   }
 
-  const aaa = localStorage.getItem("pendingAuth");
-  const authData = aaa ? JSON.parse(aaa) : null;
+  // 🔧 신규 사용자만 동의 폼 표시
+  if (isNewUser) {
+    const authData = JSON.parse(pendingAuth);
 
-  // 🟢 기존 사용자면 로딩 화면만 표시
-  if (authData?.isExistingUser) {
     return (
       <>
         <Head>
           <title>서비스 이용 동의</title>
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=yes"
+          />
         </Head>
+
         <div className={styles.container}>
-          <div className={styles.loadingContainer}>
-            <div className={styles.loadingSpinner}></div>
-            <p>로그인 처리 중입니다...</p>
+          <div className={styles.header}>
+            <h1>서비스 이용 동의</h1>
+            {authData.name && <p>안녕하세요, {authData.name}님!</p>}
+          </div>
+
+          {/* 동의서 내용 */}
+          <div className={styles.consentSection}>
+            <h2>이용약관 및 개인정보처리방침</h2>
+            <div className={styles.consentBox}>
+              <div className={styles.consentContent}>
+                {consentText.split("\n").map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
+              <div className={styles.scrollHint}>
+                위아래로 스크롤하여 내용을 확인해주세요
+              </div>
+            </div>
+
+            <div className={styles.consentCheckbox}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={userInput.hasConsented}
+                  onChange={(e) => handleConsentChange(e.target.checked)}
+                  className={styles.checkboxInput}
+                  disabled={isLoading}
+                />
+                <span className={styles.checkboxText}>
+                  위 내용을 모두 읽었으며 동의합니다
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* 사용자 정보 입력 */}
+          <div className={styles.infoSection}>
+            <h2>기본 정보 입력</h2>
+
+            <div className={styles.inputGroup}>
+              <h3>성별을 선택해주세요</h3>
+              <div className={styles.buttonGroup}>
+                {genders.map((gender) => (
+                  <button
+                    key={gender}
+                    type="button"
+                    className={`${styles.selectButton} ${
+                      userInput.gender === gender ? styles.selected : ""
+                    }`}
+                    onClick={() => handleGenderSelect(gender)}
+                    disabled={isLoading}
+                  >
+                    {gender}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.inputGroup}>
+              <h3>연령대를 선택해주세요</h3>
+              <div className={`${styles.buttonGroup} ${styles.vertical}`}>
+                {ageGroups.map((age) => (
+                  <button
+                    key={age}
+                    type="button"
+                    className={`${styles.selectButton} ${
+                      userInput.ageGroup === age ? styles.selected : ""
+                    }`}
+                    onClick={() => handleAgeGroupSelect(age)}
+                    disabled={isLoading}
+                  >
+                    {age}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 디버깅 정보 */}
+          {process.env.NODE_ENV === "development" && (
+            <div className={styles.debugInfo}>
+              <h4>🐛 디버그 정보</h4>
+              <p>
+                인증 상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
+              </p>
+              <p>사용자 ID: {authStatus?.userId}</p>
+              <p>완료 상태: {userCompletionStatus ? "완료" : "미완료"}</p>
+              <p>신규 사용자: {isNewUser ? "예" : "아니오"}</p>
+              <p>입력 정보: {JSON.stringify(userInput)}</p>
+            </div>
+          )}
+
+          {/* 오류 메시지 */}
+          {displayError && (
+            <div className={styles.errorMessage}>❌ {displayError}</div>
+          )}
+
+          {/* 제출 버튼 */}
+          <div className={styles.submitSection}>
+            <button
+              type="button"
+              className={`${styles.submitButton} ${
+                isSubmitEnabled() ? styles.enabled : styles.disabled
+              }`}
+              onClick={handleCompleteRegistration}
+              disabled={!isSubmitEnabled() || isLoading}
+            >
+              {getButtonText()}
+            </button>
           </div>
         </div>
       </>
     );
   }
 
-  // 🟢 인증된 사용자를 위한 동의 및 정보 입력 폼
+  // 🔧 기타 모든 경우 (이미 처리된 사용자 등) - 로딩 화면
   return (
     <>
       <Head>
         <title>서비스 이용 동의</title>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, user-scalable=yes"
-        />
       </Head>
-
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h1>서비스 이용 동의</h1>
-          {userName && <p>안녕하세요, {userName}님!</p>}
-        </div>
-
-        {/* 동의서 내용 */}
-        <div className={styles.consentSection}>
-          <h2>이용약관 및 개인정보처리방침</h2>
-          <div className={styles.consentBox}>
-            <div className={styles.consentContent}>
-              {consentText.split("\n").map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
-            </div>
-            <div className={styles.scrollHint}>
-              위아래로 스크롤하여 내용을 확인해주세요
-            </div>
-          </div>
-
-          <div className={styles.consentCheckbox}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={userInput.hasConsented}
-                onChange={(e) => handleConsentChange(e.target.checked)}
-                className={styles.checkboxInput}
-                disabled={isLoading}
-              />
-              <span className={styles.checkboxText}>
-                위 내용을 모두 읽었으며 동의합니다
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* 사용자 정보 입력 */}
-        <div className={styles.infoSection}>
-          <h2>기본 정보 입력</h2>
-
-          {/* 성별 선택 */}
-          <div className={styles.inputGroup}>
-            <h3>성별을 선택해주세요</h3>
-            <div className={styles.buttonGroup}>
-              {genders.map((gender) => (
-                <button
-                  key={gender}
-                  type="button"
-                  className={`${styles.selectButton} ${
-                    userInput.gender === gender ? styles.selected : ""
-                  }`}
-                  onClick={() => handleGenderSelect(gender)}
-                  disabled={isLoading}
-                >
-                  {gender}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 연령대 선택 */}
-          <div className={styles.inputGroup}>
-            <h3>연령대를 선택해주세요</h3>
-            <div className={`${styles.buttonGroup} ${styles.vertical}`}>
-              {ageGroups.map((age) => (
-                <button
-                  key={age}
-                  type="button"
-                  className={`${styles.selectButton} ${
-                    userInput.ageGroup === age ? styles.selected : ""
-                  }`}
-                  onClick={() => handleAgeGroupSelect(age)}
-                  disabled={isLoading}
-                >
-                  {age}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 디버깅 정보 */}
-        {process.env.NODE_ENV === "development" && (
-          <div className={styles.debugInfo}>
-            <h4>🐛 디버그 정보 (쿠키 기반)</h4>
-            <p>
-              인증 상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
-            </p>
-            <p>사용자 ID: {authStatus?.userId}</p>
-            <p>로컬 사용자: {minimalUserInfo ? "있음" : "없음"}</p>
-            <p>완료 상태: {minimalUserInfo?.completedAt ? "완료" : "미완료"}</p>
-            <p>입력 정보: {JSON.stringify(userInput)}</p>
-          </div>
-        )}
-
-        {/* 오류 메시지 */}
-        {displayError && (
-          <div className={styles.errorMessage}>❌ {displayError}</div>
-        )}
-
-        {/* 제출 버튼 */}
-        <div className={styles.submitSection}>
-          <button
-            type="button"
-            className={`${styles.submitButton} ${
-              isSubmitEnabled() ? styles.enabled : styles.disabled
-            }`}
-            onClick={handleCompleteRegistration}
-            disabled={!isSubmitEnabled() || isLoading}
-          >
-            {getButtonText()}
-          </button>
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingSpinner}></div>
+          <p>사용자 상태를 확인하고 있습니다...</p>
         </div>
       </div>
     </>

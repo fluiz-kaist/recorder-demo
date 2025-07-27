@@ -33,11 +33,11 @@ export const useAuthMutation = (): UseMutationResult<
       name,
       socialNumber,
     }: AuthRequest): Promise<AuthResponse> => {
-      console.log("🚀 하이브리드 인증 시작");
+      console.log("🚀 사용자 인증 시작");
 
       try {
         // 1. 먼저 새로운 해시 기반 방식 시도
-        console.log("🔄 해시 기반 인증 시도...");
+        console.log("🔄 등록된 사용자인지 확인 중...");
         const hashResponse = await fetch("/api/auth/verifyAuthorizedUserV2", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -45,10 +45,12 @@ export const useAuthMutation = (): UseMutationResult<
           body: JSON.stringify({ name, socialNumber }),
         });
 
+        console.log("이거 뭐라고 떠? ", hashResponse);
+
         const hashData = await hashResponse.json();
 
         if (hashResponse.ok && hashData.success) {
-          console.log("✅ 해시 기반 인증 성공!");
+          console.log("✅ 등록된 사용자 확인 성공!");
           return {
             ...hashData,
             method: "hash-based" as const,
@@ -56,10 +58,12 @@ export const useAuthMutation = (): UseMutationResult<
           };
         }
 
-        console.log("⚠️ 해시 기반 인증 실패");
-        throw new Error(hashData.message || "해시 기반 인증에 실패했습니다.");
+        console.log("⚠️ 등록된 사용자가 아닙니다");
+        throw new Error(
+          hashData.message || "등록 여부를 확인하는 데 실패했습니다."
+        );
       } catch (error) {
-        console.error("💥 해시 기반 인증 오류:", error);
+        console.error("💥 등록된 사용자 확인 중 에러 발생:", error);
 
         if (error instanceof Error) {
           throw error;
@@ -71,7 +75,10 @@ export const useAuthMutation = (): UseMutationResult<
     onSuccess: (data) => {
       if (!data.user) return;
 
-      console.log(`🎯 인증 성공 (${data.method} 방식):`, data.user.name);
+      console.log(
+        `🎯 등록된 사용자 확인 성공 (${data.method} 방식):`,
+        data.user.name
+      );
       // 🟢 localStorage에 저장 (모든 사용자)
       localStorage.setItem(
         "pendingAuth",
@@ -86,27 +93,12 @@ export const useAuthMutation = (): UseMutationResult<
         })
       );
 
-      // 기존 사용자는 바로 쿠키 생성하고 main으로 이동
-      if (data.user.isExistingUser) {
-        console.log("✅ 기존 사용자 - 바로 쿠키 생성하고 main으로 이동");
-        // 바로 리다이렉트
-        window.location.href = "/main";
+      console.log("로컬스토리지에 저장함");
+      console.log("여기서 이게 뭐야?", data.user);
 
-        // 백그라운드에서 쿠키 생성 (응답 기다리지 않음)
-        fetch("/api/auth/completeAuth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            userId: data.user.userId,
-            userHash: data.user.userHash,
-          }),
-        });
+      console.log(`🎯 등록된 사용자 확인 성공: ${data.user.name}`);
 
-        return;
-      }
-
-      // 신규 사용자만 localStorage 저장
+      // 🔧 localStorage에만 저장, 페이지 이동/쿠키 생성 제거
       localStorage.setItem(
         "pendingAuth",
         JSON.stringify({
@@ -115,11 +107,10 @@ export const useAuthMutation = (): UseMutationResult<
           userHash: data.user.userHash,
           method: data.method,
           timestamp: Date.now(),
-          isExistingUser: false, // 신규 사용자
+          isExistingUser: data.user.isExistingUser,
+          existingData: data.user.existingData,
         })
       );
-
-      console.log("✅ 신규 사용자 - localStorage 저장 완료");
     },
     onError: (error) => {
       console.error("❌ 하이브리드 인증 실패:", error);

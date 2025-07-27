@@ -99,7 +99,7 @@
     "id": 11
   },
   {
-    "service_name": "금융",
+    "service_name": "은행",
     "service_target": "은행",
     "task_name": "공과금 납부",
     "task_key": "은행-은행-1",
@@ -108,7 +108,7 @@
     "id": 12
   },
   {
-    "service_name": "금융",
+    "service_name": "은행",
     "service_target": "은행",
     "task_name": "송금하기",
     "task_key": "은행-은행-2",

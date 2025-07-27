@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import styles from "@/styles/Layout.module.css";
 import { useIsAuthenticated } from "@/hooks/queries/useUserQueries";
 import { useLogoutUserMutation } from "@/hooks/mutations/useUserMutations";
+import { AdminLogoutButton } from "@/pages/admin/dashboard";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,7 +18,7 @@ const Layout = ({ children }: LayoutProps) => {
   const shouldShowHomeButton = showHomeButtonPaths.some((path) =>
     router.asPath.startsWith(path)
   );
-  console.log("router.pathname?", router.pathname);
+  // console.log("router.pathname?", router.pathname);
 
   // 인증 상태 확인
   const isAuthenticated = useIsAuthenticated();
@@ -186,6 +187,9 @@ const Layout = ({ children }: LayoutProps) => {
                 </svg>
               </div>
               <span className={styles.helpText}>문의하기</span>
+            </div>
+            <div>
+              <AdminLogoutButton />
             </div>
           </div>
 

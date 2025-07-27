@@ -3,7 +3,7 @@
 export const SERVICE_NAME_TO_SLUG = {
   건강: "health",
   교통: "traffic",
-  금융: "finance",
+  은행: "finance",
   메시지: "message",
   생활: "life",
   영상: "video",
@@ -32,7 +32,7 @@ export const SERVICE_CONFIG = {
     iconColor: "cardBlue",
     description: "교통수단 이용 관련",
   },
-  금융: {
+  은행: {
     icon: "M20,8H4V6H20M20,18H4V12H20M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.11,4 20,4Z",
     iconColor: "cardYellow",
     description: "은행 업무 관련",

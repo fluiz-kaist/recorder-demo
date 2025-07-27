@@ -6,6 +6,8 @@ import {
   useCurrentSetNumber,
   useMinimalUserQuery,
   useUserQuery,
+  useAuthStatusQuery,
+  useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
 import { useScriptLoader } from "@/hooks/useScriptUtils";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
@@ -18,7 +20,10 @@ const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
 
 const MainSelectionPage = () => {
   const router = useRouter();
-
+  // 인증 상태 확인
+  const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
+  const { data: userCompletionStatus, isLoading: completionLoading } =
+    useUserCompletionStatusQuery();
   // 쿠키 기반 인증 상태 확인
   const { data: minimalUserInfo, isLoading: isUserLoading } =
     useMinimalUserQuery();
@@ -35,7 +40,17 @@ const MainSelectionPage = () => {
   );
 
   console.log("fullUser?", fullUser);
-
+  console.log("🔍 완전한 상태 체크:", {
+    "1. authStatus": authStatus,
+    "2. authLoading": authLoading,
+    "3. userCompletionStatus": userCompletionStatus,
+    "4. completionLoading": completionLoading,
+    // "5. 쿠키": document.cookie,
+    "6. useUserQuery enabled":
+      !!authStatus?.isAuthenticated && !!authStatus?.userId,
+    "7. fullUser": fullUser,
+    "8. fullUserLoading": isFullUserLoading,
+  });
   const [showContent, setShowContent] = useState(false);
 
   // 각 서비스별 완료 상태 (situational + formal 태스크 모두 확인)
@@ -93,7 +108,14 @@ const MainSelectionPage = () => {
       navigator.vibrate(50);
     }
   };
-
+  console.log("🔍 메인 페이지 상세 상태:", {
+    "authStatus 전체": authStatus,
+    "authStatus.isAuthenticated": authStatus?.isAuthenticated,
+    "authStatus.userId": authStatus?.userId,
+    // "쿠키 직접 확인": document.cookie,
+    "useUserQuery enabled 조건":
+      !!authStatus?.isAuthenticated && !!authStatus?.userId,
+  });
   // 키보드 접근성을 위한 핸들러
   const handleKeyDown = (e: React.KeyboardEvent, handler: () => void) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -144,7 +166,7 @@ const MainSelectionPage = () => {
   };
 
   // 서비스 해금 상태 확인 함수
-  const isServiceUnlocked = (serviceName: string): boolean => {
+  const isServiceUnlocked = (serviceName: ServiceName): boolean => {
     // 튜토리얼이 완료되지 않으면 모든 서비스 잠금
     if (!isTutorialCompleted) {
       return false;
@@ -192,8 +214,9 @@ const MainSelectionPage = () => {
     return null; // 모든 서비스 해금됨
   };
 
+  console.log("인증 정보 로딩 중?", authStatus, completionLoading);
   // 사용자 인증 정보 로딩 중
-  if (!minimalUserInfo) {
+  if (!authStatus?.isAuthenticated || completionLoading) {
     return (
       <>
         <Head>
@@ -212,7 +235,6 @@ const MainSelectionPage = () => {
       </>
     );
   }
-
   // fullUser 로딩 중일 때 처리 (하지만 튜토리얼은 접근 가능하게)
   if (isFullUserLoading) {
     return (
@@ -482,6 +504,15 @@ const MainSelectionPage = () => {
           {process.env.NODE_ENV === "development" && (
             <div className={styles.debugInfo}>
               <h4>🐛 디버그 정보</h4>
+              <p>인증상태: {authStatus?.isAuthenticated ? "✅" : "❌"}</p>
+              <p>인증로딩: {authLoading ? "🔄" : "✅"}</p>
+              <p>authStatus 전체: {JSON.stringify(authStatus)}</p>{" "}
+              {/* 🔧 추가 */}
+              <p>완료상태: {userCompletionStatus ? "✅" : "❌"}</p>
+              <p>완료로딩: {completionLoading ? "🔄" : "✅"}</p>
+              <p>사용자명: {userName || "로딩 중..."}</p>
+              <p>fullUser 존재: {fullUser ? "✅" : "❌"}</p>
+              <p>fullUser 로딩: {isFullUserLoading ? "🔄" : "✅"}</p>
               <p>사용자명: {userName || "로딩 중..."}</p>
               <p>튜토리얼 완료: {isTutorialCompleted ? "✅" : "❌"}</p>
               <p>전체 진행률: {overallProgress}%</p>
@@ -495,7 +526,6 @@ const MainSelectionPage = () => {
               <p>
                 할당된 세트 수: {fullUser?.participation?.sets?.length || 0}
               </p>
-
               {/* 각 서비스별 상태 표시 */}
               <div style={{ marginTop: "8px", fontSize: "12px" }}>
                 {SERVICE_ORDER.map((service, index) => (

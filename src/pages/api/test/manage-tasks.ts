@@ -27,6 +27,8 @@ export default async function handler(
     } else if (req.method === "PUT") {
       // 모든 태스크 완료
       return await completeAllTasks(req, res);
+    } else if (req.method === "PATCH") {
+      return await updateTutorialStatus(req, res);
     } else {
       return res.status(405).json({
         success: false,
@@ -66,10 +68,17 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
 
   const userData = userDoc.data() as User;
 
+  // 스크립트가 할당되지 않은 경우 빈 배열 반환
   if (!userData.participation?.sets?.length) {
-    return res.status(400).json({
-      success: false,
-      message: "할당된 세트가 없습니다.",
+    return res.status(200).json({
+      success: true,
+      data: {
+        userId,
+        totalTasks: 0,
+        completedTasks: 0,
+        tasks: [],
+        tutorialCompleted: userData.currentStatus?.isTutorialCompleted || false,
+      },
     });
   }
 
@@ -104,6 +113,7 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
       totalTasks: taskList.length,
       completedTasks: taskList.filter((t) => t.status === "completed").length,
       tasks: taskList,
+      tutorialCompleted: userData.currentStatus?.isTutorialCompleted || false,
     },
   });
 }
@@ -393,7 +403,38 @@ async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 }
+// updateTutorialStatus 함수 추가 (completeAllTasks 함수 아래에)
+async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
+  const { userId, isTutorialCompleted } = req.body;
 
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: "userId는 필수입니다.",
+    });
+  }
+
+  const userRef = doc(db, "usersV2", userId);
+  const userDoc = await getDoc(userRef);
+
+  if (!userDoc.exists()) {
+    return res.status(404).json({
+      success: false,
+      message: "사용자를 찾을 수 없습니다.",
+    });
+  }
+
+  await updateDoc(userRef, {
+    "currentStatus.isTutorialCompleted": isTutorialCompleted,
+    "recordingStatus.isTutorialCompleted": isTutorialCompleted,
+    updatedAt: serverTimestamp(),
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "튜토리얼 상태가 업데이트되었습니다.",
+  });
+}
 // ===== API 사용법 =====
 /*
 1. 태스크 목록 조회:

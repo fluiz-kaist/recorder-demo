@@ -1,14 +1,6 @@
 // pages/api/auth/verifyAdmin.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-  //   getDoc,
-} from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { serialize } from "cookie";
 // import bcrypt from "bcryptjs";
@@ -35,33 +27,26 @@ export default async function handler(
   }
 
   try {
-    // admins 컬렉션에서 name으로 검색
-    const adminQuery = query(
-      collection(db, "admin"),
-      where("name", "==", adminId) // adminId를 name 필드로 사용
-    );
+    // 🔄 수정: 문서 ID로 직접 접근
+    const adminDocRef = doc(db, "admin", adminId); // admin/admin 문서
+    const adminDoc = await getDoc(adminDocRef);
 
-    const adminSnap = await getDocs(adminQuery);
-
-    if (adminSnap.empty) {
+    if (!adminDoc.exists()) {
       return res.status(401).json({
         success: false,
         message: "존재하지 않는 관리자 계정입니다.",
       });
     }
 
-    // 문서 정보 가져오기
-    const adminDoc = adminSnap.docs[0];
     const adminData = adminDoc.data();
 
-    // 비밀번호 확인 (평문 비교 - 간단한 구현)
+    // 비밀번호 확인
     if (adminData.password !== password) {
       return res.status(401).json({
         success: false,
         message: "비밀번호가 올바르지 않습니다.",
       });
     }
-
     // 세션 토큰 생성
     const sessionToken = `admin-${Date.now()}-${Math.random()
       .toString(36)

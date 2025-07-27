@@ -1,617 +1,378 @@
 /* AdminDashboard.module.css */
 
-.loadingContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 80vh;
-  color: var(--color-text-light);
-  font-family: var(--font-primary);
-}
-
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--space-lg);
-  font-family: var(--font-primary);
-  min-height: 100vh;
-  background: var(--color-bg-secondary);
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--space-2xl);
-  padding-bottom: var(--space-lg);
-  border-bottom: 2px solid var(--color-border);
-}
-
-.titleSection {
-  flex: 1;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .title {
-  font-size: var(--font-4xl);
-  font-weight: var(--font-weight-extrabold);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-sm) 0;
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  color: var(--color-text-light);
-  font-size: var(--space-base);
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
   margin: 0;
-  line-height: var(--line-height-normal);
 }
 
-.actionButtons {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
+.adminInfo {
+  font-size: 14px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 6px;
 }
 
-.actionButton {
+.tabNav {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-light),
-    var(--color-primary)
-  );
-  color: var(--color-bg-primary);
+  gap: 4px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabButton {
+  padding: 12px 24px;
+  background: none;
   border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
 }
 
-.actionButton:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.tabButton:hover {
+  color: #374151;
 }
 
-.actionButton svg {
-  width: var(--font-lg);
-  height: var(--font-lg);
+.tabButton.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
 }
 
-.refreshButton {
-  background: linear-gradient(
-    135deg,
-    var(--color-success),
-    var(--color-secondary)
-  );
+.content {
+  min-height: 500px;
 }
 
-.refreshButton:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.backButton {
-  background: var(--color-text-light);
-  color: var(--color-bg-primary);
-  border: none;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-}
-
-.backButton:hover {
-  background: var(--color-text-muted);
-  transform: translateY(-2px);
-}
-
-/* 통계 섹션 */
-.statsLoading {
+.loading,
+.error {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--button-height) var(--space-md);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: var(--space-2xl);
+  height: 200px;
+  font-size: 16px;
+  color: #6b7280;
 }
 
-.errorCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-3xl) var(--space-md);
-  background: var(--color-error-bg);
-  border: 2px solid var(--color-warning-bg);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-2xl);
-  text-align: center;
+.error {
+  color: #ef4444;
 }
 
-.errorCard svg {
-  width: 48px;
-  height: 48px;
-  color: var(--color-error-hover);
-  margin-bottom: var(--space-base);
-}
-
-.errorCard p {
-  color: var(--color-error-hover);
-  font-size: var(--space-base);
-  margin: 0 0 var(--space-base) 0;
-}
-
-.errorCard button {
-  padding: var(--space-sm) var(--space-base);
-  background: var(--color-error-hover);
-  color: var(--color-bg-primary);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
+/* 전체 현황 스타일 */
+.overviewGrid {
+  display: grid;
+  gap: 30px;
 }
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-lg);
-  margin-bottom: var(--space-3xl);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
 }
 
 .statCard {
-  background: var(--color-bg-primary);
-  padding: var(--space-lg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-gray-100);
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  gap: var(--space-base);
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
 }
 
-.statCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+.statCard h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0 0 8px 0;
 }
 
-.statIcon {
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-light),
-    var(--color-primary)
-  );
-  border-radius: var(--font-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.statNumber {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
 }
 
-.statIcon svg {
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  color: var(--color-bg-primary);
+.section {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
-.statContent {
-  flex: 1;
+.section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 16px 0;
 }
 
-.statTitle {
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-light);
-  margin: 0 0 var(--space-xs) 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.statValue {
-  font-size: var(--font-3xl);
-  font-weight: var(--font-weight-extrabold);
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: var(--line-height-tight);
-}
-
-/* 차트 섹션 */
-.chartsSection {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: var(--space-lg);
-  margin-bottom: var(--space-3xl);
-}
-
-.chartCard {
-  background: var(--color-bg-primary);
-  padding: var(--space-lg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-gray-100);
-}
-
-.chartTitle {
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-md) 0;
-  padding-bottom: var(--space-sm);
-  border-bottom: 2px solid var(--color-gray-100);
-}
-
-.chartContent {
+.progressBars {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 12px;
 }
 
-.chartItem {
+.progressItem {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 12px;
 }
 
-.chartLabel {
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-muted);
+.progressItem > span:first-child {
   min-width: 80px;
-  flex-shrink: 0;
+  font-size: 14px;
+  color: #374151;
 }
 
-.chartBar {
+.progressBar {
   flex: 1;
-  height: var(--space-lg);
-  background: var(--color-gray-100);
-  border-radius: var(--space-sm);
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
   overflow: hidden;
-  position: relative;
 }
 
-.chartFill {
+.progressFill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary-light),
-    var(--color-primary)
-  );
-  border-radius: var(--space-sm);
-  transition: width var(--transition-slow);
-  min-width: 4px;
+  transition: width 0.3s ease;
 }
 
-.chartValue {
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
+.progressItem > span:last-child {
   min-width: 40px;
-  text-align: right;
-  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
 }
 
-/* 녹음 차트 */
-.recordingChart {
-  display: flex;
-  align-items: end;
-  gap: var(--space-sm);
-  height: 200px;
-  padding: var(--space-md) 0;
-}
-
-.recordingItem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  height: 100%;
-}
-
-.recordingDate {
-  font-size: var(--space-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-light);
-  text-align: center;
-}
-
-.recordingBar {
-  flex: 1;
-  width: 100%;
-  background: var(--color-gray-100);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  overflow: hidden;
-  display: flex;
-  align-items: end;
-  min-height: var(--space-md);
-}
-
-.recordingFill {
-  width: 100%;
-  background: linear-gradient(
-    180deg,
-    var(--color-primary-light),
-    var(--color-primary)
-  );
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  transition: height var(--transition-slow);
-  min-height: 4px;
-}
-
-.recordingCount {
-  font-size: var(--space-sm);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
-  text-align: center;
-}
-
-/* 빠른 액션 섹션 */
-.quickActions {
-  margin-bottom: var(--space-3xl);
-}
-
-.sectionTitle {
-  font-size: var(--font-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-md) 0;
-}
-
-.actionGrid {
+.activityGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
-.quickActionCard {
-  background: var(--color-bg-primary);
-  padding: var(--space-lg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 2px solid var(--color-gray-100);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.activityItem {
   text-align: center;
-  gap: var(--space-sm);
-  text-decoration: none;
-  color: inherit;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 6px;
 }
 
-.quickActionCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-light);
+.activityItem span {
+  display: block;
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
 }
 
-.quickActionCard svg {
-  width: 40px;
-  height: 40px;
-  color: var(--color-primary-light);
+.activityItem strong {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
 }
 
-.quickActionCard h4 {
-  font-size: var(--space-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
-  margin: 0;
+/* 테이블 스타일 */
+.tableContainer {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
-.quickActionCard p {
-  font-size: var(--font-sm);
-  color: var(--color-text-light);
-  margin: 0;
-  line-height: var(--line-height-normal);
+.tableHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-.spinner {
-  width: var(--space-2xl);
-  height: var(--space-2xl);
-  border: 3px solid var(--color-gray-100);
-  border-top: 3px solid var(--color-primary-light);
-  border-radius: var(--radius-full);
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--space-base);
+.tableHeader h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.statsRow {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: #6b7280;
 }
 
-/* 반응형 디자인 */
+.table {
+  width: 100%;
+}
+
+.tableHead {
+  background: #f9fafb;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.tableRow:hover {
+  background: #f9fafb;
+}
+
+.tableHead .tableRow {
+  background: transparent;
+  font-weight: 600;
+  color: #374151;
+}
+
+.tableCell {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #111827;
+}
+
+.userId {
+  font-family: monospace;
+  font-size: 12px;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.taskKey {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.progressContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.progressContainer .progressBar {
+  flex: 1;
+  height: 6px;
+}
+
+.progressText {
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 35px;
+}
+
+.statusBadge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusGray {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.statusBlue {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+.statusGreen {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.statusRed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.typeBadge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.typeSituational {
+  background: #fef3c7;
+  color: #d97706;
+}
+.typeFormal {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.qualityIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qualityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.qualityHigh {
+  background: #10b981;
+}
+.qualityMedium {
+  background: #f59e0b;
+}
+.qualityLow {
+  background: #ef4444;
+}
+
+.downloadButton {
+  padding: 4px 8px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.downloadButton:hover {
+  background: #2563eb;
+}
+
+/* 반응형 */
 @media (max-width: 768px) {
   .container {
-    padding: var(--space-base);
-  }
-
-  .header {
-    flex-direction: column;
-    gap: var(--space-base);
-    align-items: stretch;
-  }
-
-  .title {
-    font-size: var(--font-3xl);
-  }
-
-  .actionButtons {
-    justify-content: center;
+    padding: 16px;
   }
 
   .statsGrid {
-    grid-template-columns: 1fr;
-    gap: var(--space-base);
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .chartsSection {
-    grid-template-columns: 1fr;
-    gap: var(--space-base);
+  .tableRow {
+    grid-template-columns: repeat(4, 1fr);
+    font-size: 12px;
   }
 
-  .actionGrid {
-    grid-template-columns: 1fr;
-    gap: var(--space-base);
-  }
-
-  .statCard {
-    padding: var(--space-md);
-  }
-
-  .chartCard {
-    padding: var(--space-md);
-  }
-
-  .quickActionCard {
-    padding: var(--space-md);
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: var(--space-sm);
-  }
-
-  .statValue {
-    font-size: var(--font-3xl);
-  }
-
-  .statIcon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .statIcon svg {
-    width: var(--space-lg);
-    height: var(--space-lg);
-  }
-
-  .recordingChart {
-    height: 150px;
-  }
-
-  .chartLabel {
-    min-width: 60px;
-    font-size: var(--font-sm);
-  }
-
-  .chartValue {
-    min-width: 35px;
-    font-size: var(--font-sm);
-  }
-}
-
-/* 다크 모드 지원 */
-@media (prefers-color-scheme: dark) {
-  .container {
-    background: var(--color-gray-900);
-    color: var(--color-bg-primary);
-  }
-
-  .title {
-    color: var(--color-bg-primary);
-  }
-
-  .subtitle {
-    color: var(--color-gray-400);
-  }
-
-  .statCard,
-  .chartCard,
-  .quickActionCard {
-    background: var(--color-text-secondary);
-    border-color: var(--color-text-secondary);
-  }
-
-  .statValue {
-    color: var(--color-bg-primary);
-  }
-
-  .chartTitle,
-  .sectionTitle {
-    color: var(--color-bg-primary);
-  }
-
-  .quickActionCard h4 {
-    color: var(--color-bg-primary);
-  }
-
-  .quickActionCard p {
-    color: var(--color-gray-400);
-  }
-
-  .chartLabel,
-  .chartValue {
-    color: var(--color-gray-300);
-  }
-
-  .chartBar {
-    background: var(--color-text-secondary);
-  }
-
-  .recordingBar {
-    background: var(--color-text-secondary);
-  }
-
-  .recordingDate,
-  .recordingCount {
-    color: var(--color-gray-400);
-  }
-
-  .header {
-    border-color: var(--color-text-secondary);
-  }
-
-  .chartTitle {
-    border-color: var(--color-text-secondary);
-  }
-}
-
-/* 접근성 개선 */
-@media (prefers-reduced-motion: reduce) {
-  .statCard:hover,
-  .quickActionCard:hover,
-  .actionButton:hover {
-    transform: none;
-  }
-
-  .chartFill,
-  .recordingFill {
-    transition: none;
-  }
-
-  .spinner {
-    animation: none;
-  }
-}
-
-/* 고해상도 디스플레이 지원 */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .statCard,
-  .chartCard,
-  .quickActionCard {
-    box-shadow: var(--shadow-sm);
-  }
-
-  .statCard:hover,
-  .quickActionCard:hover {
-    box-shadow: var(--shadow-md);
-  }
+  /* .tableRow .tableCell:nth-child(n + 5) {
+    display: none;
+  } */
 }

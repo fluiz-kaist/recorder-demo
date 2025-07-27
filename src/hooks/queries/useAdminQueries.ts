@@ -1,283 +1,434 @@
-// // hooks/queries/useAdminQueries.ts
-// import { useQuery, UseQueryResult } from "@tanstack/react-query";
-// import { useState, useEffect } from "react";
-// import { User} from "@/types/firebase";
+// hooks/queries/useAdminQueries.ts
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { ParticipantOverview } from "@/pages/api/admin/participants/overview";
+import { ParticipantDetail } from "@/pages/api/admin/participants/[userId]";
+import { ProgressOverview } from "@/pages/api/admin/progress/overview";
+import { RecordingOverview } from "@/pages/api/admin/recordings";
+// ===== 타입 정의 =====
 
-// interface AdminData {
-//   name: string;
-// }
+interface ParticipantsOverviewData {
+  participants: ParticipantOverview[];
+  totalCount: number;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  statistics: {
+    totalParticipants: number;
+    startedParticipants: number;
+    completedParticipants: number;
+    activeInLast7Days: number;
+  };
+}
 
-// /**
-//  * 관리자 통계 데이터 타입
-//  */
-// export interface AdminStats {
-//   totalUsers: number;
-//   totalRecordings: number;
-//   totalCompletedScripts: number;
-//   averageProgress: number;
-//   usersByAgeGroup: { [ageGroup: string]: number };
-//   usersByGender: { [gender: string]: number };
-//   recordingsByDate: { date: string; count: number }[];
-// }
+interface RecordingsData {
+  recordings: RecordingOverview[];
+  totalCount: number;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  statistics: {
+    totalRecordings: number;
+    byDomain: Record<string, number>;
+    byTaskType: {
+      situational: number;
+      formal: number;
+    };
+    byQuality: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+    byStatus: Record<string, number>;
+  };
+}
 
-// // 관리자 권한 확인 훅
-// export const useIsAdmin = () => {
-//   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-//   const [adminData, setAdminData] = useState<AdminData | null>(null);
-//   const [isLoading, setIsLoading] = useState(true);
+interface UserRecordingsData {
+  userInfo: {
+    userId: string;
+    userName?: string;
+    gender: string;
+    ageGroup: string;
+  };
+  recordings: RecordingOverview[];
+  statistics: {
+    totalRecordings: number;
+    averageDuration: number;
+    totalFileSize: number;
+    qualityDistribution: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+    domainBreakdown: Record<string, number>;
+  };
+}
 
-//   useEffect(() => {
-//     const checkAdminStatus = async () => {
-//       try {
-//         const response = await fetch("/api/auth/checkAdmin", {
-//           method: "GET",
-//           credentials: "include",
-//         });
+// ===== 참여자 관리 훅 =====
 
-//         if (response.ok) {
-//           const data = await response.json();
-//           setIsAdmin(true);
-//           setAdminData(data.admin);
-//         } else {
-//           setIsAdmin(false);
-//           setAdminData(null);
-//         }
-//       } catch (error) {
-//         console.error("관리자 권한 확인 중 오류:", error);
-//         setIsAdmin(false);
-//         setAdminData(null);
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
+/**
+ * 참여자 목록 조회 훅
+ */
+interface UseAdminParticipantsParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  status?: string;
+  gender?: string;
+  ageGroup?: string;
+  search?: string;
+}
 
-//     checkAdminStatus();
-//   }, []);
+export const useAdminParticipants = (
+  params: UseAdminParticipantsParams = {}
+): UseQueryResult<ParticipantsOverviewData, Error> => {
+  const {
+    page = 1,
+    limit = 20,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    status,
+    gender,
+    ageGroup,
+    search,
+  } = params;
 
-//   return { isAdmin, adminData, isLoading };
-// };
+  return useQuery({
+    queryKey: ["adminParticipants", params],
+    queryFn: async (): Promise<ParticipantsOverviewData> => {
+      const queryParams = new URLSearchParams();
+      queryParams.append("page", page.toString());
+      queryParams.append("limit", limit.toString());
+      queryParams.append("sortBy", sortBy);
+      queryParams.append("sortOrder", sortOrder);
 
-// // 관리자 권한 쿼리 훅
-// export const useAdminAuth = () => {
-//   return useQuery({
-//     queryKey: ["adminAuth"],
-//     queryFn: async () => {
-//       const response = await fetch("/api/auth/checkAdmin", {
-//         method: "GET",
-//         credentials: "include",
-//       });
+      if (status) queryParams.append("status", status);
+      if (gender) queryParams.append("gender", gender);
+      if (ageGroup) queryParams.append("ageGroup", ageGroup);
+      if (search) queryParams.append("search", search);
 
-//       if (!response.ok) {
-//         throw new Error("관리자 권한이 없습니다.");
-//       }
+      const response = await fetch(
+        `/api/admin/participants/overview?${queryParams.toString()}`
+      );
+      const data = await response.json();
 
-//       return response.json();
-//     },
-//     retry: false,
-//     staleTime: 1000 * 60 * 5, // 5분간 캐시
-//   });
-// };
+      if (!response.ok) {
+        throw new Error(data.message || "참여자 목록 조회에 실패했습니다.");
+      }
 
-// // 특정 권한 확인 훅 (간단한 관리자 확인으로 변경)
-// export const useAdminPermission = () => {
-//   const { adminData } = useIsAdmin();
+      return data.data;
+    },
+    staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
+    retry: 1,
+  });
+};
 
-//   // name이 있으면 모든 권한이 있다고 가정
-//   return !!adminData?.name;
-// };
+/**
+ * 특정 참여자 상세 정보 조회 훅
+ */
+export const useAdminParticipantDetail = (
+  userId: string
+): UseQueryResult<ParticipantDetail, Error> => {
+  return useQuery({
+    queryKey: ["adminParticipantDetail", userId],
+    queryFn: async (): Promise<ParticipantDetail> => {
+      const response = await fetch(`/api/admin/participants/${userId}`);
+      const data = await response.json();
 
-// /**
-//  * 관리자 전체 통계 조회
-//  */
-// export const useAdminStatsQuery = (): UseQueryResult<AdminStats, Error> => {
-//   return useQuery({
-//     queryKey: ["adminStats"],
-//     queryFn: async (): Promise<AdminStats> => {
-//       const response = await fetch("/api/admin/stats");
-//       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.message || "참여자 상세 정보 조회에 실패했습니다."
+        );
+      }
 
-//       if (!response.ok) {
-//         throw new Error(data.message || "통계 데이터를 불러올 수 없습니다.");
-//       }
+      return data.data;
+    },
+    enabled: !!userId,
+    staleTime: 1 * 60 * 1000, // 1분간 캐시 유지
+    retry: 1,
+  });
+};
 
-//       return data.stats as AdminStats;
-//     },
-//     staleTime: 1 * 60 * 1000, // 1분간 캐시 유지
-//     retry: 1,
-//   });
-// };
+// ===== 진행 상황 관리 훅 =====
 
-// /**
-//  * 전체 사용자 목록 조회 (관리자용)
-//  */
-// export const useAllUsersQuery = (params?: {
-//   page?: number;
-//   limit?: number;
-//   sortBy?: string;
-//   sortOrder?: string;
-//   ageGroup?: string;
-//   gender?: string;
-//   hasAssignments?: string;
-// }): UseQueryResult<{ users: User[]; totalCount: number }, Error> => {
-//   const queryParams = new URLSearchParams();
-//   if (params?.page) queryParams.append("page", params.page.toString());
-//   if (params?.limit) queryParams.append("limit", params.limit.toString());
-//   if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
-//   if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
-//   if (params?.ageGroup) queryParams.append("ageGroup", params.ageGroup);
-//   if (params?.gender) queryParams.append("gender", params.gender);
-//   if (params?.hasAssignments)
-//     queryParams.append("hasAssignments", params.hasAssignments);
+/**
+ * 전체 진행 상황 개요 조회 훅
+ */
+export const useAdminProgressOverview = (): UseQueryResult<
+  ProgressOverview,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["adminProgressOverview"],
+    queryFn: async (): Promise<ProgressOverview> => {
+      const response = await fetch("/api/admin/progress/overview");
+      const data = await response.json();
 
-//   return useQuery({
-//     queryKey: ["allUsers", params],
-//     queryFn: async () => {
-//       const response = await fetch(
-//         `/api/admin/users?${queryParams.toString()}`
-//       );
-//       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "진행 상황 조회에 실패했습니다.");
+      }
 
-//       if (!response.ok) {
-//         throw new Error(data.message || "사용자 목록을 불러올 수 없습니다.");
-//       }
+      return data.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    retry: 1,
+    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신
+  });
+};
 
-//       return {
-//         users: data.users as User[],
-//         totalCount: data.totalCount as number,
-//       };
-//     },
-//     staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
-//     retry: 1,
-//   });
-// };
+/**
+ * 특정 사용자 진행 상황 상세 조회 훅
+ */
+export const useAdminUserProgress = (
+  userId: string
+): UseQueryResult<ParticipantDetail, Error> => {
+  return useQuery({
+    queryKey: ["adminUserProgress", userId],
+    queryFn: async (): Promise<ParticipantDetail> => {
+      const response = await fetch(`/api/admin/progress/${userId}`);
+      const data = await response.json();
 
-// /**
-//  * 특정 사용자의 상세 정보 조회 (관리자용)
-//  */
-// export const useUserDetailQuery = (
-//   userId: string
-// ): UseQueryResult<User, Error> => {
-//   return useQuery({
-//     queryKey: ["userDetail", userId],
-//     queryFn: async (): Promise<User> => {
-//       const response = await fetch(`/api/admin/users/${userId}`);
-//       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.message || "사용자 진행 상황 조회에 실패했습니다."
+        );
+      }
 
-//       if (!response.ok) {
-//         throw new Error(data.message || "사용자 정보를 불러올 수 없습니다.");
-//       }
+      return data.data;
+    },
+    enabled: !!userId,
+    staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
+    retry: 1,
+  });
+};
 
-//       return data.user as User;
-//     },
-//     enabled: !!userId,
-//     staleTime: 1 * 60 * 1000, // 1분간 캐시 유지
-//     retry: 1,
-//   });
-// };
+// ===== 녹음 데이터 관리 훅 =====
 
-// // hooks/mutations/useAdminMutations.ts
-// import { useMutation, useQueryClient } from "@tanstack/react-query";
-// import { useRouter } from "next/router";
+/**
+ * 녹음 목록 조회 훅
+ */
+interface UseAdminRecordingsParams {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  domain?: string;
+  taskType?: "situational" | "formal";
+  quality?: "high" | "medium" | "low";
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  search?: string;
+}
 
-// interface AdminLoginData {
-//   name: string;
-//   password: string;
-// }
+export const useAdminRecordings = (
+  params: UseAdminRecordingsParams = {}
+): UseQueryResult<RecordingsData, Error> => {
+  const {
+    page = 1,
+    limit = 50,
+    userId,
+    domain,
+    taskType,
+    quality,
+    sortBy = "recordedAt",
+    sortOrder = "desc",
+    search,
+  } = params;
 
-// // 관리자 로그인 뮤테이션
-// export const useAdminLoginMutation = () => {
-//   const router = useRouter();
-//   const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ["adminRecordings", params],
+    queryFn: async (): Promise<RecordingsData> => {
+      const queryParams = new URLSearchParams();
+      queryParams.append("page", page.toString());
+      queryParams.append("limit", limit.toString());
+      queryParams.append("sortBy", sortBy);
+      queryParams.append("sortOrder", sortOrder);
 
-//   return useMutation({
-//     mutationFn: async (loginData: AdminLoginData) => {
-//       const response = await fetch("/api/auth/verifyAdmin", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(loginData),
-//         credentials: "include",
-//       });
+      if (userId) queryParams.append("userId", userId);
+      if (domain) queryParams.append("domain", domain);
+      if (taskType) queryParams.append("taskType", taskType);
+      if (quality) queryParams.append("quality", quality);
+      if (search) queryParams.append("search", search);
 
-//       if (!response.ok) {
-//         const error = await response.json();
-//         throw new Error(error.message || "관리자 로그인 실패");
-//       }
+      const response = await fetch(
+        `/api/admin/recordings?${queryParams.toString()}`
+      );
+      const data = await response.json();
 
-//       return response.json();
-//     },
-//     onSuccess: () => {
-//       // 관리자 인증 성공 시 캐시 무효화
-//       queryClient.invalidateQueries({ queryKey: ["adminAuth"] });
+      console.log("녹음 목록 조회:", data);
 
-//       // 관리자 대시보드로 리다이렉트
-//       router.push("/admin/dashboard");
-//     },
-//     onError: (error) => {
-//       console.error("관리자 로그인 실패:", error);
-//     },
-//   });
-// };
+      if (!response.ok) {
+        throw new Error(data.message || "녹음 목록 조회에 실패했습니다.");
+      }
 
-// // 관리자 로그아웃 뮤테이션
-// export const useAdminLogoutMutation = () => {
-//   const router = useRouter();
-//   const queryClient = useQueryClient();
+      return data.data;
+    },
+    staleTime: 3 * 60 * 1000, // 3분간 캐시 유지
+    retry: 1,
+  });
+};
 
-//   return useMutation({
-//     mutationFn: async () => {
-//       const response = await fetch("/api/auth/logoutAdmin", {
-//         method: "POST",
-//         credentials: "include",
-//       });
+/**
+ * 특정 사용자의 녹음 목록 조회 훅
+ */
+export const useAdminUserRecordings = (
+  userId: string
+): UseQueryResult<UserRecordingsData, Error> => {
+  return useQuery({
+    queryKey: ["adminUserRecordings", userId],
+    queryFn: async (): Promise<UserRecordingsData> => {
+      const response = await fetch(`/api/admin/recordings/${userId}`);
+      const data = await response.json();
 
-//       if (!response.ok) {
-//         throw new Error("로그아웃 실패");
-//       }
+      if (!response.ok) {
+        throw new Error(
+          data.message || "사용자 녹음 목록 조회에 실패했습니다."
+        );
+      }
 
-//       return response.json();
-//     },
-//     onSuccess: () => {
-//       // 관리자 캐시 클리어
-//       queryClient.removeQueries({ queryKey: ["adminAuth"] });
+      return data.data;
+    },
+    enabled: !!userId,
+    staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
+    retry: 1,
+  });
+};
 
-//       // 로그인 페이지로 리다이렉트
-//       router.push("/admin/login");
-//     },
-//     onError: (error) => {
-//       console.error("관리자 로그아웃 실패:", error);
-//       // 실패해도 로그인 페이지로 이동
-//       router.push("/admin/login");
-//     },
-//   });
-// };
+// ===== 유틸리티 훅 =====
 
-// // 사용자 삭제 뮤테이션
-// export const useDeleteUserMutation = () => {
-//   const queryClient = useQueryClient();
+/**
+ * 관리자 권한 확인 훅
+ */
+export const useAdminAuth = (): UseQueryResult<
+  { isAdmin: boolean; adminName?: string },
+  Error
+> => {
+  return useQuery({
+    queryKey: ["adminAuth"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/checkAdmin", {
+        method: "GET",
+        credentials: "include",
+      });
 
-//   return useMutation({
-//     mutationFn: async (userId: string) => {
-//       const response = await fetch(`/api/admin/users/${userId}`, {
-//         method: "DELETE",
-//         credentials: "include",
-//       });
+      if (!response.ok) {
+        return { isAdmin: false };
+      }
 
-//       if (!response.ok) {
-//         const error = await response.json();
-//         throw new Error(error.message || "사용자 삭제에 실패했습니다.");
-//       }
+      const data = await response.json();
+      return {
+        isAdmin: true,
+        adminName: data.admin?.name,
+      };
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5분간 캐시
+    refetchOnWindowFocus: false,
+  });
+};
 
-//       return response.json();
-//     },
-//     onSuccess: () => {
-//       // 사용자 목록과 통계 캐시 무효화
-//       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
-//       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
-//     },
-//     onError: (error) => {
-//       console.error("사용자 삭제 실패:", error);
-//     },
-//   });
-// };
+/**
+ * 관리자 대시보드 통합 데이터 훅 (여러 API를 한 번에)
+ */
+export const useAdminDashboard = () => {
+  const participantsQuery = useAdminParticipants({ limit: 10 });
+  const progressQuery = useAdminProgressOverview();
+  const recordingsQuery = useAdminRecordings({ limit: 20 });
+
+  return {
+    participants: participantsQuery,
+    progress: progressQuery,
+    recordings: recordingsQuery,
+
+    // 통합 로딩 상태
+    isLoading:
+      participantsQuery.isLoading ||
+      progressQuery.isLoading ||
+      recordingsQuery.isLoading,
+
+    // 통합 에러 상태
+    hasError:
+      participantsQuery.isError ||
+      progressQuery.isError ||
+      recordingsQuery.isError,
+
+    // 모든 데이터 로드 완료 여부
+    isReady:
+      participantsQuery.isSuccess &&
+      progressQuery.isSuccess &&
+      recordingsQuery.isSuccess,
+  };
+};
+
+// ===== 데이터 변환 유틸리티 =====
+
+/**
+ * 진행률 색상 반환 함수
+ */
+export const getProgressColor = (progress: number): string => {
+  if (progress === 0) return "#6b7280"; // gray
+  if (progress < 25) return "#ef4444"; // red
+  if (progress < 50) return "#f97316"; // orange
+  if (progress < 75) return "#eab308"; // yellow
+  if (progress < 100) return "#3b82f6"; // blue
+  return "#10b981"; // green
+};
+
+/**
+ * 상태별 색상 반환 함수
+ */
+export const getStatusColor = (status: string): string => {
+  switch (status) {
+    case "not_started":
+      return "#6b7280"; // gray
+    case "in_progress":
+      return "#3b82f6"; // blue
+    case "completed":
+      return "#10b981"; // green
+    case "inactive":
+      return "#ef4444"; // red
+    default:
+      return "#6b7280";
+  }
+};
+
+/**
+ * 품질 등급별 색상 반환 함수
+ */
+export const getQualityColor = (quality: string): string => {
+  switch (quality) {
+    case "high":
+      return "#10b981"; // green
+    case "medium":
+      return "#eab308"; // yellow
+    case "low":
+      return "#ef4444"; // red
+    default:
+      return "#6b7280";
+  }
+};
+
+/**
+ * 파일 크기 포맷팅 함수
+ */
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+/**
+ * 시간 포맷팅 함수 (초 → 분:초)
+ */
+export const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+};

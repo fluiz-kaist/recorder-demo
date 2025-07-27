@@ -1,4 +1,4 @@
-// hooks/queries/useUserQueries.ts - localStorage 변경사항 반영
+// hooks/queries/useUserQueries.ts - 수정된 버전
 
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { User } from "@/types/firebase";
@@ -20,7 +20,7 @@ export const useMinimalUserQuery = (): UseQueryResult<
   const { data: fullUser, isLoading, isError, error } = useUserQuery();
 
   return useQuery({
-    queryKey: ["minimalUserInfo"], // 🔄 queryKey를 'minimalUserInfo'로 변경했습니다.
+    queryKey: ["minimalUserInfo"],
     queryFn: async () => {
       if (fullUser) {
         console.log(
@@ -49,6 +49,7 @@ export const useMinimalUserQuery = (): UseQueryResult<
 /**
  * 🆕 전체 사용자 정보 조회 (서버에서)
  * 진행 상태 등 모든 정보 포함
+ * 🔧 등록되지 않은 사용자에 대한 안전장치 추가
  */
 export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
@@ -57,6 +58,8 @@ export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
     queryKey: ["user", userId || authStatus?.userId],
     queryFn: async (): Promise<User> => {
       const targetUserId = userId || authStatus?.userId;
+
+      console.log("여기 뭐뭐뭐?", targetUserId);
 
       if (!targetUserId) {
         throw new Error("사용자 ID가 없습니다.");
@@ -74,16 +77,26 @@ export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
       const data = await response.json();
 
       if (!response.ok) {
+        // 🔧 404 에러인 경우 사용자가 아직 등록되지 않았음을 명시
+        if (response.status === 404) {
+          throw new Error("USER_NOT_REGISTERED");
+        }
         throw new Error(data.message || "사용자 정보를 불러올 수 없습니다.");
       }
 
       return data.user as User;
     },
     enabled:
-      // !!localUser?.completedAt && // 온보딩 완료된 사용자만
+      // 🔧 사용자가 등록 완료된 경우에만 쿼리 실행
       !!authStatus?.isAuthenticated && !!(userId || authStatus?.userId),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
+    retry: (failureCount, error) => {
+      // 🔧 등록되지 않은 사용자는 재시도하지 않음
+      if (error?.message === "USER_NOT_REGISTERED") {
+        return false;
+      }
+      return failureCount < 1;
+    },
   });
 };
 
@@ -123,7 +136,16 @@ export const useAuthStatusQuery = (): UseQueryResult<
       isAuthenticated: boolean;
       userId: string | null;
     }> => {
+      // 🔧 디버깅 추가
+      console.log("🔄 useAuthStatusQuery 실행됨");
+      console.log("🍪 전체 쿠키:", document.cookie);
+
       const authToken = getCookie("auth-token");
+
+      console.log("🍪 getCookie 결과:", {
+        authToken,
+        "authToken 존재?": !!authToken,
+      });
 
       return {
         isAuthenticated: !!authToken,
@@ -139,13 +161,12 @@ export const useAuthStatusQuery = (): UseQueryResult<
 };
 
 /**
- * 사용자 등록(온보딩) 완료 상태 확인
+ * 🔧 사용자 등록(온보딩) 완료 상태 확인 - 개선된 버전
  */
 export const useUserCompletionStatusQuery = (
   userId?: string
 ): UseQueryResult<boolean, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
-  const { data: minimalUserInfo } = useMinimalUserQuery();
 
   return useQuery({
     queryKey: ["userCompletionStatus", userId || authStatus?.userId],
@@ -156,9 +177,20 @@ export const useUserCompletionStatusQuery = (
         return false;
       }
 
-      // 🔄 로컬에서 온보딩 완료 여부 확인 (localStorage에 있음)
-      if (minimalUserInfo?.completedAt) {
-        return true;
+      // 🔧 pendingAuth 확인 - 아직 등록 과정 중인 사용자
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        try {
+          const authData = JSON.parse(pendingAuth);
+          // 기존 사용자라면 완료된 것으로 간주
+          if (authData.isExistingUser) {
+            return true;
+          }
+          // 신규 사용자라면 아직 미완료
+          return false;
+        } catch (error) {
+          console.error("pendingAuth 파싱 오류:", error);
+        }
       }
 
       if (!authStatus?.isAuthenticated) {
@@ -171,12 +203,15 @@ export const useUserCompletionStatusQuery = (
           credentials: "include",
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
+          // 🔧 404는 미등록 상태를 의미
+          if (response.status === 404) {
+            return false;
+          }
           return false;
         }
 
+        const data = await response.json();
         const user = data.user as User;
         return !!user.completedAt; // 온보딩 완료 여부
       } catch (error) {
@@ -228,9 +263,6 @@ export const useIsAuthenticated = (): boolean => {
   return !!authStatus?.isAuthenticated;
 };
 
-// 🔄 삭제된 훅들 (더 이상 사용하지 않음)
-// - useUserParticipationQuery: useUserQuery로 대체
-// - useUserCurrentStatusQuery: useUserQuery로 대체
 export const useCurrentSetId = (): number => {
   const { data: fullUser } = useUserQuery();
   const currentSetNumber = fullUser?.participation?.currentSetNumber || 1;

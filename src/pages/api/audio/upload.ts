@@ -274,12 +274,9 @@ export default async function handler(
     // Firestore에 AudioRecording 저장
     const audioRecordingRef = doc(
       db,
-      "domains",
-      domain,
-      "recordings",
+      "audioRecordingsV2", // 단일 컬렉션
       recordingId
     );
-
     await setDoc(audioRecordingRef, {
       ...audioRecording,
       recordedAt: serverTimestamp(),
