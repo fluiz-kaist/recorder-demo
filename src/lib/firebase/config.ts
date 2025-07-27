@@ -38,18 +38,32 @@ const app = !getApps().length
   : getApps()[0];
 
 // 📚 Firestore 초기화
-const db: Firestore = (() => {
-  if (process.env.NODE_ENV === "development") {
-    const databaseId = process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID;
-    return initializeFirestore(
-      app,
-      { experimentalForceLongPolling: true },
-      databaseId
-    );
+let db: Firestore;
+// 명명된 데이터베이스를 사용한다면, databaseId를 여기에 전달하거나 환경 변수에서 가져옵니다.
+// NEXT_PUBLIC_FIRESTORE_DATABASE_ID가 설정되어 있다면, 명명된 DB를 사용한다고 가정합니다.
+const firestoreDatabaseId = process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID;
+
+if (process.env.NODE_ENV === "development") {
+  debugLog("Firestore 개발 모드 초기화 (long polling 강제)");
+  db = initializeFirestore(
+    app,
+    { experimentalForceLongPolling: true },
+    firestoreDatabaseId // 명명된 DB 사용 시 개발 환경에서 전달
+  );
+} else {
+  debugLog("Firestore 프로덕션 모드 초기화");
+  // 명명된 데이터베이스를 프로덕션에서도 사용한다면, databaseId를 전달해야 합니다.
+  // getFirestore는 initializeFirestore와 달리 옵션 객체를 받지 않습니다.
+  // 따라서 options는 initializeFirestore에서만 사용 가능합니다.
+  if (firestoreDatabaseId) {
+    debugLog(`명명된 Firestore 데이터베이스 '${firestoreDatabaseId}' 사용 중.`);
+    db = getFirestore(app, firestoreDatabaseId);
   } else {
-    return getFirestore(app);
+    debugLog("기본 Firestore 데이터베이스 사용 중.");
+    db = getFirestore(app);
   }
-})();
+}
+
 
 // Storage 초기화
 const storage = getStorage(app);
