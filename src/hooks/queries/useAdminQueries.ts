@@ -338,30 +338,30 @@ export const useAdminAuth = (): UseQueryResult<
 export const useAdminDashboard = () => {
   const participantsQuery = useAdminParticipants({ limit: 10 });
   const progressQuery = useAdminProgressOverview();
-  const recordingsQuery = useAdminRecordings({ limit: 20 });
+  // const recordingsQuery = useAdminRecordings({ limit: 50 });
 
   return {
     participants: participantsQuery,
     progress: progressQuery,
-    recordings: recordingsQuery,
+    // recordings: recordingsQuery,
 
     // 통합 로딩 상태
     isLoading:
       participantsQuery.isLoading ||
-      progressQuery.isLoading ||
-      recordingsQuery.isLoading,
+      progressQuery.isLoading ,
+      // recordingsQuery.isLoading,
 
     // 통합 에러 상태
     hasError:
       participantsQuery.isError ||
-      progressQuery.isError ||
-      recordingsQuery.isError,
+      progressQuery.isError ,
+      // recordingsQuery.isError,
 
     // 모든 데이터 로드 완료 여부
     isReady:
       participantsQuery.isSuccess &&
-      progressQuery.isSuccess &&
-      recordingsQuery.isSuccess,
+      progressQuery.isSuccess ,
+      // recordingsQuery.isSuccess,
   };
 };
 

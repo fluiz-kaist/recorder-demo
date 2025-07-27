@@ -7,57 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { AudioFormat } from "@/types/firebase";
 import { AudioUploadResponse } from "@/types/api";
-import { AudioRecording } from "@/types/audio";
-/**
- * 오디오 업로드 뮤테이션 요청 데이터
- */
-interface AudioUploadMutationRequest {
-  userId: string;
-  taskKey: string; // "건강-건강정보-1"
-  taskType: "situational" | "formal";
-  audioBlob: Blob;
-  originalScript: string; // 원본 스크립트 텍스트
-
-  // 스크립트 메타데이터
-  domain: string; // service_name
-  intent: string; // task_name
-  category: string; // service_target
-
-  // 화자 정보
-  gender: "남성" | "여성" | "불명";
-  ageGroup: string;
-
-  // 선택적 정보
-  audioFormat?: AudioFormat;
-  deviceInfo?: string;
-  browserInfo?: string;
-  recordingEnvironment?: "quiet" | "normal" | "noisy";
-}
-
-/**
- * 오디오 삭제 요청 데이터
- */
-interface AudioDeleteRequest {
-  recordingId: string;
-  userId: string;
-}
-
-/**
- * STT 재처리 요청 데이터
- */
-interface STTReprocessRequest {
-  recordingId: string;
-  userId: string;
-}
-
-/**
- * 수동 전사 업데이트 요청
- */
-interface ManualTranscriptionRequest {
-  recordingId: string;
-  userId: string;
-  manualTranscription: string;
-}
+import { AudioUploadMutationRequest, AudioDeleteRequest } from "@/types/audio";
 
 /**
  * 오디오 업로드 뮤테이션
@@ -75,16 +25,19 @@ export const useUploadAudioMutation = (): UseMutationResult<
       taskKey,
       taskType,
       audioBlob,
+      recordingStartedAt,
+      recordingEndedAt,
+      actualDuration,
+      sessionDuration,
       originalScript,
       domain,
       intent,
       category,
       gender,
       ageGroup,
+      sttTranscription,
       audioFormat = AudioFormat.WAV,
       deviceInfo,
-      browserInfo,
-      recordingEnvironment,
     }: AudioUploadMutationRequest): Promise<AudioUploadResponse> => {
       const formData = new FormData();
 
@@ -101,6 +54,12 @@ export const useUploadAudioMutation = (): UseMutationResult<
       formData.append("taskType", taskType);
       formData.append("originalScript", originalScript);
 
+      //음성 데이터 관련 데이터
+      formData.append("recordingStartedAt", recordingStartedAt);
+      formData.append("recordingEndedAt", recordingEndedAt);
+      formData.append("actualDuration", actualDuration.toString());
+      formData.append("sessionDuration", sessionDuration.toString());
+
       // 스크립트 메타데이터
       formData.append("domain", domain);
       formData.append("intent", intent);
@@ -110,11 +69,11 @@ export const useUploadAudioMutation = (): UseMutationResult<
       formData.append("gender", gender);
       formData.append("ageGroup", ageGroup);
 
+      //클라이언트에서 변환해서 보내는 stt
+      formData.append("sttTranscription", sttTranscription);
+
       // 선택적 정보
       if (deviceInfo) formData.append("deviceInfo", deviceInfo);
-      if (browserInfo) formData.append("browserInfo", browserInfo);
-      if (recordingEnvironment)
-        formData.append("recordingEnvironment", recordingEnvironment);
 
       const response = await fetch("/api/audio/upload", {
         method: "POST",

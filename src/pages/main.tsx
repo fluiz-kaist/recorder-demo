@@ -128,6 +128,7 @@ const MainSelectionPage = () => {
   // 튜토리얼 페이지로 이동
   const handleTutorial = async () => {
     try {
+      console.log("minimalUserInfo?", minimalUserInfo);
       if (!minimalUserInfo?.id) {
         console.error("사용자 정보가 없습니다.");
         return;
@@ -495,8 +496,8 @@ const MainSelectionPage = () => {
           {/* 완료 축하 메시지 */}
           {overallProgress === 100 && (
             <div className={styles.congratulationsMessage}>
-              <h3>🎉 모든 녹음을 완료했습니다!</h3>
-              <p>수고하셨습니다. 제출 완료를 기다리고 있습니다.</p>
+              <h3>모든 녹음을 완료했습니다!</h3>
+              <p>수고하셨습니다.</p>
             </div>
           )}
 

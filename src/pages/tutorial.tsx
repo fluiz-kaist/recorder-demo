@@ -63,10 +63,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     new Set()
   );
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
-  const [showGuideModal, setShowGuideModal] = useState(false);
-  const [guideModalType, setGuideModalType] = useState<
-    "assistant" | "voice" | "method"
-  >("assistant");
+
   const [showTutorialComplete, setShowTutorialComplete] = useState(false);
   const { mutateAsync: updateUser } = useUpdateUserMutation();
   const totalSteps = 6;
@@ -214,60 +211,6 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
       default:
         return "녹음 연습하기";
     }
-  };
-
-  const openGuideModal = (type: "assistant" | "voice" | "method") => {
-    setGuideModalType(type);
-    setShowGuideModal(true);
-  };
-
-  // 가이드 모달 렌더링
-  const renderGuideModal = () => {
-    if (!showGuideModal) return null;
-
-    let modalContent;
-    switch (guideModalType) {
-      case "assistant":
-        modalContent = <AssistantIntro />;
-        break;
-      case "voice":
-        modalContent = <VoiceGuide />;
-        break;
-      case "method":
-        modalContent = (
-          <MicPermission
-            isGranted={micPermissionGranted}
-            onRequestPermission={requestMicPermission}
-          />
-        );
-        break;
-    }
-
-    return (
-      <div
-        className={styles.modalOverlay}
-        onClick={() => setShowGuideModal(false)}
-      >
-        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.modalHeader}>
-            <h2>
-              {guideModalType === "assistant"
-                ? "비서 소개"
-                : guideModalType === "voice"
-                ? "음성 안내"
-                : "마이크 사용법"}
-            </h2>
-            <button
-              className={styles.modalCloseButton}
-              onClick={() => setShowGuideModal(false)}
-            >
-              ✕
-            </button>
-          </div>
-          <div className={styles.modalContent}>{modalContent}</div>
-        </div>
-      </div>
-    );
   };
 
   // 실제 녹음 연습 페이지 렌더링
@@ -429,30 +372,69 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
 
           {currentStep === TutorialStep.ASSISTANT_INTRO && (
             <div className={styles.card}>
-              {/* <div className={styles.stepIndicator}>
-                <span className={styles.stepNumber}>1</span>
-                <span className={styles.stepTotal}>/ {totalSteps}</span>
-              </div> */}
               <AssistantIntro />
+              {/* 핵심 메시지 */}
+              <div className={styles.keyMessageSection}>
+                <div className={styles.keyMessage}>
+                  <p>
+                    이제 이 비서를 상상하면서, <u>어떤 말을 하실지</u> 녹음하는
+                    연습을 해보겠습니다.
+                  </p>
+                  <p>
+                    <strong>평소처럼 부탁하듯 말씀해 주세요.</strong>
+                  </p>
+                </div>
+              </div>
+              <p className={styles.next}>
+                계속해서 [다음] 버튼을 눌러서 진행해주세요!
+              </p>
             </div>
           )}
 
           {currentStep === TutorialStep.VOICE_GUIDE && (
             <div className={styles.card}>
-              {/* <div className={styles.stepIndicator}>
-                <span className={styles.stepNumber}>2</span>
-                <span className={styles.stepTotal}>/ {totalSteps}</span>
-              </div> */}
               <VoiceGuide />
             </div>
           )}
 
           {currentStep === TutorialStep.MIC_PERMISSION && (
             <div className={styles.card}>
-              {/* <div className={styles.stepIndicator}>
-                <span className={styles.stepNumber}>3</span>
-                <span className={styles.stepTotal}>/ {totalSteps}</span>
-              </div> */}
+              {/* 헤더 */}
+              <div className={styles.headerSection}>
+                <div className={styles.micIcon}>🎤</div>
+                <h1 className={styles.pageTitle}>실전 연습을 시작하겠습니다</h1>
+              </div>
+
+              {/* 설명 */}
+              <div className={styles.explanationSection}>
+                <p className={styles.explanationText}>
+                  이제 실제로 음성을 녹음해보겠습니다.
+                  <br />
+                  <br />
+                  먼저 마이크 사용 권한을 허용해주세요.
+                </p>
+              </div>
+              {/* 단계 안내 */}
+              <div className={styles.stepsSection}>
+                <div className={styles.permissionStep}>
+                  <span className={styles.stepIcon}>1️⃣</span>
+                  <span className={styles.stepText}>
+                    아래 버튼을 눌러주세요
+                  </span>
+                </div>
+                <div className={styles.permissionStep}>
+                  <span className={styles.stepIcon}>2️⃣</span>
+                  <span className={styles.stepText}>
+                    허용 또는 Allow 버튼을 눌러주세요
+                  </span>
+                </div>
+                <div className={styles.permissionStep}>
+                  <span className={styles.stepIcon}>3️⃣</span>
+                  <span className={styles.stepText}>
+                    준비가 완료되면 다음으로 진행하세요
+                  </span>
+                </div>
+              </div>
               <MicPermission
                 isGranted={micPermissionGranted}
                 onRequestPermission={requestMicPermission}
@@ -529,34 +511,6 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Footer - 안내 정보 바로가기 */}
-      <div className={styles.footer}>
-        <div className={styles.footerTitle}>도움말</div>
-        <div className={styles.footerButtons}>
-          <button
-            className={styles.footerButton}
-            onClick={() => openGuideModal("assistant")}
-          >
-            🤖 비서 소개
-          </button>
-          <button
-            className={styles.footerButton}
-            onClick={() => openGuideModal("voice")}
-          >
-            📢 녹음 안내
-          </button>
-          <button
-            className={styles.footerButton}
-            onClick={() => openGuideModal("method")}
-          >
-            🎤 마이크 사용법
-          </button>
-        </div>
-      </div>
-
-      {/* 가이드 모달 */}
-      {renderGuideModal()}
     </div>
   );
 };

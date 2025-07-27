@@ -226,8 +226,8 @@
 
 .tableRow {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 5px;
   padding: 12px 24px;
   border-bottom: 1px solid #f3f4f6;
 }
@@ -387,4 +387,29 @@
 
 .copyButton:hover {
   color: #000;
+}
+.filtersContainer {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  align-items: center;
+}
+
+.filtersContainer input,
+.filtersContainer select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.filtersContainer input {
+  min-width: 200px;
+}
+
+.filtersContainer select {
+  min-width: 150px;
 }

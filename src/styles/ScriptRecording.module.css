@@ -1122,3 +1122,40 @@
   background: #e0e0e0 !important;
   transform: none !important;
 }
+/* 완료 축하 메시지 */
+.congratulationsMessage {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.congratulationsMessage h3 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-size: 1.5rem;
+}
+
+.congratulationsMessage p {
+  margin: 0;
+  color: #047857;
+  font-size: 1.1rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .congratulationsMessage {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .congratulationsMessage h3 {
+    font-size: 1.25rem;
+  }
+
+  .congratulationsMessage p {
+    font-size: 1rem;
+  }
+}

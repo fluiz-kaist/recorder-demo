@@ -70,3 +70,15 @@ export const toSlug = (korName: ServiceName): ServiceSlug =>
 
 export const fromSlug = (slug: ServiceSlug): ServiceName =>
   SLUG_TO_SERVICE_NAME[slug];
+
+// 서비스 순서 정의
+const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
+export const getNextServiceSlug = (
+  currentServiceName: ServiceName
+): string | null => {
+  const currentIndex = SERVICE_ORDER.indexOf(currentServiceName);
+  if (currentIndex === -1 || currentIndex >= SERVICE_ORDER.length - 1)
+    return null;
+  const nextServiceName = SERVICE_ORDER[currentIndex + 1];
+  return toSlug(nextServiceName); // 예: "health", "traffic", ...
+};

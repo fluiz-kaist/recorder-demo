@@ -11,7 +11,7 @@ import {
 } from "@/hooks/queries/useUserQueries";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-
+import { getNextServiceSlug, ServiceName } from "@/lib/serviceMapping";
 export interface MergedScript {
   scriptType: "situational" | "formal";
   situation?: SituationalScript;
@@ -362,10 +362,36 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             </button>
           </div>
 
-          {/* 🎯 진행 안내 메시지 추가 */}
+          {/* ✅ 마지막 스크립트이고 완료 상태일 때, 다음 주제로 바로가기 버튼 표시 */}
+          {scriptIndex === flatScriptList.length - 1 &&
+            completed &&
+            (() => {
+              const currentService = current?.script
+                ?.service_name as ServiceName;
+              const nextSlug = getNextServiceSlug(currentService);
+              return nextSlug ? (
+                <div className={styles.nextTopicWrapper}>
+                  <button
+                    className={styles.nextTopicButton}
+                    onClick={() => router.push(`/recording/${nextSlug}`)}
+                  >
+                    다음 주제 녹음하러 가기
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.congratulationsMessage}>
+                    <h3>모든 녹음을 완료했습니다!</h3>
+                    <p>수고하셨습니다.</p>
+                  </div>
+                </>
+              ); // 마지막 서비스일 경우 버튼 없음
+            })()}
+
+          {/*  진행 안내 메시지 추가 */}
           {!completed && (
             <div className={styles.progressHint}>
-              <div className={styles.hintIcon}>📝</div>
+              {/* <div className={styles.hintIcon}>📝</div> */}
               <div className={styles.hintText}>
                 녹음을 완료하고 제출해야 다음으로 넘어갈 수 있습니다.
               </div>

@@ -13,41 +13,9 @@ const MicPermission: React.FC<MicPermissionProps> = ({
 }) => {
   return (
     <div className={styles.container}>
-      {/* 헤더 */}
-      <div className={styles.headerSection}>
-        <div className={styles.micIcon}>🎤</div>
-        <h1 className={styles.pageTitle}>실전 연습을 시작하겠습니다</h1>
-      </div>
 
-      {/* 설명 */}
-      <div className={styles.explanationSection}>
-        <p className={styles.explanationText}>
-          이제 실제로 음성을 녹음해보겠습니다.
-          <br />
-          <br />
-          먼저 마이크 사용 권한을 허용해주세요.
-        </p>
-      </div>
 
-      {/* 단계 안내 */}
-      <div className={styles.stepsSection}>
-        <div className={styles.permissionStep}>
-          <span className={styles.stepIcon}>1️⃣</span>
-          <span className={styles.stepText}>아래 버튼을 눌러주세요</span>
-        </div>
-        <div className={styles.permissionStep}>
-          <span className={styles.stepIcon}>2️⃣</span>
-          <span className={styles.stepText}>
-            허용 또는 Allow 버튼을 눌러주세요
-          </span>
-        </div>
-        <div className={styles.permissionStep}>
-          <span className={styles.stepIcon}>3️⃣</span>
-          <span className={styles.stepText}>
-            준비가 완료되면 다음으로 진행하세요
-          </span>
-        </div>
-      </div>
+
       {/* 추가 안내 */}
       <div className={styles.additionalInfo}>
         <h3 className={styles.infoTitle}>🔐 마이크 허가 안내</h3>

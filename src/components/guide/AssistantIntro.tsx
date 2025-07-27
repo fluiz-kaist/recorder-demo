@@ -62,20 +62,6 @@ const AssistantIntro: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* 핵심 메시지 */}
-      <div className={styles.keyMessageSection}>
-        <div className={styles.keyMessage}>
-          <p>
-            이제 이 비서를 상상하면서, <u>어떤 말을 하실지</u> 녹음하는 연습을
-            해보겠습니다.
-          </p>
-          <p>
-            <strong>평소처럼 부탁하듯 말씀해 주세요.</strong>
-          </p>
-        </div>
-      </div>
-      <p className={styles.next}>계속해서 [다음] 버튼을 눌러서 진행해주세요!</p>
     </div>
   );
 };

@@ -113,3 +113,31 @@ export function logKoreanTimeFormats(): void {
   console.log("UI용 타임스탬프:", getTimestampForUI());
   //   console.log("오디오 ID 예시:", generateAudioFileId("user123", "script001"));
 }
+
+/**
+ * Firebase Timestamp 객체를 한국시간 기준으로 읽기 쉬운 문자열로 변환
+ * @param timestamp - Firestore Timestamp 또는 { seconds, nanoseconds } 객체
+ * @returns {string} 예: "2025-07-27\n14:29:51"
+ */
+export function formatFirestoreTimestampKST(timestamp: {
+  seconds: number;
+  nanoseconds: number;
+}): string {
+  if (!timestamp?.seconds) return "-";
+
+  const date = new Date(
+    timestamp.seconds * 1000 + Math.floor(timestamp.nanoseconds / 1e6)
+  );
+  const kst = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+
+  const yyyy = kst.getFullYear();
+  const mm = String(kst.getMonth() + 1).padStart(2, "0");
+  const dd = String(kst.getDate()).padStart(2, "0");
+  const hh = String(kst.getHours()).padStart(2, "0");
+  const min = String(kst.getMinutes()).padStart(2, "0");
+  const ss = String(kst.getSeconds()).padStart(2, "0");
+
+  return `${yyyy}-${mm}-${dd}\n${hh}:${min}:${ss}`;
+}

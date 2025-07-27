@@ -68,59 +68,6 @@ export interface Script {
 // 스크립트 복합 키 (타입 + ID로 전역 고유성 보장)
 export type ScriptKey = `${ScriptType}_${number}`; // 예: "formal_0", "qas_1", "situ_2"
 
-// ===== 오디오 관련 타입 =====
-
-// 오디오 녹음 정보 (Firebase audioRecordings 컬렉션)
-interface AudioRecording {
-  id: string; // 녹음 기록 고유 ID
-  userId: string; // 녹음한 사용자 ID
-  scriptId: number; // 스크립트 ID (0, 1, 2...)
-  scriptType: ScriptType; // 스크립트 타입
-
-  createdAt: string;
-
-  // 오디오 파일 정보
-  audioUrl: string; // Firebase Storage URL
-  fileName: string; // 저장된 파일명
-  fileSize: number; // 파일 크기 (bytes)
-  duration: number; // 녹음 시간 (초)
-  audioFormat: AudioFormat; // 오디오 포맷
-
-  // STT 및 분석 결과
-  sttText: string; // google-transcribe 변환된 텍스트
-  sttConfidence?: number; // STT 신뢰도 (0-1)
-
-  // 시간 정보
-  recordedAt: string; // 녹음 완료 시간 (ISO string)
-  uploadedAt: string; // 업로드 완료 시간 (ISO string)
-  processedAt?: string; // STT 처리 완료 시간 (ISO string)
-
-  // 상태 정보
-  status: AudioStatus; // 처리 상태
-
-  // 메타데이터
-  deviceInfo?: string; // 녹음 장치 정보
-  browserInfo?: string; // 브라우저 정보
-  quality?: "high" | "medium" | "low"; // 음질 품질
-
-  //관리자용
-  // 품질 및 검토 관련 (관리자 기능)
-  qualityScore?: number;
-  isApproved?: boolean;
-  reviewedAt?: string;
-  reviewedBy?: string;
-  reviewNotes?: string;
-
-  //호환용?
-  filePath?: string;
-
-  // 학습 고려
-  originalScriptContent: string; // 사용자가 녹음한 당시의 스크립트 원본 텍스트
-  scriptCategory?: string; // 스크립트 카테고리 (예: '건강', '금융')
-  scriptIntent?: string; // 스크립트 의도
-  scriptTitle?: string; // 스크립트 제목
-}
-
 // 통계를 위한 타입
 export interface ScriptUsage {
   [scriptId: number]: boolean; // "0": true, "1": false 형태

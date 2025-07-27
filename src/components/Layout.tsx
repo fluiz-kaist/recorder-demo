@@ -4,6 +4,9 @@ import styles from "@/styles/Layout.module.css";
 import { useIsAuthenticated } from "@/hooks/queries/useUserQueries";
 import { useLogoutUserMutation } from "@/hooks/mutations/useUserMutations";
 import { AdminLogoutButton } from "@/pages/admin/dashboard";
+import AssistantIntro from "@/components/guide/AssistantIntro";
+import VoiceGuide from "@/components/guide/VoiceGuide";
+import MicPermission from "@/components/guide/MicPermission";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +14,14 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
+
+  //guide
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [guideModalType, setGuideModalType] = useState<
+    "assistant" | "voice" | "method"
+  >("assistant");
+  const [micPermissionGranted, setMicPermissionGranted] = useState(false);
+
   const router = useRouter();
   const logoutMutation = useLogoutUserMutation();
 
@@ -102,6 +113,87 @@ const Layout = ({ children }: LayoutProps) => {
   const goBack = () => {
     triggerHapticFeedback();
     router.push("/");
+  };
+
+  //guide
+
+  const requestMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      setMicPermissionGranted(true);
+      triggerHapticFeedback();
+    } catch (error) {
+      alert("마이크 권한이 필요합니다. 브라우저 설정을 확인해 주세요.");
+    }
+  };
+
+  const openGuideModal = (type: "assistant" | "voice" | "method") => {
+    setGuideModalType(type);
+    setShowGuideModal(true);
+  };
+
+  const renderGuideModal = () => {
+    if (!showGuideModal) return null;
+
+    let modalContent;
+    switch (guideModalType) {
+      case "assistant":
+        modalContent = <AssistantIntro />;
+        break;
+      case "voice":
+        modalContent = <VoiceGuide />;
+        break;
+      case "method":
+        modalContent = (
+          <MicPermission
+            isGranted={micPermissionGranted}
+            onRequestPermission={requestMicPermission}
+          />
+        );
+        break;
+    }
+
+    return (
+      <div
+        className={styles.modalOverlay}
+        onClick={() => setShowGuideModal(false)}
+      >
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modalHeader}>
+            <h2>
+              {guideModalType === "assistant"
+                ? "비서 소개"
+                : guideModalType === "voice"
+                ? "음성 안내"
+                : "마이크 사용법"}
+            </h2>
+            <button
+              className={styles.modalCloseButton}
+              onClick={() => setShowGuideModal(false)}
+            >
+              창 닫기
+            </button>
+          </div>
+          <div className={styles.modalContent}>{modalContent}</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center", // 가로 중앙
+              alignItems: "center", // 세로 중앙
+              flexDirection: "column", // 수직 정렬 시
+            }}
+          >
+            <button
+              className={styles.modalCloseButton}
+              onClick={() => setShowGuideModal(false)}
+            >
+              녹음하러 가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -196,49 +288,37 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
+      {/* 가이드 모달 */}
+      {renderGuideModal()}
+
       {/* 메인 콘텐츠 */}
       <main>{children}</main>
 
       {/* 푸터 */}
       <footer className={styles.footer}>
         <div className={styles.footerContainer}>
-          {/* 도움말 링크 */}
-          <div className={styles.helpSection}>
-            <div
-              className={styles.helpItem}
-              onClick={() => {
-                triggerHapticFeedback();
-                handleHelp();
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => handleKeyDown(e, handleHelp)}
+          {/* 푸터 - 도움말 버튼 */}
+          <div className={styles.footerButtons}>
+            <button
+              className={styles.footerButton}
+              onClick={() => openGuideModal("assistant")}
             >
-              <div className={styles.helpIcon}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
-                </svg>
-              </div>
-              <span className={styles.helpText}>도움말</span>
-            </div>
-
-            <div
-              className={styles.helpItem}
-              onClick={() => {
-                triggerHapticFeedback();
-                handleContact();
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => handleKeyDown(e, handleContact)}
+              비서 소개
+            </button>
+            <button
+              className={styles.footerButton}
+              onClick={() => openGuideModal("voice")}
             >
-              <div className={styles.helpIcon}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                </svg>
-              </div>
-              <span className={styles.helpText}>문의하기</span>
-            </div>
+              녹음 안내
+            </button>
+            <button
+              className={styles.footerButton}
+              onClick={() => openGuideModal("method")}
+            >
+              마이크
+              <br />
+              사용
+            </button>
           </div>
 
           {/* 구분선 */}
@@ -261,9 +341,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
           {/* 저작권 정보 */}
           <div className={styles.copyright}>
-            <p className={styles.copyrightText}>
-              © 2024 음성수집 서비스. 모든 권리 보유.
-            </p>
+            <p className={styles.copyrightText}>© 2025 Fluiz, 서울AI재단</p>
             <p className={styles.versionText}>버전 1.0.0</p>
           </div>
         </div>

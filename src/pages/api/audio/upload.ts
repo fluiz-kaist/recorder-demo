@@ -6,7 +6,7 @@ import { readFile } from "fs/promises";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { storage, db } from "@/lib/firebase/config";
-import { AudioStatus, AudioFormat } from "@/types/firebase";
+import { VerificationStatus, AudioFormat } from "@/types/audio";
 import { AudioUploadResponse } from "@/types/api";
 import { AudioRecording } from "@/types/audio";
 // Next.js API Route의 body parser 비활성화
@@ -33,15 +33,6 @@ const getAudioFormatFromFileName = (fileName: string): AudioFormat => {
     default:
       return AudioFormat.WAV;
   }
-};
-
-/**
- * 한국 시간 생성 함수
- */
-const getKoreanTime = (): string => {
-  const now = new Date();
-  const koreanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return koreanTime.toISOString();
 };
 
 /**
@@ -77,13 +68,13 @@ const analyzeAudioQuality = (
   };
 };
 
-/**
- * STT 처리 (임시 구현 - 실제로는 Google Speech-to-Text API 등 사용)
- */
-const performSTT = async (audioBuffer: Buffer): Promise<string> => {
-  // TODO: 실제 STT 서비스 연동
-  // 임시로 빈 문자열 반환
-  return "클라이언트에서해서보낼겁니다";
+const parseNumber = (
+  value: string | undefined,
+  defaultValue: number = 0
+): number => {
+  if (!value) return defaultValue;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
 };
 
 export default async function handler(
@@ -124,6 +115,23 @@ export default async function handler(
       ? fields.originalScript[0]
       : fields.originalScript;
 
+    // === 녹음 세션 정보 파싱 추가 ===
+    const recordingStartedAt = Array.isArray(fields.recordingStartedAt)
+      ? fields.recordingStartedAt[0]
+      : fields.recordingStartedAt;
+    const recordingEndedAt = Array.isArray(fields.recordingEndedAt)
+      ? fields.recordingEndedAt[0]
+      : fields.recordingEndedAt;
+
+    const actualDurationRaw = Array.isArray(fields.actualDuration)
+      ? fields.actualDuration[0]
+      : fields.actualDuration;
+    const sessionDurationRaw = Array.isArray(fields.sessionDuration)
+      ? fields.sessionDuration[0]
+      : fields.sessionDuration;
+
+    const actualDuration = parseNumber(actualDurationRaw, 0);
+    const sessionDuration = parseNumber(sessionDurationRaw, 0);
     // 스크립트 메타데이터
     const domain = Array.isArray(fields.domain)
       ? fields.domain[0]
@@ -143,33 +151,49 @@ export default async function handler(
       ? fields.ageGroup[0]
       : fields.ageGroup;
 
+    const sttTranscriptionRaw = Array.isArray(fields.sttTranscription)
+      ? fields.sttTranscription[0]
+      : fields.sttTranscription;
+
+    const sttTranscription =
+      typeof sttTranscriptionRaw === "string" &&
+      sttTranscriptionRaw.trim() !== ""
+        ? sttTranscriptionRaw
+        : "클라이언트에서 STT 결과를 아직 보내지 않았습니다";
+
     // 선택적 필드
     const deviceInfo = Array.isArray(fields.deviceInfo)
       ? fields.deviceInfo[0]
       : fields.deviceInfo;
 
     // 필수 필드 검증
-    if (
-      !userId ||
-      !taskKey ||
-      !taskType ||
-      !originalScript ||
-      !domain ||
-      !intent ||
-      !category ||
-      !gender ||
-      !ageGroup
-    ) {
+    const missingFields: string[] = [];
+
+    if (!userId) missingFields.push("userId");
+    if (!taskKey) missingFields.push("taskKey");
+    if (!taskType) missingFields.push("taskType");
+    if (!originalScript) missingFields.push("originalScript");
+    if (!domain) missingFields.push("domain");
+    if (!intent) missingFields.push("intent");
+    if (!category) missingFields.push("category");
+    if (!gender) missingFields.push("gender");
+    if (!ageGroup) missingFields.push("ageGroup");
+    if (!recordingStartedAt) missingFields.push("recordingStartedAt");
+    if (!recordingEndedAt) missingFields.push("recordingEndedAt");
+    if (!actualDuration) missingFields.push("actualDuration");
+    if (!sessionDuration) missingFields.push("sessionDuration");
+
+    if (missingFields.length > 0) {
+      console.warn("❗ 누락된 필수 필드:", missingFields.join(", "));
       return res.status(400).json({
         success: false,
-        message: "필수 필드가 누락되었습니다.",
+        message: `필수 필드가 누락되었습니다: ${missingFields.join(", ")}`,
         recordingId: "",
         audioUrl: "",
         fileName: "",
         fileSize: 0,
       });
     }
-
     // taskType 검증
     if (taskType !== "situational" && taskType !== "formal") {
       return res.status(400).json({
@@ -208,11 +232,8 @@ export default async function handler(
     const fileBuffer = await readFile(audioFile.filepath);
     const fileSize = fileBuffer.length;
 
-    // 오디오 길이 추정 (실제로는 더 정확한 분석 필요)
-    const estimatedDuration = fileSize / 16000; // 16kbps 기준 추정
-
     // 품질 분석
-    const qualityAnalysis = analyzeAudioQuality(fileBuffer, estimatedDuration);
+    const qualityAnalysis = analyzeAudioQuality(fileBuffer, actualDuration);
 
     // Firebase Storage에 업로드
     const storageRef = ref(
@@ -226,11 +247,6 @@ export default async function handler(
     // 다운로드 URL 생성
     const audioUrl = await getDownloadURL(uploadResult.ref);
 
-    // STT 처리
-    const sttTranscription = await performSTT(fileBuffer);
-
-    const now = getKoreanTime();
-
     // AudioRecording 데이터 생성
     const audioRecording: AudioRecording = {
       id: recordingId,
@@ -238,8 +254,16 @@ export default async function handler(
       taskKey,
       taskType: taskType as "situational" | "formal",
       audioUrl,
-      recordedAt: now,
-      uploadedAt: now,
+
+      // 녹음 세션 정보
+      recordingSession: {
+        startedAt: recordingStartedAt,
+        endedAt: recordingEndedAt,
+        actualDuration,
+        sessionDuration,
+      },
+
+      uploadedAt: serverTimestamp(), // 서버에서 설정
 
       // 텍스트 데이터
       textData: {
@@ -252,13 +276,13 @@ export default async function handler(
 
       // 화자 정보
       speakerInfo: {
-        gender: gender as "male" | "female",
+        gender: gender as "남성" | "여성" | "불명",
         ageGroup,
       },
 
       // 품질 체크
       qualityCheck: {
-        duration: estimatedDuration,
+        duration: actualDuration,
         fileSize,
         volumeLevel: qualityAnalysis.volumeLevel,
         hasClipping: qualityAnalysis.hasClipping,
@@ -268,7 +292,7 @@ export default async function handler(
       },
 
       fileName,
-      status: sttTranscription ? AudioStatus.COMPLETED : AudioStatus.PROCESSING,
+      verificationStatus: VerificationStatus.PENDING,
     };
 
     // Firestore에 AudioRecording 저장
@@ -279,25 +303,7 @@ export default async function handler(
     );
     await setDoc(audioRecordingRef, {
       ...audioRecording,
-      recordedAt: serverTimestamp(),
-      uploadedAt: serverTimestamp(),
-      processedAt: sttTranscription ? serverTimestamp() : null,
     });
-
-    // // 사용자의 진행 상태 업데이트 (간단화)
-    // try {
-    //   const userRef = doc(db, "usersV2", userId);
-    //   const userDoc = await getDoc(userRef);
-
-    //   if (userDoc.exists()) {
-    //     // 실제로는 더 복잡한 로직으로 사용자의 RecordingTask 상태 업데이트
-    //     // 여기서는 간단하게 처리
-    //     console.log(`사용자 ${userId}의 태스크 ${taskKey} 완료 처리`);
-    //   }
-    // } catch (updateError) {
-    //   console.error("사용자 상태 업데이트 실패:", updateError);
-    //   // 오디오 업로드는 성공했으므로 에러를 던지지 않음
-    // }
 
     console.log("오디오 업로드 완료:", {
       recordingId,
@@ -305,7 +311,7 @@ export default async function handler(
       taskKey,
       taskType,
       fileSize,
-      duration: estimatedDuration,
+      duration: actualDuration,
       qualityScore: qualityAnalysis,
     });
 
