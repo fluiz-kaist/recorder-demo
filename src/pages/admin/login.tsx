@@ -60,7 +60,35 @@ const AdminLogin = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  // 환경변수 테스트 함수
+  const testFirebaseEnv = () => {
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    };
 
+    console.group("🔥 [Firebase] 환경 정보");
+    console.log(
+      `환경: ${
+        process.env.NODE_ENV === "development" ? "Development" : "Production"
+      }`
+    );
+    console.log("NODE_ENV:", process.env.NODE_ENV);
+    console.log("프로젝트 ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+    console.log("Firebase Config:", firebaseConfig);
+
+    // 환경변수가 제대로 로드되었는지 확인
+    Object.entries(firebaseConfig).forEach(([key, value]) => {
+      console.log(`${key}:`, value ? "✅ 설정됨" : "❌ 누락");
+    });
+
+    console.groupEnd();
+  };
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -103,7 +131,24 @@ const AdminLogin = () => {
             {loginMutation.isPending ? "로그인 중..." : "로그인"}
           </button>
         </form>
-
+        {/* 테스트용 버튼 추가 */}
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <button
+            type="button"
+            onClick={testFirebaseEnv}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#ff6b6b",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            🔥 Firebase 환경변수 테스트
+          </button>
+        </div>
         <div className={styles.footer}>
           관리자 권한이 있는 계정만 접근 가능합니다.
         </div>
