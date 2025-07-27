@@ -10,6 +10,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const logoutMutation = useLogoutUserMutation();
 
@@ -22,6 +23,29 @@ const Layout = ({ children }: LayoutProps) => {
 
   // 인증 상태 확인
   const isAuthenticated = useIsAuthenticated();
+
+  useEffect(() => {
+    const checkAdminCookie = () => {
+      if (typeof document !== "undefined") {
+        const cookies = document.cookie.split(";");
+        const adminCookie = cookies.find((cookie) =>
+          cookie.trim().startsWith("admin-token=")
+        );
+        console.log("쿠키?", adminCookie);
+
+        if (adminCookie) {
+          const adminToken = adminCookie.split("=")[1]?.trim();
+          console.log("?adminToken", adminToken);
+          // admin-token이 존재하고 값이 있으면 관리자로 인식
+          setIsAdmin(!!adminToken && adminToken.startsWith("admin-"));
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    checkAdminCookie();
+  }, []);
 
   const handleHomeClick = () => {
     if (isAuthenticated) {
@@ -48,6 +72,15 @@ const Layout = ({ children }: LayoutProps) => {
   // 문의하기 클릭
   const handleContact = () => {
     alert("문의하기 페이지로 이동합니다.(구현예정)");
+  };
+
+  const handleAdminLogout = () => {
+    if (confirm("관리자 로그아웃 하시겠습니까?")) {
+      document.cookie =
+        "admin=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setIsAdmin(false);
+      router.push("/admin/login");
+    }
   };
 
   // 햅틱 피드백 (모바일)
@@ -124,8 +157,26 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
           )}
 
-          {/* 관리자 정보 및 로그아웃 영역 */}
+          {/* 로그아웃 영역 */}
           <div className={styles.buttonSection}>
+            {isAdmin && (
+              <button
+                className={styles.logoutButton}
+                onClick={() => {
+                  triggerHapticFeedback();
+                  handleAdminLogout();
+                }}
+                onKeyDown={(e) => handleKeyDown(e, handleAdminLogout)}
+                style={{ marginRight: "8px" }}
+              >
+                <span className={styles.logoutIcon}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z" />
+                  </svg>
+                </span>
+                <span className={styles.logoutText}>관리자 로그아웃</span>
+              </button>
+            )}
             <button
               className={styles.logoutButton}
               onClick={() => {
@@ -188,14 +239,26 @@ const Layout = ({ children }: LayoutProps) => {
               </div>
               <span className={styles.helpText}>문의하기</span>
             </div>
-            <div>
-              <AdminLogoutButton />
-            </div>
           </div>
 
           {/* 구분선 */}
           <div className={styles.divider}></div>
-
+          <div
+            className={styles.adminItem}
+            onClick={() => router.push("/admin/login")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) =>
+              handleKeyDown(e, () => router.push("/admin/login"))
+            }
+          >
+            <div className={styles.adminIcon}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 17v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+              </svg>
+            </div>
+            <span className={styles.adminText}>관리자 로그인</span>
+          </div>
           {/* 저작권 정보 */}
           <div className={styles.copyright}>
             <p className={styles.copyrightText}>

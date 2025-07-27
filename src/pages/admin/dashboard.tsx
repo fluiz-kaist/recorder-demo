@@ -286,7 +286,6 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
       <div className={styles.table}>
         <div className={styles.tableHead}>
           <div className={styles.tableRow}>
-            <div className={styles.tableCell}>사용자 ID</div>
             <div className={styles.tableCell}>이름</div>
             <div className={styles.tableCell}>성별</div>
             <div className={styles.tableCell}>연령대</div>
@@ -301,12 +300,16 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
           {participantsData.participants.map((participant: any) => (
             <div key={participant.userId} className={styles.tableRow}>
               <div className={styles.tableCell}>
-                <span className={styles.userId}>
-                  {participant.userId.slice(0, 8)}...
-                </span>
-              </div>
-              <div className={styles.tableCell}>
                 {participant.userName || "미설정"}
+                <button
+                  className={styles.copyButton}
+                  onClick={() =>
+                    navigator.clipboard.writeText(participant.userId)
+                  }
+                  title="ID 복사"
+                >
+                  📋
+                </button>
               </div>
               <div className={styles.tableCell}>{participant.gender}</div>
               <div className={styles.tableCell}>{participant.ageGroup}</div>

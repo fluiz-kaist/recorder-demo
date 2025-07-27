@@ -376,3 +376,15 @@
     display: none;
   } */
 }
+.copyButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px;
+  color: #555;
+}
+
+.copyButton:hover {
+  color: #000;
+}

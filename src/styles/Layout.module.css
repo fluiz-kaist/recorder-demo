@@ -233,6 +233,55 @@
   margin: 0;
   line-height: var(--line-height-normal);
 }
+/* 관리자 로그인용 스타일 (보라색 계열) */
+.adminItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  padding: var(--space-sm);
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.adminItem:hover {
+  background: #f3e8ff; /* 연보라 배경 */
+  transform: translateY(-1px);
+}
+
+.adminItem:active {
+  transform: translateY(0);
+}
+
+.adminItem:focus {
+  outline: 3px solid #e9d5ff;
+  outline-offset: 2px;
+}
+
+.adminIcon {
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  color: #9333ea; /* 진보라 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3e8ff; /* 연보라 배경 */
+  border-radius: var(--radius-sm);
+}
+
+.adminIcon svg {
+  width: var(--space-md);
+  height: var(--space-md);
+}
+
+.adminText {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #7e22ce; /* 보라 텍스트 */
+  text-align: center;
+}
 
 /* 모바일 최적화 (작은 화면) */
 @media (max-width: 360px) {
@@ -270,12 +319,26 @@
   .helpText {
     font-size: var(--font-sm);
   }
+
+  .adminIcon {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
+  }
+
+  .adminIcon svg {
+    width: var(--font-lg);
+    height: var(--font-lg);
+  }
+
+  .adminText {
+    font-size: var(--font-sm);
+  }
 }
 /* 접근성 향상 */
 @media (prefers-reduced-motion: reduce) {
   .logo,
   .logoutButton,
-  .helpItem {
+  .helpItem .adminItem {
     transition: none;
   }
 }
