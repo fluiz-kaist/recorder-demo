@@ -20,7 +20,6 @@ import SttWhisper from "@/components/stt/SttWhisper";
 import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { useCompleteScriptMutation } from "@/hooks/mutations/useUserMutations";
-import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
 import { queryClient } from "@/utils/queryClient";
 // 🎯 간단한 품질 검증 결과 인터페이스
 interface SimpleQualityResult {
@@ -89,7 +88,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const uploadAudioMutation = useUploadAudioMutation();
   const completeUserScriptMutation = useCompleteScriptMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
-  const { data: localScripts } = useAllLocalScriptsQuery();
+
   //녹음 정지 강제 관리
   const [canStopRecording, setCanStopRecording] = useState(false);
 
@@ -279,25 +278,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     try {
       console.log("[vr]녹음 시작 요청");
 
-      // 튜토리얼 스크립트이고 로컬에 스크립트가 없는 경우에만 할당 실행
-      if (isTutorial && authToken?.userId && !localScripts) {
-        try {
-          console.log("튜토리얼 스크립트 - 로컬 스크립트 없음, 할당 실행");
-          await assignScriptsMutation.mutateAsync({
-            userId: authToken.userId,
-          });
-          console.log("튜토리얼 스크립트 할당 완료");
-        } catch (error) {
-          console.error("튜토리얼 스크립트 할당 실패:", error);
-          // 스크립트 할당 실패해도 녹음은 계속 진행
-        }
-      } else if (isTutorial && localScripts) {
-        console.log(
-          "튜토리얼 스크립트 - 이미 로컬에 스크립트 존재, 할당 건너뜀"
-        );
-      }
-
-      // 이전 녹음 결과 초기화
+        // 이전 녹음 결과 초기화
       setAudioUrl(null);
       setAudioDuration(null);
       setTranscription(null);

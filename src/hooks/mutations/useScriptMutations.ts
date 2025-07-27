@@ -5,13 +5,10 @@ import {
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { useMinimalUserQuery } from "@/hooks/queries/useUserQueries";
 import { ScriptDataManager } from "@/utils/scriptDataManager";
 import {
-  ScriptType,
   FormalScript,
   SituationalScript,
-  User,
   ParticipationSet,
 } from "@/types/firebase";
 
@@ -52,25 +49,6 @@ interface AssignScriptsResponse {
     situational: SituationalScript[];
   };
 }
-/**
- * 스크립트 완료 응답 데이터 타입
- */
-interface CompleteScriptResponse {
-  success: boolean;
-  message?: string;
-  user?: User; // 업데이트된 사용자 정보
-}
-/**
- * 스크립트 완료 요청 데이터 타입 (수정된 complete.ts 기반)
- */
-interface CompleteScriptRequest {
-  userId: string;
-  scriptId: number;
-  scriptType: ScriptType;
-  recordingId: string; // 오디오 업로드 후 받은 recording ID
-  audioUrl: string;
-  sttText: string;
-}
 
 /**
  * 스크립트 초기화 뮤테이션
@@ -106,15 +84,15 @@ export const useInitializeScriptsMutation = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      console.log("🎯 할당 성공, participationSet:", data.participationSet);
-      console.log("✅ 스크립트 초기화 완료:", {
-        situational: data.scripts.situational.length,
-        formal: data.scripts.formal.length,
-        setNumber: variables.setNumber,
-        setId: variables.setId,
-      });
+      // console.log("🎯 할당 성공, participationSet:", data.participationSet);
+      // console.log("✅ 스크립트 초기화 완료:", {
+      //   situational: data.scripts.situational.length,
+      //   formal: data.scripts.formal.length,
+      //   setNumber: variables.setNumber,
+      //   setId: variables.setId,
+      // });
 
-      // 🔥 participationSet이 있으면 localStorage에 스크립트 저장
+      // participationSet이 있으면 localStorage에 스크립트 저장
       if (data.participationSet && data.scripts) {
         // ScriptDataManager 사용
         ScriptDataManager.saveScriptData(
@@ -123,18 +101,6 @@ export const useInitializeScriptsMutation = () => {
           data.participationSet.setId,
           data.scripts
         );
-      }
-
-      // 스크립트 내용을 localStorage에도 저장 (기존 로직 유지)
-      if (data.success && data.scripts) {
-        Object.entries(data.scripts).forEach(([scriptType, scripts]) => {
-          if (Array.isArray(scripts) && scripts.length > 0) {
-            localStorage.setItem(
-              `scriptContents_${scriptType}`,
-              JSON.stringify(scripts)
-            );
-          }
-        });
       }
 
       // 🔥 사용자 쿼리 무효화 (participation.sets 업데이트됨)
