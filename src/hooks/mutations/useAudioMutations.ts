@@ -35,6 +35,7 @@ export const useUploadAudioMutation = (): UseMutationResult<
       category,
       gender,
       ageGroup,
+      userName,
       sttTranscription,
       audioFormat = AudioFormat.WAV,
       deviceInfo,
@@ -68,6 +69,7 @@ export const useUploadAudioMutation = (): UseMutationResult<
       // 화자 정보
       formData.append("gender", gender);
       formData.append("ageGroup", ageGroup);
+      formData.append("userName", userName);
 
       //클라이언트에서 변환해서 보내는 stt
       formData.append("sttTranscription", sttTranscription);

@@ -144,7 +144,8 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
-
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
   const { userId, taskKey, taskType, status, audioRecordId } =
     req.body as CompleteScriptRequest;
 
@@ -161,7 +162,7 @@ export default async function handler(
   });
 
   try {
-    const userRef = doc(db, "usersV2", userId);
+    const userRef = doc(db, userCollectionName, userId);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
 

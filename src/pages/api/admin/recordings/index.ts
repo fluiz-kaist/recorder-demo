@@ -2,49 +2,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { AudioRecording } from "@/types/audio";
-import { SERVICE_CONFIG } from "@/lib/serviceMapping";
-export interface RecordingOverview {
-  recordingId: string;
-  userId: string;
-  userName?: string;
-  taskKey: string;
-  taskType: "situational" | "formal";
-
-  // 오디오 정보
-  audioUrl: string;
-  fileName: string;
-  fileSize: number;
-  duration: number;
-
-  // 텍스트 정보
-  originalScript: string;
-  sttTranscription: string;
-  domain: string;
-  intent: string;
-  category: string;
-
-  // 화자 정보
-  gender: "male" | "female";
-  ageGroup: string;
-
-  // 품질 정보
-  volumeLevel: number;
-  backgroundNoise: "low" | "medium" | "high";
-  hasClipping: boolean;
-  audioFormat: string;
-
-  // 시간 정보
-  recordedAt: string;
-  uploadedAt: string;
-
-  // 상태
-  status: string;
-}
 
 interface RecordingsResponse {
   success: boolean;
   data?: {
-    recordings: RecordingOverview[];
+    recordings: AudioRecording[];
     totalCount: number;
     pagination: {
       currentPage: number;
@@ -64,7 +26,7 @@ interface RecordingsResponse {
         medium: number;
         low: number;
       };
-      byStatus: Record<string, number>;
+      byVerificationStatus: Record<string, number>; // 수정: status -> verificationStatus
     };
   };
   message?: string;
@@ -110,7 +72,8 @@ export default async function handler(
       message: "Method not allowed",
     });
   }
-
+  const audioCollectionName =
+    process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
   try {
     // 관리자 권한 확인
     const adminToken = req.cookies["admin-token"];
@@ -129,7 +92,8 @@ export default async function handler(
       domain,
       taskType,
       quality,
-      sortBy = "recordedAt",
+      verificationStatus, // 추가
+      sortBy = "uploadedAt", // 수정: recordedAt -> uploadedAt
       sortOrder = "desc",
       search,
     } = req.query;
@@ -137,10 +101,10 @@ export default async function handler(
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(queryLimit as string, 10);
 
-    // 단일 컬렉션에서 모든 녹음 데이터 조회
+    // 단일 컬렉션에서 모든 녹음 데이터 조회 - 수정: uploadedAt으로 정렬
     let recordingsQuery = query(
-      collection(db, "audioRecordingsV2"),
-      orderBy("recordedAt", "desc")
+      collection(db, audioCollectionName),
+      orderBy("uploadedAt", "desc")
     );
 
     // 사용자별 필터
@@ -164,14 +128,24 @@ export default async function handler(
       );
     }
 
+    // 검증 상태 필터 - 추가
+    if (verificationStatus) {
+      recordingsQuery = query(
+        recordingsQuery,
+        where("verificationStatus", "==", verificationStatus)
+      );
+    }
+
     const recordingsSnapshot = await getDocs(recordingsQuery);
     const allRecordings = recordingsSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as AudioRecording[];
 
-    // 사용자 정보 조회 (userName 매핑용)
-    const usersSnapshot = await getDocs(collection(db, "usersV2"));
+    // 사용자 정보 조회 (userName 매핑용) - 수정: 올바른 컬렉션명 사용
+    const userCollectionName =
+      process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+    const usersSnapshot = await getDocs(collection(db, userCollectionName));
     const userMap = new Map<string, string>();
     usersSnapshot.docs.forEach((doc) => {
       const userData = doc.data();
@@ -193,13 +167,6 @@ export default async function handler(
       );
     }
 
-    // 도메인 필터
-    if (domain) {
-      filteredRecordings = filteredRecordings.filter(
-        (recording) => recording.textData.domain === domain
-      );
-    }
-
     // 품질 필터
     if (quality) {
       filteredRecordings = filteredRecordings.filter(
@@ -213,9 +180,16 @@ export default async function handler(
       let bValue: any;
 
       switch (sortBy) {
-        case "recordedAt":
-          aValue = new Date(a.recordedAt).getTime();
-          bValue = new Date(b.recordedAt).getTime();
+        case "uploadedAt":
+          // Timestamp를 Date로 변환
+          aValue =
+            a.uploadedAt instanceof Date
+              ? a.uploadedAt.getTime()
+              : (a.uploadedAt as any).toDate().getTime();
+          bValue =
+            b.uploadedAt instanceof Date
+              ? b.uploadedAt.getTime()
+              : (b.uploadedAt as any).toDate().getTime();
           break;
         case "duration":
           aValue = a.qualityCheck.duration;
@@ -229,9 +203,24 @@ export default async function handler(
           aValue = a.userId;
           bValue = b.userId;
           break;
+        case "domain": // 추가 가능한 정렬 옵션
+          aValue = a.textData.domain;
+          bValue = b.textData.domain;
+          break;
+        case "verificationStatus": // 추가 가능한 정렬 옵션
+          aValue = a.verificationStatus;
+          bValue = b.verificationStatus;
+          break;
         default:
-          aValue = new Date(a.recordedAt).getTime();
-          bValue = new Date(b.recordedAt).getTime();
+          // Timestamp를 Date로 변환
+          aValue =
+            a.uploadedAt instanceof Date
+              ? a.uploadedAt.getTime()
+              : (a.uploadedAt as any).toDate().getTime();
+          bValue =
+            b.uploadedAt instanceof Date
+              ? b.uploadedAt.getTime()
+              : (b.uploadedAt as any).toDate().getTime();
       }
 
       if (sortOrder === "desc") {
@@ -248,40 +237,8 @@ export default async function handler(
     const endIndex = startIndex + limitNum;
     const paginatedRecordings = filteredRecordings.slice(startIndex, endIndex);
 
-    // 녹음 데이터 변환
-    const recordings: RecordingOverview[] = paginatedRecordings.map(
-      (recording) => ({
-        recordingId: recording.id,
-        userId: recording.userId,
-        userName: userMap.get(recording.userId),
-        taskKey: recording.taskKey,
-        taskType: recording.taskType,
-
-        audioUrl: recording.audioUrl,
-        fileName: recording.fileName,
-        fileSize: recording.qualityCheck.fileSize,
-        duration: recording.qualityCheck.duration,
-
-        originalScript: recording.textData.originalScript,
-        sttTranscription: recording.textData.sttTranscription,
-        domain: recording.textData.domain,
-        intent: recording.textData.intent,
-        category: recording.textData.category,
-
-        gender: recording.speakerInfo.gender,
-        ageGroup: recording.speakerInfo.ageGroup,
-
-        volumeLevel: recording.qualityCheck.volumeLevel,
-        backgroundNoise: recording.qualityCheck.backgroundNoise,
-        hasClipping: recording.qualityCheck.hasClipping,
-        audioFormat: recording.qualityCheck.audioFormat,
-
-        recordedAt: recording.recordedAt,
-        uploadedAt: recording.uploadedAt,
-        status: recording.status,
-      })
-    );
-
+    // 녹음 데이터 변환 - audio.ts 타입에 맞춰 수정
+    const recordings = paginatedRecordings;
     // 통계 계산
     const statistics = {
       totalRecordings: totalCount,
@@ -295,7 +252,7 @@ export default async function handler(
         medium: 0,
         low: 0,
       },
-      byStatus: {} as Record<string, number>,
+      byVerificationStatus: {} as Record<string, number>, // 수정
     };
 
     filteredRecordings.forEach((recording) => {
@@ -310,9 +267,10 @@ export default async function handler(
       const qualityGrade = calculateQualityGrade(recording);
       statistics.byQuality[qualityGrade]++;
 
-      // 상태별 통계
-      statistics.byStatus[recording.status] =
-        (statistics.byStatus[recording.status] || 0) + 1;
+      // 검증 상태별 통계 - 수정
+      statistics.byVerificationStatus[recording.verificationStatus] =
+        (statistics.byVerificationStatus[recording.verificationStatus] || 0) +
+        1;
     });
 
     return res.status(200).json({

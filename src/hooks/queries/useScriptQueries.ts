@@ -30,31 +30,70 @@ export const useScriptDataQuery = (setNumber: number, setId: number = 1) => {
   const { data: minimalUserInfo } = useMinimalUserQuery();
 
   return useQuery({
-    queryKey: ["scriptData", minimalUserInfo?.id, setNumber, setId],
+    queryKey: ["scriptData", setNumber, setId],
     queryFn: async () => {
-      // localStorage에서 스크립트 데이터를 직접 가져옵니다.
-      // 이 함수는 서버 호출이 아니라 로컬 스토리지 읽기입니다.
-      const scriptData = ScriptDataManager.getScriptData();
+      console.log("🔍 스크립트 데이터 조회 시작:", { setNumber, setId });
 
-      // 요청한 세트와 다르면 null 반환
-      if (
-        scriptData &&
-        (scriptData.setNumber !== setNumber || scriptData.setId !== setId)
-      ) {
+      const scriptData = ScriptDataManager.getScriptData();
+      console.log("📦 localStorage에서 가져온 scriptData:", scriptData);
+
+      if (!scriptData) {
+        console.log("❌ scriptData가 null입니다.");
         return null;
       }
 
+      console.log("📊 저장된 데이터:", {
+        storedSetNumber: scriptData.setNumber,
+        storedSetId: scriptData.setId,
+        requestedSetNumber: setNumber,
+        requestedSetId: setId,
+      });
+
+      // 요청한 세트와 다르면 null 반환
+      if (scriptData.setNumber !== setNumber || scriptData.setId !== setId) {
+        console.log("⚠️ 세트 번호가 일치하지 않습니다.");
+        return null;
+      }
+
+      console.log("✅ 스크립트 데이터 반환 성공");
       return scriptData;
     },
-    // localUser.id가 있을 때만 쿼리를 실행합니다.
     enabled: !!minimalUserInfo?.id,
-    // 스크립트 데이터는 자주 변하지 않으므로, 꽤 긴 staleTime을 설정합니다.
-    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
-    // 데이터가 없으면 refetch 하지 않도록 설정
+    staleTime: 1000 * 60 * 5,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+  // const { data: minimalUserInfo } = useMinimalUserQuery();
+
+  // return useQuery({
+  //   queryKey: ["scriptData", setNumber, setId], // userId는 scriptData 내부에 있음
+  //   queryFn: async () => {
+  //     // localStorage에서 스크립트 데이터를 직접 가져옵니다.
+  //     // 이 함수는 서버 호출이 아니라 로컬 스토리지 읽기입니다.
+  //     const scriptData = ScriptDataManager.getScriptData();
+
+  //     console.log("scriptData?", scriptData);
+
+  //     // 요청한 세트와 다르면 null 반환
+  //     if (
+  //       scriptData &&
+  //       (scriptData.setNumber !== setNumber || scriptData.setId !== setId)
+  //     ) {
+  //       return null;
+  //     }
+
+  //     return scriptData;
+  //   },
+  //   // localUser.id가 있을 때만 쿼리를 실행합니다.
+  //   enabled: !!minimalUserInfo?.id,
+  //   // 스크립트 데이터는 자주 변하지 않으므로, 꽤 긴 staleTime을 설정합니다.
+  //   staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
+  //   // 데이터가 없으면 refetch 하지 않도록 설정
+  //   refetchOnMount: false,
+  //   refetchOnWindowFocus: false,
+  //   refetchOnReconnect: false,
+  // });
 };
 
 /**
@@ -266,6 +305,7 @@ export const useAllScriptsByServiceQuery = (
 ) => {
   console.log("저기?-7");
   const scriptDataQuery = useScriptDataQuery(setNumber, setId);
+  console.log("scriptDataQuery?", scriptDataQuery);
 
   return useQuery({
     queryKey: ["allScriptsByService", serviceName, setNumber, setId],

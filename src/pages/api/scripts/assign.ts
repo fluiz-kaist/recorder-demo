@@ -43,12 +43,14 @@ export default async function handler(
       scripts: { situational: [], formal: [] },
     });
   }
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
   try {
     const {
       userId,
       setNumber = 1,
-      progressMode = "mixed",//기본세팅 혼합 
+      progressMode = "mixed", //기본세팅 혼합
       setId = 1,
     }: AssignScriptsRequest = req.body;
 
@@ -68,7 +70,7 @@ export default async function handler(
     });
 
     // 1. 사용자 존재 확인
-    const userRef = doc(db, "usersV2", userId);
+    const userRef = doc(db, userCollectionName, userId);
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
@@ -308,3 +310,22 @@ async function getScriptsForSet(participationSet: ParticipationSet): Promise<{
     ),
   };
 }
+/**
+ * [assign.ts 설명]
+ *
+ * 사용자에게 새 발화 세트를 할당하는 API입니다.
+ *
+ * ✅ setNumber vs setId 구분
+ * - setNumber: 사용자의 진행 회차 (1회차, 2회차 등) — UI 및 진행 추적용
+ * - setId: 실제 불러올 정형 발화 세트 번호 — formal_scripts.json에서 스크립트 분기용
+ *
+ * 예: 2회차 사용자에게 2세트를 할당하려면
+ * {
+ *   userId: "...",
+ *   setNumber: 2, // 사용자 진행 기록용
+ *   setId: 2,     // 불러올 정형 스크립트 세트 ID
+ *   progressMode: "mixed"
+ * }
+ *
+ * 둘 다 명확히 구분해 설정하지 않으면 스크립트 로딩 또는 기록에 오류 발생 가능
+ */

@@ -1,5 +1,6 @@
-/* styles/ConsentPage.module.css */
+/* ConsentPage.module.css - 최적화된 버전 */
 
+/* 기본 레이아웃 */
 .container {
   min-height: 100vh;
   background-color: var(--color-bg-primary);
@@ -12,47 +13,20 @@
 
 .header {
   text-align: center;
-  margin-bottom: var(--space-3xl);
-  border-bottom: 3px solid var(--color-text-primary);
-  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-2xl);
 }
 
 .header h1 {
-  font-size: var(--font-4xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-/* 서비스 설명 섹션 */
-.serviceSection {
-  margin-bottom: var(--space-3xl);
-}
-
-.serviceSection h2 {
+  margin: 0 0 var(--space-sm) 0;
   font-size: var(--font-3xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-md);
 }
 
-.serviceDescription {
-  background-color: var(--color-primary-bg);
-  border: 3px solid var(--color-primary);
-  border-radius: var(--radius);
-  padding: var(--space-lg);
-  margin-bottom: var(--space-md);
-}
-
-.serviceDescription p {
-  font-size: var(--font-xl);
-  line-height: var(--line-height-relaxed);
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-base);
-}
-
-.serviceDescription p:last-child {
-  margin-bottom: 0;
+.header p {
+  margin: 0;
+  font-size: var(--space-base);
+  color: var(--color-text-light);
 }
 
 /* 동의서 섹션 */
@@ -146,120 +120,17 @@
 }
 
 .inputGroup {
-  margin-bottom: var(--space-2xl);
+  margin-bottom: var(--space-lg);
 }
 
 .inputGroup h3 {
-  font-size: var(--font-2xl);
-  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--space-base);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-base);
 }
 
-.buttonGroup {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.buttonGroup.vertical {
-  flex-direction: column;
-}
-
-.selectButton {
-  flex: 1;
-  padding: var(--space-md) var(--space-lg);
-  font-size: var(--font-xl);
-  font-weight: var(--font-weight-bold);
-  border: 3px solid var(--color-border-strong);
-  border-radius: var(--radius);
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  min-height: var(--button-height);
-}
-
-.selectButton:hover {
-  border-color: var(--color-text-primary);
-  background-color: var(--color-gray-100);
-}
-
-.selectButton.selected {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--color-bg-primary);
-}
-
-/* 제출 섹션 */
-.submitSection {
-  text-align: center;
-  margin-top: var(--space-3xl);
-}
-
-.submitButton {
-  width: 100%;
-  padding: var(--space-lg);
-  font-size: var(--font-2xl);
-  font-weight: var(--font-weight-bold);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  min-height: 80px;
-}
-
-.submitButton.enabled {
-  background-color: var(--color-success);
-  color: var(--color-bg-primary);
-}
-
-.submitButton.enabled:hover {
-  background-color: var(--color-success-hover);
-}
-
-.submitButton.disabled {
-  background-color: var(--color-gray-200);
-  color: var(--color-text-light);
-  cursor: not-allowed;
-}
-
-/* 모바일 반응형 */
-@media (max-width: 768px) {
-  .container {
-    padding: var(--space-md) var(--space-base) var(--space-2xl);
-  }
-
-  .header h1 {
-    font-size: var(--font-4xl);
-  }
-
-  .consentSection h2,
-  .infoSection h2,
-  .serviceSection h2 {
-    font-size: var(--font-3xl);
-  }
-
-  .inputGroup h3 {
-    font-size: var(--font-2xl);
-  }
-
-  .selectButton {
-    font-size: var(--font-xl);
-    padding: var(--font-lg) var(--space-md);
-    min-height: var(--button-height-sm);
-  }
-
-  .submitButton {
-    font-size: var(--font-3xl);
-    padding: var(--space-md);
-    min-height: 72px;
-  }
-
-  .serviceDescription p {
-    font-size: var(--font-xl);
-  }
-}
-/* 텍스트 입력 필드 스타일 */
+/* 텍스트 입력 */
 .textInput {
   width: 100%;
   padding: var(--space-sm) var(--space-base);
@@ -287,118 +158,16 @@
   color: var(--color-gray-400);
 }
 
-/* 입력 그룹 스타일 개선 */
-.inputGroup {
-  margin-bottom: var(--space-lg);
+/* 버튼 그룹 */
+.buttonGroup {
+  display: flex;
+  gap: var(--space-sm);
 }
 
-.inputGroup h3 {
-  margin: 0 0 var(--space-sm) 0;
-  font-size: var(--space-base);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+.buttonGroup.vertical {
+  flex-direction: column;
 }
 
-/* 인증 상태 표시 */
-.authStatus {
-  background-color: var(--color-success-bg);
-  border: 1px solid var(--color-success);
-  border-radius: var(--radius);
-  padding: var(--space-base);
-  margin-bottom: var(--space-lg);
-  text-align: center;
-}
-
-.authStatus.success {
-  background-color: var(--color-success-bg);
-  border-color: var(--color-success);
-  color: var(--color-success-hover);
-}
-
-.authStatus.error {
-  background-color: var(--color-error-bg);
-  border-color: var(--color-error);
-  color: var(--color-error-hover);
-}
-
-/* 헤더 스타일 개선 */
-.header {
-  text-align: center;
-  margin-bottom: var(--space-2xl);
-}
-
-.header h1 {
-  margin: 0 0 var(--space-sm) 0;
-  font-size: var(--font-3xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-}
-
-.header p {
-  margin: 0;
-  font-size: var(--space-base);
-  color: var(--color-text-light);
-}
-
-/* 디버그 정보 스타일 */
-.debugInfo {
-  background: var(--color-bg-secondary) !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius);
-  padding: var(--space-base);
-  margin: var(--space-base) 0;
-  font-family: var(--font-mono);
-}
-
-.debugInfo h4 {
-  margin: 0 0 var(--space-sm) 0;
-  font-size: var(--font-sm);
-  color: var(--color-text-muted);
-}
-
-.debugInfo p {
-  margin: var(--space-xs) 0;
-  font-size: var(--space-sm);
-  color: var(--color-text-light);
-}
-
-/* 버튼 스타일 개선 */
-.submitButton {
-  width: 100%;
-  padding: var(--space-base);
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-semibold);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-align: center;
-}
-
-.submitButton.enabled {
-  background-color: var(--color-primary);
-  color: var(--color-bg-primary);
-}
-
-.submitButton.enabled:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.submitButton.disabled {
-  background-color: var(--color-gray-200);
-  color: var(--color-text-light);
-  cursor: not-allowed;
-}
-
-.submitButton:disabled {
-  background-color: var(--color-gray-200);
-  color: var(--color-text-light);
-  cursor: not-allowed;
-}
-
-/* 선택 버튼 스타일 개선 */
 .selectButton {
   padding: var(--space-sm) var(--space-lg);
   margin: var(--space-sm);
@@ -427,7 +196,43 @@
   cursor: not-allowed;
 }
 
-/* 에러 메시지 스타일 */
+/* 제출 섹션 */
+.submitSection {
+  text-align: center;
+  margin-top: var(--space-3xl);
+}
+
+.submitButton {
+  width: 100%;
+  padding: var(--space-base);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.submitButton.enabled {
+  background-color: var(--color-primary);
+  color: var(--color-bg-primary);
+}
+
+.submitButton.enabled:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.submitButton.disabled,
+.submitButton:disabled {
+  background-color: var(--color-gray-200);
+  color: var(--color-text-light);
+  cursor: not-allowed;
+}
+
+/* 에러 메시지 */
 .errorMessage {
   background-color: var(--color-error-bg);
   border: 1px solid var(--color-error);
@@ -439,26 +244,7 @@
   text-align: center;
 }
 
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .container {
-    padding: var(--space-base);
-  }
-
-  .textInput {
-    font-size: var(--font-lg);
-  }
-
-  .submitButton {
-    padding: var(--font-lg);
-    font-size: var(--font-lg);
-  }
-
-  .selectButton {
-    padding: var(--font-sm) var(--space-md);
-    font-size: var(--font-base);
-  }
-}
+/* 로딩 상태 */
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -479,6 +265,29 @@
   margin-bottom: var(--space-base);
 }
 
+/* 디버그 정보 */
+.debugInfo {
+  background: var(--color-gray-100);
+  padding: 10px;
+  margin: 10px 0;
+  font-size: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+}
+
+.debugInfo h4 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.debugInfo p {
+  margin: var(--space-xs) 0;
+  font-size: var(--space-sm);
+  color: var(--color-text-light);
+}
+
+/* 애니메이션 */
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -488,11 +297,36 @@
   }
 }
 
-.debugInfo {
-  background: var(--color-gray-100);
-  padding: 10px;
-  margin: 10px 0;
-  font-size: var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-base);
+  }
+
+  .header h1 {
+    font-size: var(--font-4xl);
+  }
+
+  .consentSection h2,
+  .infoSection h2 {
+    font-size: var(--font-3xl);
+  }
+
+  .inputGroup h3 {
+    font-size: var(--font-2xl);
+  }
+
+  .textInput {
+    font-size: var(--font-lg);
+  }
+
+  .selectButton {
+    padding: var(--font-sm) var(--space-md);
+    font-size: var(--font-base);
+  }
+
+  .submitButton {
+    padding: var(--font-lg);
+    font-size: var(--font-lg);
+  }
 }

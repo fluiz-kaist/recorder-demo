@@ -17,7 +17,8 @@ export const useMinimalUserQuery = (): UseQueryResult<
   } | null,
   Error
 > => {
-  const { data: fullUser, isLoading, isError, error } = useUserQuery();
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: fullUser, isLoading, isError, error } = useUserQuery(authStatus?.userId);
 
   return useQuery({
     queryKey: ["minimalUserInfo"],
@@ -50,16 +51,17 @@ export const useMinimalUserQuery = (): UseQueryResult<
  * 🆕 전체 사용자 정보 조회 (서버에서)
  * 진행 상태 등 모든 정보 포함
  * 🔧 등록되지 않은 사용자에 대한 안전장치 추가
+ * ✅ queryKey 일관성 문제 해결
  */
-export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
+export const useUserQuery = (userId?: string | null): UseQueryResult<User, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
+  const targetUserId = userId || authStatus?.userId;
 
   return useQuery({
-    queryKey: ["user", userId || authStatus?.userId],
+    // ✅ 수정: targetUserId가 없으면 쿼리 비활성화
+    queryKey: targetUserId ? ["user", targetUserId] : ["user", "no-user"],
     queryFn: async (): Promise<User> => {
-      const targetUserId = userId || authStatus?.userId;
-
-      console.log("여기 뭐뭐뭐?", targetUserId);
+      console.log("useUserQuery 실행, targetUserId:", targetUserId);
 
       if (!targetUserId) {
         throw new Error("사용자 ID가 없습니다.");
@@ -87,8 +89,8 @@ export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
       return data.user as User;
     },
     enabled:
-      // 🔧 사용자가 등록 완료된 경우에만 쿼리 실행
-      !!authStatus?.isAuthenticated && !!(userId || authStatus?.userId),
+      // ✅ 수정: targetUserId와 인증 상태 모두 확인
+      !!authStatus?.isAuthenticated && !!targetUserId,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => {
       // 🔧 등록되지 않은 사용자는 재시도하지 않음
@@ -104,7 +106,8 @@ export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
  * 🔄 튜토리얼 완료 여부 확인 (서버 데이터 기반)
  */
 export const useIsTutorialCompleted = (): boolean => {
-  const { data: fullUser } = useUserQuery();
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: fullUser } = useUserQuery(authStatus?.userId);
 
   // 서버 데이터에서 확인 (localStorage에는 없음)
   return (
@@ -118,7 +121,8 @@ export const useIsTutorialCompleted = (): boolean => {
  * 🔄 현재 세트 번호 조회 (서버 데이터 기반)
  */
 export const useCurrentSetNumber = (): number => {
-  const { data: fullUser } = useUserQuery();
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: fullUser } = useUserQuery(authStatus?.userId);
 
   return fullUser?.participation?.currentSetNumber || 1;
 };
@@ -164,15 +168,14 @@ export const useAuthStatusQuery = (): UseQueryResult<
  * 🔧 사용자 등록(온보딩) 완료 상태 확인 - 개선된 버전
  */
 export const useUserCompletionStatusQuery = (
-  userId?: string
+  userId?: string | null
 ): UseQueryResult<boolean, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
+  const targetUserId = userId || authStatus?.userId;
 
   return useQuery({
-    queryKey: ["userCompletionStatus", userId || authStatus?.userId],
+    queryKey: ["userCompletionStatus", targetUserId],
     queryFn: async (): Promise<boolean> => {
-      const targetUserId = userId || authStatus?.userId;
-
       if (!targetUserId) {
         return false;
       }
@@ -219,7 +222,7 @@ export const useUserCompletionStatusQuery = (
         return false;
       }
     },
-    enabled: !!(userId || authStatus?.userId),
+    enabled: !!targetUserId,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -229,10 +232,10 @@ export const useUserCompletionStatusQuery = (
  * 🆕 전체 녹음 작업 완료 상태 확인 (서버 데이터 기반)
  */
 export const useAllRecordingCompletionQuery = (
-  userId?: string
+  userId?: string | null
 ): UseQueryResult<boolean, Error> => {
   const { data: authStatus } = useAuthStatusQuery();
-  const { data: fullUser } = useUserQuery(userId);
+  const { data: fullUser } = useUserQuery(userId || authStatus?.userId);
 
   return useQuery({
     queryKey: ["allRecordingCompletion", userId || authStatus?.userId],
@@ -264,10 +267,11 @@ export const useIsAuthenticated = (): boolean => {
 };
 
 export const useCurrentSetId = (): number => {
-  const { data: fullUser } = useUserQuery();
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: fullUser } = useUserQuery(authStatus?.userId);
   const currentSetNumber = fullUser?.participation?.currentSetNumber || 1;
   const currentSet = fullUser?.participation?.sets?.find(
     (set) => set.setNumber === currentSetNumber
   );
   return currentSet?.setId || 1;
-};
+}

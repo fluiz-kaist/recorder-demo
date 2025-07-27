@@ -75,6 +75,9 @@ export default async function handler(
     });
   }
 
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
   try {
     // 관리자 권한 확인
     const adminToken = req.cookies["admin-token"];
@@ -87,7 +90,7 @@ export default async function handler(
 
     // 모든 사용자 데이터 조회 (200명 이하이므로 전체 조회)
     const usersQuery = query(
-      collection(db, "usersV2"),
+      collection(db, userCollectionName),
       orderBy("createdAt", "desc")
     );
 

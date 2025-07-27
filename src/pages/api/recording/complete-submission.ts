@@ -37,7 +37,10 @@ export default async function handler(
       message: "Method not allowed. Only POST requests are supported.",
     });
   }
-
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+  const audioCollectionName =
+    process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
   try {
     // 요청 데이터 추출 및 유효성 검사
     const {
@@ -86,7 +89,7 @@ export default async function handler(
 
     // 1. 오디오 파일 메타데이터 저장
     // audio_files 컬렉션에 오디오 파일 정보와 메타데이터 저장
-    const audioDocRef = doc(db, "audio_files", audioMetadata.documentId);
+    const audioDocRef = doc(db, audioCollectionName, audioMetadata.documentId);
     const audioDocData = {
       ...audioMetadata,
       downloadURL: audioUrl,
@@ -100,7 +103,7 @@ export default async function handler(
 
     // 2. 사용자 완료 스크립트 목록 업데이트
     // users 컬렉션에서 해당 사용자의 완료된 스크립트 목록과 통계 업데이트
-    const userRef = doc(db, "usersV2", userId);
+    const userRef = doc(db, userCollectionName, userId);
     const completedField = `completedScripts.${scriptType}`;
 
     batch.update(userRef, {
@@ -112,7 +115,13 @@ export default async function handler(
 
     // 3. 사용자 진도 정보 업데이트
     // users/{userId}/progress 서브컬렉션에 해당 스크립트의 진도 정보 업데이트
-    const progressRef = doc(db, "usersV2", userId, "progress", scriptId);
+    const progressRef = doc(
+      db,
+      userCollectionName,
+      userId,
+      "progress",
+      scriptId
+    );
     const progressData = {
       status: "completed",
       recordedAt: serverTimestamp(),

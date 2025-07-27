@@ -2,7 +2,7 @@
 
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { AudioStatus, AudioFormat } from "@/types/firebase";
+import { AudioStatus } from "@/types/firebase";
 import { AudioRecording } from "@/types/audio";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
 
@@ -10,7 +10,7 @@ import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
  * 사용자의 모든 오디오 녹음 기록 조회
  */
 export const useUserAudioRecordingsQuery = (
-  userId?: string
+  userId?: string | null
 ): UseQueryResult<AudioRecording[], Error> => {
   const { data: authToken } = useAuthStatusQuery();
   const targetUserId = userId || authToken?.userId;

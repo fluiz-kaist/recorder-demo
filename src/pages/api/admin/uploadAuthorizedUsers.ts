@@ -35,6 +35,9 @@ export default async function handler(
     });
   }
 
+  const regiUserCollectionName =
+    process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION || "regi-users-temp";
+
   try {
     // 1. 파일 업로드 처리 (OS별 임시 디렉토리 사용)
     const uploadDir = os.tmpdir(); // Windows: C:\Users\...\AppData\Local\Temp
@@ -178,7 +181,7 @@ export default async function handler(
 
     for (const user of processedUsers) {
       try {
-        const docRef = doc(db, "authorizedUsersV2", user.userHash);
+        const docRef = doc(db, regiUserCollectionName, user.userHash);
 
         batch.set(
           docRef,

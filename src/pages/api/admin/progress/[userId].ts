@@ -119,6 +119,9 @@ export default async function handler(
       });
     }
 
+    const userCollectionName =
+      process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
     const { userId } = req.query;
 
     if (!userId || typeof userId !== "string") {
@@ -129,7 +132,7 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userDoc = await getDoc(doc(db, "usersV2", userId));
+    const userDoc = await getDoc(doc(db, userCollectionName, userId));
 
     if (!userDoc.exists()) {
       return res.status(404).json({

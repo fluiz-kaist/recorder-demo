@@ -22,7 +22,8 @@ export default async function handler(
       message: "Method not allowed",
     });
   }
-
+  const audioCollectionName =
+    process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
   try {
     const { userId, taskType, domain, limit: queryLimit } = req.query;
 
@@ -35,7 +36,7 @@ export default async function handler(
 
     // 기본 쿼리 구성
     let q = query(
-      collection(db, "audioRecordings"),
+      collection(db, audioCollectionName),
       where("userId", "==", userId as string),
       orderBy("recordedAt", "desc")
     );

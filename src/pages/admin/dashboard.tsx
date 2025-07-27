@@ -6,7 +6,6 @@ import {
   useAdminAuth,
 } from "@/hooks/queries/useAdminQueries";
 import styles from "@/styles/AdminDashboard.module.css";
-import { AdminRoute } from "@/components/AdminRoute";
 import AdminRecordingsTab from "@/components/admin/RecordingTaps";
 // 로그아웃 버튼 컴포넌트
 export const AdminLogoutButton = () => {
@@ -47,21 +46,17 @@ export const AdminLogoutButton = () => {
 };
 
 const AdminDashboard = () => {
-  const { data: authData, isLoading: authLoading } = useAdminAuth();
+  const { adminName, isLoading: authLoading } = useAdminAuth();
   const { participants, progress, isLoading, hasError, isReady } =
     useAdminDashboard();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "participants" | "recordings"
+    "overview" | "participants" | "recordings" | "upload"
   >("overview");
+  const router = useRouter();
 
   // 인증 체크
   if (authLoading) {
     return <div className={styles.loading}>인증 확인 중...</div>;
-  }
-
-  // console.log("여기서 authData?", authData);
-  if (!authData?.isAdmin) {
-    return <div className={styles.error}>관리자 권한이 필요합니다.</div>;
   }
 
   if (isLoading) {
@@ -73,12 +68,12 @@ const AdminDashboard = () => {
   }
 
   return (
-    <AdminRoute>
+    <>
       <div className={styles.container}>
         {/* 헤더 */}
         <header className={styles.header}>
           <h1 className={styles.title}>관리자 대시보드</h1>
-          <div className={styles.adminInfo}>관리자: {authData.adminName}</div>
+          <div className={styles.adminInfo}>관리자: {adminName}</div>
         </header>
 
         {/* 탭 네비게이션 */}
@@ -107,6 +102,14 @@ const AdminDashboard = () => {
           >
             녹음 데이터
           </button>
+          <button
+            className={`${styles.tabButton} ${
+              activeTab === "upload" ? styles.active : ""
+            }`}
+            onClick={() => router.push("upload")}
+          >
+            사용자 업로드
+          </button>
         </nav>
 
         {/* 컨텐츠 영역 */}
@@ -120,7 +123,7 @@ const AdminDashboard = () => {
           {activeTab === "recordings" && <AdminRecordingsTab />}
         </main>
       </div>
-    </AdminRoute>
+    </>
   );
 };
 

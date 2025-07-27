@@ -14,7 +14,8 @@ export default async function handler(
       message: "Method not allowed",
     });
   }
-
+  const audioCollectionName =
+    process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
   try {
     // 관리자 권한 확인
     const adminToken = req.cookies["admin-token"];
@@ -36,7 +37,7 @@ export default async function handler(
 
     // 녹음 정보 조회
     const recordingDoc = await getDoc(
-      doc(db, "audioRecordingsV2", recordingId as string)
+      doc(db, audioCollectionName, recordingId as string)
     );
 
     if (!recordingDoc.exists()) {

@@ -56,6 +56,9 @@ async function completeSelectedTasks(
     });
   }
 
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
   if (
     !selectedTasks ||
     !Array.isArray(selectedTasks) ||
@@ -68,7 +71,7 @@ async function completeSelectedTasks(
   }
 
   // 사용자 문서 조회
-  const userRef = doc(db, "usersV2", userId);
+  const userRef = doc(db, userCollectionName, userId);
   const userDoc = await getDoc(userRef);
 
   if (!userDoc.exists()) {

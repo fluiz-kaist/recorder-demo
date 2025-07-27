@@ -1,4 +1,3 @@
-// components/script/TutorialComponent.tsx - 메인 튜토리얼 컴포넌트
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/Tutorial.module.css";
@@ -6,26 +5,27 @@ import VoiceRecorder from "@/components/voiceRecorder";
 import { ScriptType, TutorialScript } from "@/types/firebase";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-import { useQueryClient } from "@tanstack/react-query";
+import { useTutorialFlow } from "@/hooks/useTutorialFlow";
+import { useUserQuery } from "@/hooks/queries/useUserQueries";
+
 // 독립 컴포넌트들 임포트
 import TutorialWelcome from "@/components/guide/TutorialWelcome";
 import AssistantIntro from "@/components/guide/AssistantIntro";
 import VoiceGuide from "@/components/guide/VoiceGuide";
 import MicPermission from "@/components/guide/MicPermission";
-import { useUserQuery } from "@/hooks/queries/useUserQueries";
-import { useUpdateUserMutation } from "@/hooks/mutations/useUserMutations";
+
 interface TutorialComponentProps {
   scriptType: ScriptType;
 }
 
 // 튜토리얼 단계 정의
 enum TutorialStep {
-  WELCOME = 0, // 1페이지: 튜토리얼 시작 안내
-  ASSISTANT_INTRO = 1, // 2페이지: 비서 개념
-  VOICE_GUIDE = 2, // 3페이지: 기술적 녹음 방법
-  MIC_PERMISSION = 3, // 4페이지: 마이크 권한 및 연습 준비
-  SITUATIONAL = 4, // 5페이지: 상황 연습
-  FORMAL = 5, // 6페이지: 정형 연습
+  WELCOME = 0,
+  ASSISTANT_INTRO = 1,
+  VOICE_GUIDE = 2,
+  MIC_PERMISSION = 3,
+  SITUATIONAL = 4,
+  FORMAL = 5,
 }
 
 const tutorialScripts = [
@@ -39,7 +39,6 @@ const tutorialScripts = [
     explain:
       "비서가 대신 캘린더 앱을 열고 병원 일정을 등록한다고 생각해보세요. <br />그때 어떤 말로 부탁할까요?",
   },
-
   {
     id: 1,
     category: "tutorial",
@@ -56,6 +55,11 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
   scriptType = "tutorial",
 }) => {
   const router = useRouter();
+  const scrollToTop = useScrollToTop();
+  const { data: user, isLoading, error } = useUserQuery();
+  const { completeTutorialAndAssignScripts, isCompleting } = useTutorialFlow();
+
+  // 로컬 상태들
   const [currentStep, setCurrentStep] = useState<TutorialStep>(
     TutorialStep.WELCOME
   );
@@ -63,30 +67,10 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     new Set()
   );
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
-
   const [showTutorialComplete, setShowTutorialComplete] = useState(false);
-  const { mutateAsync: updateUser } = useUpdateUserMutation();
-  const totalSteps = 6;
-  const scrollToTop = useScrollToTop();
-  const { data: user, isLoading, error } = useUserQuery();
-  const queryClient = useQueryClient();
-  // 튜토리얼 완료 시 호출
-  const handleTutorialComplete = (userId: string) => {
-    if (user) {
-      updateUser({
-        userId,
-        updates: {
-          currentStatus: {
-            ...user.currentStatus, // 기존 값 유지
-            isTutorialCompleted: true,
-            canStartRecording: true,
-          },
-        },
-      });
-    }
-  };
 
-  console.log("currentStep?", currentStep);
+  const totalSteps = 6;
+  const isDev = process.env.NODE_ENV === "development";
   // 햅틱 피드백
   const triggerHapticFeedback = () => {
     if ("vibrate" in navigator) {
@@ -94,6 +78,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     }
   };
 
+  // 네비게이션 핸들러들
   const handleNext = () => {
     if (currentStep < TutorialStep.FORMAL) {
       triggerHapticFeedback();
@@ -103,65 +88,35 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
   };
 
   const handlePrev = () => {
-    // WELCOME 단계가 아닐 때만 이전 단계로 이동
     if (currentStep > TutorialStep.WELCOME) {
-      // 수정된 부분
       triggerHapticFeedback();
       setCurrentStep((prev) => prev - 1);
       scrollToTop();
     }
   };
 
+  // 메인 화면으로 이동 (간소화됨)
   const goToMain = async () => {
-    console.group("유저가 튜토리얼을 완료함");
-    if (!user?.id) {
-      console.warn(
-        "유저 정보가 없어서 tutorial 완료 상태를 저장할 수 없습니다."
-      );
-    } else {
-      try {
-        const updatedUser = await updateUser({
-          // await 추가
-          userId: user.id,
-          updates: {
-            currentStatus: {
-              ...user.currentStatus,
-              isTutorialCompleted: true,
-              canStartRecording: true,
-            },
-          },
-        });
-        console.log("튜토리얼 완료!");
-        // mutation이 반환한 최신 데이터 사용
-        console.log(
-          "mutation 반환값:",
-          updatedUser.currentStatus.isTutorialCompleted
-        );
-
-        // 잠시 기다린 후 캐시에서 다시 확인
-        setTimeout(() => {
-          const cachedUser = queryClient.getQueryData(["user", user.id]);
-
-          console.log("캐시에서 가져온 user:", cachedUser);
-        }, 100);
-      } catch (error) {
-        console.error("업데이트 실패:", error);
-      }
+    try {
+      await completeTutorialAndAssignScripts();
+      triggerHapticFeedback();
+    } catch (error) {
+      console.error("튜토리얼 완료 실패:", error);
+      // 에러가 발생해도 메인으로 이동 (사용자 경험 고려)
+      router.push("/");
     }
-    triggerHapticFeedback();
-    console.log("메인 화면으로 이동 합니다. ");
-    console.groupEnd();
-    router.push("/");
   };
 
+  // 녹음 완료 핸들러
   const handleRecordingComplete = (scriptId: number) => {
     setCompletedScripts((prev) => new Set([...prev, scriptId]));
   };
 
+  // 마이크 권한 요청
   const requestMicPermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => track.stop()); // 테스트용이므로 바로 정지
+      stream.getTracks().forEach((track) => track.stop());
       setMicPermissionGranted(true);
       triggerHapticFeedback();
     } catch (error) {
@@ -172,12 +127,10 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     }
   };
 
+  // 유틸리티 함수들
   const getCurrentScript = (): TutorialScript | undefined => {
-    if (currentStep === TutorialStep.SITUATIONAL) {
-      return tutorialScripts[0]; // 상황 스크립트
-    } else if (currentStep === TutorialStep.FORMAL) {
-      return tutorialScripts[1]; // 정형 스크립트
-    }
+    if (currentStep === TutorialStep.SITUATIONAL) return tutorialScripts[0];
+    if (currentStep === TutorialStep.FORMAL) return tutorialScripts[1];
     return undefined;
   };
 
@@ -189,7 +142,6 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     return Math.round((completedScripts.size / tutorialScripts.length) * 100);
   };
 
-  //튜토 완료 핸들러
   const handleAllTutorialComplete = () => {
     setShowTutorialComplete(true);
   };
@@ -213,9 +165,40 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     }
   };
 
+  // 로딩 및 에러 처리
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.wrapper}>
+          <p className={styles.tutorialDetailedInstruction}>
+            사용자 정보를 불러오는 중입니다...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.wrapper}>
+          <p className={styles.tutorialDetailedInstruction}>
+            사용자 정보를 불러오는 데 문제가 발생했습니다. <br />
+            다시 로그인하거나, 처음 화면으로 돌아가 주세요.
+          </p>
+          <button
+            onClick={() => router.push("/")}
+            className={styles.returnHomeButton}
+          >
+            처음 화면으로
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 실제 녹음 연습 페이지 렌더링
   const renderPracticeCard = (script: TutorialScript) => {
-    console.log("여기서 스클비트?", script);
     const isCompleted = isCurrentScriptCompleted(script.id);
 
     return (
@@ -239,31 +222,29 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
                 연습 녹음을 완료했습니다!
               </div>
               <div className={styles.reRecordPrompt}>다시 연습하시겠어요?</div>
+
               <VoiceRecorder
                 key={`voice-recorder-${script.id}`}
                 scriptType={ScriptType.TUTORIAL}
                 scriptData={script}
                 isTutorial={true}
                 onRecordingComplete={() => handleRecordingComplete(script.id)}
-                onAllScriptsComplete={handleAllTutorialComplete} // 새로 추가
-                totalScriptsCount={tutorialScripts.length} // 새로 추가
-                completedScriptsCount={completedScripts.size} // 새로 추가
+                onAllScriptsComplete={handleAllTutorialComplete}
+                totalScriptsCount={tutorialScripts.length}
+                completedScriptsCount={completedScripts.size}
               />
 
-              {currentStep === TutorialStep.FORMAL && showTutorialComplete ? (
-                <></>
-              ) : (
-                <>
-                  {" "}
-                  <p className={styles.tutorialDetailedInstruction}>
-                    녹음이 끝나고 <br />
-                    제출이 정상적으로 되면,
-                    <br />
-                    이렇게 완료 화면이 나옵니다. <br /> <br /> 이제 아래의{" "}
-                    <br />
-                    <strong>‘다음’</strong> 버튼을 눌러주세요.
-                  </p>
-                </>
+              {currentStep === TutorialStep.FORMAL &&
+              showTutorialComplete ? null : (
+                <p className={styles.tutorialDetailedInstruction}>
+                  녹음이 끝나고 <br />
+                  제출이 정상적으로 되면,
+                  <br />
+                  이렇게 완료 화면이 나옵니다. <br />
+                  <br />
+                  이제 아래의 <br />
+                  <strong>[다음]</strong> 버튼을 눌러주세요.
+                </p>
               )}
             </div>
           ) : (
@@ -273,9 +254,9 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               scriptData={script}
               isTutorial={true}
               onRecordingComplete={() => handleRecordingComplete(script.id)}
-              onAllScriptsComplete={handleAllTutorialComplete} // 새로 추가
-              totalScriptsCount={tutorialScripts.length} // 새로 추가
-              completedScriptsCount={completedScripts.size} // 새로 추가
+              onAllScriptsComplete={handleAllTutorialComplete}
+              totalScriptsCount={tutorialScripts.length}
+              completedScriptsCount={completedScripts.size}
             />
           )}
         </div>
@@ -283,81 +264,27 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.wrapper}>
-          <p className={styles.tutorialDetailedInstruction}>
-            사용자 정보를 불러오는 중입니다...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !user) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.wrapper}>
-          <p className={styles.tutorialDetailedInstruction}>
-            사용자 정보를 불러오는 데 문제가 발생했습니다. <br />
-            다시 로그인하거나, 처음 화면으로 돌아가 주세요.
-          </p>
-          <button onClick={goToMain} className={styles.returnHomeButton}>
-            처음 화면으로
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        {/* 헤더 */}
-        {/* <div className={styles.header}>
-          <button onClick={goToMain} className={styles.backButton}>
-            <svg
-              className={styles.backIcon}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            처음화면으로
-          </button>
-
-          <div className={styles.headerTitle}>{getPageTitle()}</div>
-        </div> */}
-
         {/* 진행률 카드 */}
         {(currentStep === TutorialStep.SITUATIONAL ||
           currentStep === TutorialStep.FORMAL) && (
-          <div>
-            <div className={styles.progressCard}>
-              <div className={styles.progressHeader}>
-                <span className={styles.progressLabel}>연습 진행률</span>
-                <span className={styles.progressPercentage}>
-                  {getCompletionRate()}%
-                </span>
-              </div>
-              <div className={styles.progressBarTrack}>
-                <div
-                  className={styles.progressBarFill}
-                  style={{
-                    width: `${getCompletionRate()}%`,
-                  }}
-                ></div>
-              </div>
-              <div className={styles.tutorialDetailedInstruction}>
-                전체 녹음 진행도를 보여줍니다.
-              </div>
+          <div className={styles.progressCard}>
+            <div className={styles.progressHeader}>
+              <span className={styles.progressLabel}>연습 진행률</span>
+              <span className={styles.progressPercentage}>
+                {getCompletionRate()}%
+              </span>
+            </div>
+            <div className={styles.progressBarTrack}>
+              <div
+                className={styles.progressBarFill}
+                style={{ width: `${getCompletionRate()}%` }}
+              />
+            </div>
+            <div className={styles.tutorialDetailedInstruction}>
+              전체 녹음 진행도를 보여줍니다.
             </div>
           </div>
         )}
@@ -366,14 +293,13 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
         <div className={styles.cardContainer}>
           {currentStep === TutorialStep.WELCOME && (
             <div className={styles.card}>
-              <TutorialWelcome /> {/* 새 컴포넌트 렌더링 */}
+              <TutorialWelcome />
             </div>
           )}
 
           {currentStep === TutorialStep.ASSISTANT_INTRO && (
             <div className={styles.card}>
               <AssistantIntro />
-              {/* 핵심 메시지 */}
               <div className={styles.keyMessageSection}>
                 <div className={styles.keyMessage}>
                   <p>
@@ -399,13 +325,10 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
 
           {currentStep === TutorialStep.MIC_PERMISSION && (
             <div className={styles.card}>
-              {/* 헤더 */}
               <div className={styles.headerSection}>
                 <div className={styles.micIcon}>🎤</div>
                 <h1 className={styles.pageTitle}>실전 연습을 시작하겠습니다</h1>
               </div>
-
-              {/* 설명 */}
               <div className={styles.explanationSection}>
                 <p className={styles.explanationText}>
                   이제 실제로 음성을 녹음해보겠습니다.
@@ -414,7 +337,6 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
                   먼저 마이크 사용 권한을 허용해주세요.
                 </p>
               </div>
-              {/* 단계 안내 */}
               <div className={styles.stepsSection}>
                 <div className={styles.permissionStep}>
                   <span className={styles.stepIcon}>1️⃣</span>
@@ -444,19 +366,23 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
 
           {currentStep === TutorialStep.SITUATIONAL &&
             renderPracticeCard(tutorialScripts[0])}
-
           {currentStep === TutorialStep.FORMAL &&
             renderPracticeCard(tutorialScripts[1])}
         </div>
 
+        {/* 튜토리얼 완료 버튼 */}
         {currentStep === TutorialStep.FORMAL && showTutorialComplete && (
           <div>
             <div className={styles.tutorialDetailedInstruction}>
               🎉 축하합니다! 모든 연습이 끝났습니다! <br />
               이제 본격적인 녹음을 시작해 주세요!
             </div>
-            <button onClick={goToMain} className={styles.returnHomeButton}>
-              <span>이곳을 눌러주세요!</span>
+            <button
+              onClick={goToMain}
+              className={styles.returnHomeButton}
+              disabled={isCompleting}
+            >
+              <span>{isCompleting ? "준비 중..." : "이곳을 눌러주세요!"}</span>
             </button>
           </div>
         )}
@@ -465,10 +391,9 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
         <div className={styles.navigation}>
           <button
             onClick={handlePrev}
-            // WELCOME 단계일 때만 비활성화
-            disabled={currentStep === TutorialStep.WELCOME} // 수정된 부분
+            disabled={currentStep === TutorialStep.WELCOME}
             className={`${styles.navButton} ${
-              currentStep === TutorialStep.WELCOME // 수정된 부분: WELCOME 단계일 때만 비활성화 스타일 적용
+              currentStep === TutorialStep.WELCOME
                 ? styles.navButtonDisabled
                 : styles.navButtonEnabled
             }`}
@@ -493,7 +418,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               currentStep === TutorialStep.FORMAL ||
               (currentStep === TutorialStep.MIC_PERMISSION &&
                 !micPermissionGranted)
-            } // 조건 추가 (권한 없으면 '다음' 비활성화)
+            }
             className={`${styles.navButton} ${
               currentStep === TutorialStep.FORMAL ||
               (currentStep === TutorialStep.MIC_PERMISSION &&
@@ -503,14 +428,30 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
             }`}
           >
             {currentStep === TutorialStep.FORMAL
-              ? "연습완료!" // 마지막 버튼 문구 변경
+              ? "연습완료!"
               : currentStep === TutorialStep.MIC_PERMISSION &&
                 !micPermissionGranted
-              ? "권한 필요" // 마이크 권한 없으면 '권한 필요' 표시
+              ? "권한 필요"
               : "다음"}
           </button>
         </div>
       </div>
+      {isDev && (
+        <>
+          <div>
+            <div className={styles.tutorialDetailedInstruction}>
+              튜토리얼완료버튼
+            </div>
+            <button
+              onClick={goToMain}
+              className={styles.returnHomeButton}
+              disabled={isCompleting}
+            >
+              <span>{isCompleting ? "준비 중..." : "이곳을 눌러주세요!"}</span>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

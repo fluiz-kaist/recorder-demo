@@ -3,7 +3,9 @@ import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { ParticipantOverview } from "@/pages/api/admin/participants/overview";
 import { ParticipantDetail } from "@/pages/api/admin/participants/[userId]";
 import { ProgressOverview } from "@/pages/api/admin/progress/overview";
-import { RecordingOverview } from "@/pages/api/admin/recordings";
+import { useState, useEffect } from "react";
+import { AudioRecording } from "@/types/audio";
+
 // ===== 타입 정의 =====
 
 interface ParticipantsOverviewData {
@@ -24,7 +26,7 @@ interface ParticipantsOverviewData {
 }
 
 interface RecordingsData {
-  recordings: RecordingOverview[];
+  recordings: AudioRecording[];
   totalCount: number;
   pagination: {
     currentPage: number;
@@ -55,7 +57,7 @@ interface UserRecordingsData {
     gender: string;
     ageGroup: string;
   };
-  recordings: RecordingOverview[];
+  recordings: AudioRecording[];
   statistics: {
     totalRecordings: number;
     averageDuration: number;
@@ -300,36 +302,65 @@ export const useAdminUserRecordings = (
 };
 
 // ===== 유틸리티 훅 =====
-
 /**
- * 관리자 권한 확인 훅
+ * 관리자 권한 확인 훅 (API 호출 없음!)
  */
-export const useAdminAuth = (): UseQueryResult<
-  { isAdmin: boolean; adminName?: string },
-  Error
-> => {
-  return useQuery({
-    queryKey: ["adminAuth"],
-    queryFn: async () => {
-      const response = await fetch("/api/auth/checkAdmin", {
-        method: "GET",
-        credentials: "include",
-      });
+export const useAdminAuth = (): {
+  isAdmin: boolean;
+  adminName?: string;
+  adminId?: string;
+  isLoading: boolean;
+} => {
+  const [adminInfo, setAdminInfo] = useState<{
+    isAdmin: boolean;
+    adminName?: string;
+    adminId?: string;
+  }>({ isAdmin: false });
+  const [isLoading, setIsLoading] = useState(true);
 
-      if (!response.ok) {
-        return { isAdmin: false };
+  useEffect(() => {
+    const checkAdminFromJWT = () => {
+      try {
+        // 쿠키에서 admin-token 가져오기
+        const token = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("admin-token="))
+          ?.split("=")[1];
+
+        if (!token) {
+          setAdminInfo({ isAdmin: false });
+          setIsLoading(false);
+          return;
+        }
+
+        // JWT 토큰 디코딩 (Base64 디코딩)
+        const payload = JSON.parse(atob(token.split(".")[1]));
+
+        // 토큰 만료 확인
+        if (payload.exp && Date.now() >= payload.exp * 1000) {
+          setAdminInfo({ isAdmin: false });
+          setIsLoading(false);
+          return;
+        }
+
+        // 관리자 정보 설정
+        setAdminInfo({
+          isAdmin: true,
+          adminName: payload.name,
+          adminId: payload.adminId,
+        });
+      } catch (error) {
+        console.error("JWT 디코딩 실패:", error);
+        setAdminInfo({ isAdmin: false });
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      const data = await response.json();
-      return {
-        isAdmin: true,
-        adminName: data.admin?.name,
-      };
-    },
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5분간 캐시
-    refetchOnWindowFocus: false,
-  });
+    checkAdminFromJWT();
+  }, []);
+
+  return { ...adminInfo, isLoading };
 };
 
 /**
@@ -346,22 +377,16 @@ export const useAdminDashboard = () => {
     // recordings: recordingsQuery,
 
     // 통합 로딩 상태
-    isLoading:
-      participantsQuery.isLoading ||
-      progressQuery.isLoading ,
-      // recordingsQuery.isLoading,
+    isLoading: participantsQuery.isLoading || progressQuery.isLoading,
+    // recordingsQuery.isLoading,
 
     // 통합 에러 상태
-    hasError:
-      participantsQuery.isError ||
-      progressQuery.isError ,
-      // recordingsQuery.isError,
+    hasError: participantsQuery.isError || progressQuery.isError,
+    // recordingsQuery.isError,
 
     // 모든 데이터 로드 완료 여부
-    isReady:
-      participantsQuery.isSuccess &&
-      progressQuery.isSuccess ,
-      // recordingsQuery.isSuccess,
+    isReady: participantsQuery.isSuccess && progressQuery.isSuccess,
+    // recordingsQuery.isSuccess,
   };
 };
 

@@ -116,18 +116,33 @@ export function logKoreanTimeFormats(): void {
 
 /**
  * Firebase Timestamp 객체를 한국시간 기준으로 읽기 쉬운 문자열로 변환
- * @param timestamp - Firestore Timestamp 또는 { seconds, nanoseconds } 객체
+ * @param timestamp - Firestore Timestamp 또는 { seconds, nanoseconds } 객체 또는 Date
  * @returns {string} 예: "2025-07-27\n14:29:51"
  */
-export function formatFirestoreTimestampKST(timestamp: {
-  seconds: number;
-  nanoseconds: number;
-}): string {
-  if (!timestamp?.seconds) return "-";
+export function formatFirestoreTimestampKST(timestamp: any): string {
+  if (!timestamp) return "-";
 
-  const date = new Date(
-    timestamp.seconds * 1000 + Math.floor(timestamp.nanoseconds / 1e6)
-  );
+  let date: Date;
+
+  // Firebase Timestamp 객체인 경우
+  if (timestamp?.toDate && typeof timestamp.toDate === "function") {
+    date = timestamp.toDate();
+  }
+  // { seconds, nanoseconds } 형태인 경우
+  else if (timestamp?.seconds) {
+    date = new Date(
+      timestamp.seconds * 1000 + Math.floor(timestamp.nanoseconds / 1e6)
+    );
+  }
+  // 이미 Date 객체인 경우
+  else if (timestamp instanceof Date) {
+    date = timestamp;
+  }
+  // 문자열인 경우
+  else {
+    date = new Date(timestamp);
+  }
+
   const kst = new Date(
     date.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
   );

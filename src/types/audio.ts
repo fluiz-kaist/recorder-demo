@@ -67,6 +67,7 @@ export interface AudioRecording {
   speakerInfo: {
     gender: "남성" | "여성" | "불명";
     ageGroup: string; // "60-64세" 등
+    userName: string;
   };
 
   // === 검증 정보 ===
@@ -139,6 +140,7 @@ export interface AudioUploadMutationRequest {
   // === 화자 정보 (평면화) ===
   gender: "남성" | "여성" | "불명"; // 사용자 입력 그대로
   ageGroup: string; // "60-64세" 등
+  userName: string;
 
   // === 품질 평가 (즉시 측정 가능한 것만) ===
   audioFormat?: AudioFormat; // 오디오 포맷

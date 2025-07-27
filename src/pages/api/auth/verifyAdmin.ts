@@ -1,10 +1,9 @@
 // pages/api/auth/verifyAdmin.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { serialize } from "cookie";
-// import bcrypt from "bcryptjs";
-
+import { generateAdminToken } from "@/lib/jwt-node";
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -18,7 +17,6 @@ export default async function handler(
 
   const { adminId, password } = req.body;
 
-  // 입력 검증
   if (!adminId || !password) {
     return res.status(400).json({
       success: false,
@@ -27,8 +25,7 @@ export default async function handler(
   }
 
   try {
-    // 🔄 수정: 문서 ID로 직접 접근
-    const adminDocRef = doc(db, "admin", adminId); // admin/admin 문서
+    const adminDocRef = doc(db, "admin", adminId);
     const adminDoc = await getDoc(adminDocRef);
 
     if (!adminDoc.exists()) {
@@ -40,26 +37,21 @@ export default async function handler(
 
     const adminData = adminDoc.data();
 
-    // 비밀번호 확인
     if (adminData.password !== password) {
       return res.status(401).json({
         success: false,
         message: "비밀번호가 올바르지 않습니다.",
       });
     }
-    // 세션 토큰 생성
-    const sessionToken = `admin-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
 
-    // 관리자 문서에 세션 토큰 저장
-    await updateDoc(doc(db, "admin", adminDoc.id), {
-      sessionToken: sessionToken,
-      lastLogin: new Date().toISOString(),
+    // JWT 토큰 생성 (Node.js Runtime용)
+    const jwtToken = generateAdminToken({
+      adminId: adminDoc.id,
+      name: adminData.name,
     });
 
-    // httpOnly 쿠키 설정 (관리자용)
-    const cookie = serialize("admin-token", sessionToken, {
+    // JWT 쿠키 설정
+    const cookie = serialize("admin-token", jwtToken, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -73,9 +65,9 @@ export default async function handler(
       success: true,
       message: "관리자 인증 성공",
       admin: {
+        adminId: adminDoc.id,
         name: adminData.name,
-        sessionToken: sessionToken,
-        lastLogin: new Date().toISOString(),
+        token: jwtToken,
       },
     });
   } catch (error) {

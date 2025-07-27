@@ -151,6 +151,10 @@ export default async function handler(
       ? fields.ageGroup[0]
       : fields.ageGroup;
 
+    const userName = Array.isArray(fields.userName)
+      ? fields.userName[0]
+      : fields.userName;
+
     const sttTranscriptionRaw = Array.isArray(fields.sttTranscription)
       ? fields.sttTranscription[0]
       : fields.sttTranscription;
@@ -178,6 +182,7 @@ export default async function handler(
     if (!category) missingFields.push("category");
     if (!gender) missingFields.push("gender");
     if (!ageGroup) missingFields.push("ageGroup");
+    if (!userName) missingFields.push("userName");
     if (!recordingStartedAt) missingFields.push("recordingStartedAt");
     if (!recordingEndedAt) missingFields.push("recordingEndedAt");
     if (!actualDuration) missingFields.push("actualDuration");
@@ -219,8 +224,21 @@ export default async function handler(
       });
     }
 
+    // 타입 가드 함수 추가
+    const ensureString = (
+      value: string | undefined,
+      fieldName: string
+    ): string => {
+      if (!value) {
+        throw new Error(`${fieldName} is required but undefined`);
+      }
+      return value;
+    };
+
+    const ensuredTaskKey = ensureString(taskKey, "taskKey");
+
     // 고유한 recording ID 생성
-    const recordingId = `${userId}_${taskKey.replace(
+    const recordingId = `${userId}_${ensuredTaskKey.replace(
       /[^a-zA-Z0-9]/g,
       "_"
     )}_${Date.now()}`;
@@ -236,9 +254,12 @@ export default async function handler(
     const qualityAnalysis = analyzeAudioQuality(fileBuffer, actualDuration);
 
     // Firebase Storage에 업로드
+    const collectionName =
+      process.env.NEXT_PUBLIC_STOREAGE_RECORDING_FILES_COLLECTION ||
+      "temp-recording_files";
     const storageRef = ref(
       storage,
-      `recordingsV2/${domain}/${taskKey}/${userId}/${fileName}`
+      `${collectionName}/${domain}/${taskKey}/${userId}/${fileName}`
     );
     const uploadResult = await uploadBytes(storageRef, fileBuffer, {
       contentType: audioFile.mimetype || "audio/wav",
@@ -250,15 +271,16 @@ export default async function handler(
     // AudioRecording 데이터 생성
     const audioRecording: AudioRecording = {
       id: recordingId,
-      userId,
-      taskKey,
+      userId: ensureString(userId, "userId"),
+      taskKey: ensuredTaskKey,
       taskType: taskType as "situational" | "formal",
       audioUrl,
 
       // 녹음 세션 정보
       recordingSession: {
-        startedAt: recordingStartedAt,
-        endedAt: recordingEndedAt,
+        startedAt: ensureString(recordingStartedAt, "recordingStartedAt"),
+        endedAt: ensureString(recordingEndedAt, "recordingEndedAt"),
+
         actualDuration,
         sessionDuration,
       },
@@ -267,17 +289,18 @@ export default async function handler(
 
       // 텍스트 데이터
       textData: {
-        originalScript,
+        originalScript: ensureString(originalScript, "originalScript"),
         sttTranscription,
-        domain,
-        intent,
-        category,
+        domain: ensureString(domain, "domain"),
+        intent: ensureString(intent, "intent"),
+        category: ensureString(category, "category"),
       },
 
       // 화자 정보
       speakerInfo: {
         gender: gender as "남성" | "여성" | "불명",
-        ageGroup,
+        ageGroup: ensureString(ageGroup, "ageGroup"),
+        userName: ensureString(userName, "userName"),
       },
 
       // 품질 체크

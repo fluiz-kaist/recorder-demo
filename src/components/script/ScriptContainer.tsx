@@ -39,7 +39,22 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   );
   const { data: authStatus } = useAuthStatusQuery();
   const { data: minimalUser } = useMinimalUserQuery();
-  const { data: fullUser, isLoading: isUserLoading } = useUserQuery();
+  // ✅ 수정: 명시적으로 userId 전달
+  // ScriptContainer.tsx에서
+  const { data: fullUser, isLoading: isUserLoading } = useUserQuery(
+    authStatus?.userId
+  );
+
+  // 🔥 fullUser 상태 확인
+  useEffect(() => {
+    console.log("🔍 fullUser 전체 구조:", {
+      fullUser: fullUser,
+      participation: fullUser?.participation,
+      sets: fullUser?.participation?.sets,
+      "sets 타입": typeof fullUser?.participation?.sets,
+      "sets 길이": fullUser?.participation?.sets?.length,
+    });
+  }, [fullUser]);
   const scrollToTop = useScrollToTop();
 
   const flatScriptList: FlatScript[] = useMemo(() => {
@@ -151,7 +166,16 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   }
 
   const completed = isScriptCompleted(current.script, current.type);
+  // 🔥 이 부분 추가 - 상태 변화 모니터링
 
+  console.log("🔍 상세 디버깅:", {
+    authStatus: authStatus,
+    "authStatus?.isAuthenticated": authStatus?.isAuthenticated,
+    "authStatus?.userId": authStatus?.userId,
+    "!!authStatus?.userId": !!authStatus?.userId,
+    "useUserQuery enabled 조건":
+      !!authStatus?.isAuthenticated && !!authStatus?.userId,
+  });
   // 2. ✅ 함수 추가 (isScriptCompleted 함수 아래에)
   const handleStartReRecording = () => {
     const taskKey = String(

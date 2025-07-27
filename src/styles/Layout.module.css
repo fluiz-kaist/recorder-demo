@@ -1,5 +1,3 @@
-/* Layout.module.css - 헤더와 푸터 통합 스타일 */
-
 /* 헤더 스타일 */
 .header {
   position: sticky;
@@ -9,14 +7,13 @@
   background: linear-gradient(
     135deg,
     var(--color-gray-800) 0%,
-    /* 아주 진한 회색 */ var(--color-gray-900) 80% /* 더 진한 회색 */
+    var(--color-gray-900) 80%
   );
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px);
 }
 
 .headerContainer {
-  /* max-width: 480px; */
   margin: 0 auto;
   padding: 0 var(--space-base);
   display: flex;
@@ -151,15 +148,43 @@
   font-family: var(--font-primary);
 }
 
-/* 도움말 섹션 */
-.helpSection {
+.footerButtons {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: center;
-  gap: var(--space-2xl);
-  margin-bottom: var(--space-md);
+  padding: 16px 0;
 }
 
-.helpItem {
+.footerButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  width: 100px;
+  height: 80px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.footerButton:hover {
+  background: #f9fafb;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  color: #2563eb;
+  border-color: #c7d2fe;
+}
+
+/* 관리자 스타일 */
+.adminItem {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -171,40 +196,40 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.helpItem:hover {
-  background: var(--color-primary-bg);
+.adminItem:hover {
+  background: #f3e8ff;
   transform: translateY(-1px);
 }
 
-.helpItem:active {
+.adminItem:active {
   transform: translateY(0);
 }
 
-.helpItem:focus {
-  outline: 3px solid var(--color-success-light);
+.adminItem:focus {
+  outline: 3px solid #e9d5ff;
   outline-offset: 2px;
 }
 
-.helpIcon {
+.adminIcon {
   width: var(--space-2xl);
   height: var(--space-2xl);
-  color: var(--color-primary);
+  color: #9333ea;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary-bg);
+  background: #f3e8ff;
   border-radius: var(--radius-sm);
 }
 
-.helpIcon svg {
+.adminIcon svg {
   width: var(--space-md);
   height: var(--space-md);
 }
 
-.helpText {
+.adminText {
   font-size: var(--font-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
+  color: #7e22ce;
   text-align: center;
 }
 
@@ -232,142 +257,6 @@
   color: var(--color-gray-400);
   margin: 0;
   line-height: var(--line-height-normal);
-}
-/* 관리자 로그인용 스타일 (보라색 계열) */
-.adminItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  cursor: pointer;
-  padding: var(--space-sm);
-  border-radius: var(--radius);
-  transition: all var(--transition-fast);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.adminItem:hover {
-  background: #f3e8ff; /* 연보라 배경 */
-  transform: translateY(-1px);
-}
-
-.adminItem:active {
-  transform: translateY(0);
-}
-
-.adminItem:focus {
-  outline: 3px solid #e9d5ff;
-  outline-offset: 2px;
-}
-
-.adminIcon {
-  width: var(--space-2xl);
-  height: var(--space-2xl);
-  color: #9333ea; /* 진보라 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f3e8ff; /* 연보라 배경 */
-  border-radius: var(--radius-sm);
-}
-
-.adminIcon svg {
-  width: var(--space-md);
-  height: var(--space-md);
-}
-
-.adminText {
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-semibold);
-  color: #7e22ce; /* 보라 텍스트 */
-  text-align: center;
-}
-
-/* 모바일 최적화 (작은 화면) */
-@media (max-width: 360px) {
-  .headerContainer {
-    padding: 0 var(--space-sm);
-    height: 56px;
-  }
-
-  .logoText {
-    font-size: var(--font-lg);
-  }
-
-  .logoutText {
-    font-size: var(--font-sm);
-  }
-
-  .footerContainer {
-    padding: var(--space-md) var(--space-sm);
-  }
-
-  .helpSection {
-    gap: var(--space-lg);
-  }
-
-  .helpIcon {
-    width: var(--icon-lg);
-    height: var(--icon-lg);
-  }
-
-  .helpIcon svg {
-    width: var(--font-lg);
-    height: var(--font-lg);
-  }
-
-  .helpText {
-    font-size: var(--font-sm);
-  }
-
-  .adminIcon {
-    width: var(--icon-lg);
-    height: var(--icon-lg);
-  }
-
-  .adminIcon svg {
-    width: var(--font-lg);
-    height: var(--font-lg);
-  }
-
-  .adminText {
-    font-size: var(--font-sm);
-  }
-}
-/* 접근성 향상 */
-@media (prefers-reduced-motion: reduce) {
-  .logo,
-  .logoutButton,
-  .helpItem .adminItem {
-    transition: none;
-  }
-}
-
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  .footer {
-    border-top: 2px solid var(--color-text-primary);
-  }
-
-  .copyrightText {
-    color: var(--color-text-primary);
-  }
-
-  .versionText {
-    color: var(--color-text-primary);
-  }
-
-  .helpText {
-    color: var(--color-text-primary);
-  }
-}
-
-/* 포커스 스타일 일관성 */
-.logo:focus-visible,
-.logoutButton:focus-visible,
-.helpItem:focus-visible {
-  outline: 3px solid var(--color-success-light);
-  outline-offset: 2px;
 }
 
 /* 모달 */
@@ -433,39 +322,41 @@
   /* 모달 내용은 각 컴포넌트 스타일 사용 */
 }
 
-.tutorialDetailedInstruction {
-  background: var(--color-warning-bg);
-  border: 2px solid var(--color-warning-light);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  margin: var(--space-sm);
-  text-align: center;
-  /* item-align: center; */
-}
-
 /* 모바일 최적화 */
-@media (max-width: 480px) {
-  .card {
-    padding: var(--space-lg) var(--space-base);
+@media (max-width: 360px) {
+  .headerContainer {
+    padding: 0 var(--space-sm);
+    height: 56px;
   }
 
-  .stepIndicator {
-    top: var(--space-sm);
-    right: var(--space-sm);
-    padding: var(--space-xs) var(--space-sm);
+  .logoText {
+    font-size: var(--font-lg);
+  }
+
+  .logoutText {
     font-size: var(--font-sm);
   }
 
-  .navigation {
-    flex-direction: row;
-    gap: var(--space-base);
+  .footerContainer {
+    padding: var(--space-md) var(--space-sm);
   }
 
-  .dots {
-    flex: 1;
-    justify-content: center;
+  .adminIcon {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
   }
 
+  .adminIcon svg {
+    width: var(--font-lg);
+    height: var(--font-lg);
+  }
+
+  .adminText {
+    font-size: var(--font-sm);
+  }
+}
+
+@media (max-width: 480px) {
   .footerButtons {
     flex-direction: column;
     gap: var(--space-xs);
@@ -488,89 +379,32 @@
   .modalHeader h2 {
     font-size: var(--font-lg);
   }
+}
 
-  .tutorialInstruction {
-    padding: var(--space-sm);
-  }
-
-  .tutorialDetailedInstruction {
-    padding: var(--space-sm);
+/* 접근성 향상 */
+@media (prefers-reduced-motion: reduce) {
+  .logo,
+  .logoutButton,
+  .adminItem {
+    transition: none;
   }
 }
 
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
-  .mainContent,
-  .tutorialDetailedInstruction {
-    border: 2px solid var(--color-text-primary);
+  .footer {
+    border-top: 2px solid var(--color-text-primary);
+  }
+
+  .copyrightText,
+  .versionText {
+    color: var(--color-text-primary);
   }
 }
 
-.returnHomeButton {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-secondary) 100%
-  );
-  color: var(--color-bg-primary);
-  padding: var(--space-md) var(--space-lg);
-  font-size: var(--font-base);
-  font-weight: var(--font-weight-semibold);
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: all var(--transition);
-  margin-top: var(--space-md);
-  text-align: center;
-  width: 100%;
-}
-
-.returnHomeButton:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-secondary) 0%,
-    var(--color-primary) 100%
-  );
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.footerButtons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  padding: 16px 0;
-}
-
-.footerButton {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-
-  padding: 12px 16px;
-  width: 100px;
-  height: 80px;
-
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.footerButton:hover {
-  background: #f9fafb;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-  color: #2563eb;
-  border-color: #c7d2fe;
+/* 포커스 스타일 일관성 */
+.logo:focus-visible,
+.logoutButton:focus-visible {
+  outline: 3px solid var(--color-success-light);
+  outline-offset: 2px;
 }

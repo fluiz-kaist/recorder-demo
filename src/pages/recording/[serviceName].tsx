@@ -10,17 +10,8 @@ import {
   useCurrentSetId,
 } from "@/hooks/queries/useUserQueries";
 
+import { SERVICE_NAME_TO_SLUG, ServiceName } from "@/lib/serviceMapping";
 import {
-  SERVICE_NAME_TO_SLUG,
-  SLUG_TO_SERVICE_NAME,
-  ServiceName,
-  ServiceSlug,
-  SERVICE_CONFIG,
-} from "@/lib/serviceMapping";
-import {
-  useServiceStatsQuery,
-  useScriptByTaskKeyQuery,
-  useSituationalScriptsByServiceQuery, // 새로 추가한 쿼리
   useAllScriptsByServiceQuery, // 선택사항: 상황발화 + 정형발화 모두
 } from "@/hooks/queries/useScriptQueries";
 
@@ -71,6 +62,8 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
     return <div>로딩 중...</div>;
   }
 
+  console.log("assl", allScripts);
+
   if (isLoading) return <div>로딩 중...</div>;
   if (isError) return <div>에러 발생</div>;
   if (!allScripts) return <div>해당 스크립트 없음</div>;
@@ -87,40 +80,7 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
       <Head>
         <title>{serviceName} 스크립트 녹음</title>
       </Head>
-      {/* <h1>{serviceName} 서비스 스크립트</h1> */}
       <ScriptContainer scripts={mergedScripts} />
-      {/* <div>
-        {allScripts?.situational.map((situ) => {
-          const relatedFormal = allScripts.formal.filter(
-            (f) => f.task_key === situ.task_key
-          );
-
-          return (
-            <div key={situ.task_key} style={{ marginBottom: "2rem" }}>
-              <h3>{situ.task_name}</h3>
-              <p>
-                <strong>상황 설명:</strong> {situ.main_content}
-              </p>
-              <p>
-                <em>{situ.detailed_instruction}</em>
-              </p>
-
-              <h4>정형 스크립트 예시</h4>
-              {relatedFormal.length > 0 ? (
-                relatedFormal.map((f) => (
-                  <p key={f.id} style={{ marginLeft: "1rem" }}>
-                    - {f.formal_script}
-                  </p>
-                ))
-              ) : (
-                <p style={{ color: "gray", marginLeft: "1rem" }}>
-                  정형 스크립트 없음
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div> */}
     </div>
   );
 }

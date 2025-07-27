@@ -113,6 +113,9 @@ export default async function handler(
     });
   }
 
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
   try {
     // 관리자 권한 확인
     const adminToken = req.cookies["admin-token"];
@@ -140,7 +143,7 @@ export default async function handler(
 
     // 기본 쿼리 생성
     let q = query(
-      collection(db, "usersV2"),
+      collection(db, userCollectionName),
       orderBy(sortBy as string, sortOrder as "asc" | "desc")
     );
 

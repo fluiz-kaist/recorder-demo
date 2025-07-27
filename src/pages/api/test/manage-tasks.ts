@@ -48,6 +48,8 @@ export default async function handler(
 // 사용자 태스크 목록 조회
 async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = req.query;
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
   if (!userId || typeof userId !== "string") {
     return res.status(400).json({
@@ -56,7 +58,7 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const userRef = doc(db, "usersV2", userId);
+  const userRef = doc(db, userCollectionName, userId);
   const userDoc = await getDoc(userRef);
 
   if (!userDoc.exists()) {
@@ -121,7 +123,8 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
 // 개별 태스크 상태 업데이트
 async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
   const { userId, updates } = req.body;
-
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
   if (!userId || !updates || !Array.isArray(updates)) {
     return res.status(400).json({
       success: false,
@@ -129,7 +132,7 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const userRef = doc(db, "usersV2", userId);
+  const userRef = doc(db, userCollectionName, userId);
   const userDoc = await getDoc(userRef);
 
   if (!userDoc.exists()) {
@@ -241,6 +244,8 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
 // 모든 태스크 완료 (기존 코드)
 async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = req.body;
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
   try {
     if (!userId) {
       return res.status(400).json({
@@ -250,7 +255,7 @@ async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // 사용자 문서 조회
-    const userRef = doc(db, "usersV2", userId);
+    const userRef = doc(db, userCollectionName, userId);
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
@@ -405,6 +410,8 @@ async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
 }
 // updateTutorialStatus 함수 추가 (completeAllTasks 함수 아래에)
 async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
   const { userId, isTutorialCompleted } = req.body;
 
   if (!userId) {
@@ -414,7 +421,7 @@ async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const userRef = doc(db, "usersV2", userId);
+  const userRef = doc(db, userCollectionName, userId);
   const userDoc = await getDoc(userRef);
 
   if (!userDoc.exists()) {

@@ -1,6 +1,6 @@
 // pages/admin/upload.tsx - 새로 생성 (간단한 업로드 페이지)
 import { useState } from "react";
-
+import styles from "@/styles/AdminUploadPage.module.css";
 interface UploadResult {
   success: boolean;
   message: string;
@@ -67,54 +67,44 @@ export default function AdminUploadPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">승인된 사용자 목록 업로드</h1>
+    <div className={styles.container}>
+      <h1 className={styles.title}>승인된 사용자 목록 업로드</h1>
 
-      {/* 엑셀 파일 형식 안내 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h3 className="font-semibold text-blue-800 mb-2">📋 엑셀 파일 형식</h3>
-        <p className="text-blue-700 text-sm mb-2">
-          첫 번째 행은 헤더여야 합니다:
-        </p>
-        <div className="bg-white border rounded p-2 font-mono text-sm">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <strong>이름</strong>
-            </div>
-            <div>
-              <strong>주민번호앞자리</strong>
-            </div>
-            <div>홍길동</div>
-            <div>901234</div>
-            <div>김철수</div>
-            <div>851215</div>
-            <div className="text-gray-500 text-xs col-span-2 mt-2">
-              * 업로더: admin (자동 설정)
-            </div>
+      <div className={styles.excelGuideBox}>
+        <h3 className={styles.excelGuideTitle}>📋 엑셀 파일 형식</h3>
+        <p className={styles.excelGuideText}>첫 번째 행은 헤더여야 합니다:</p>
+        <div className={styles.tablePreview}>
+          <div className={styles.gridRow}>
+            <strong>이름</strong>
           </div>
+          <div className={styles.gridRow}>
+            <strong>주민번호앞자리</strong>
+          </div>
+          <div className={styles.gridRow}>홍길동</div>
+          <div className={styles.gridRow}>901234</div>
+          <div className={styles.gridRow}>김철수</div>
+          <div className={styles.gridRow}>851215</div>
+          <div className={styles.uploadNote}>* 업로더: admin (자동 설정)</div>
         </div>
-        <p className="text-blue-600 text-xs mt-2">
+        <p className={styles.caution}>
           ⚠️ 주민번호앞자리는 6자리 숫자만 입력하세요.
         </p>
       </div>
 
-      {/* 파일 업로드 */}
-      <div className="space-y-4">
+      <div className={styles.uploadSection}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            엑셀 파일 선택
-          </label>
+          <label className={styles.label}>엑셀 파일 선택</label>
           <input
             id="file-input"
             type="file"
             accept=".xlsx,.xls"
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className={styles.fileInput}
           />
         </div>
 
         {file && (
-          <div className="text-sm text-gray-600">
+          <div className={styles.selectedFile}>
             선택된 파일: <strong>{file.name}</strong> (
             {(file.size / 1024).toFixed(1)}KB)
           </div>
@@ -123,43 +113,27 @@ export default function AdminUploadPage() {
         <button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className={`w-full py-3 px-4 rounded-lg font-semibold ${
-            !file || uploading
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-blue-600 text-white hover:bg-blue-700"
+          className={`${styles.uploadButton} ${
+            !file || uploading ? styles.disabled : styles.enabled
           }`}
         >
           {uploading ? "업로드 중..." : "업로드 시작"}
         </button>
       </div>
 
-      {/* 결과 표시 */}
       {result && (
         <div
-          className={`mt-6 p-4 rounded-lg border ${
-            result.success
-              ? "bg-green-50 border-green-200"
-              : "bg-red-50 border-red-200"
+          className={`${styles.resultBox} ${
+            result.success ? styles.success : styles.failure
           }`}
         >
-          <div
-            className={`font-semibold ${
-              result.success ? "text-green-800" : "text-red-800"
-            }`}
-          >
+          <div className={styles.resultTitle}>
             {result.success ? "✅ 업로드 성공" : "❌ 업로드 실패"}
           </div>
-
-          <p
-            className={`mt-2 ${
-              result.success ? "text-green-700" : "text-red-700"
-            }`}
-          >
-            {result.message}
-          </p>
+          <p className={styles.resultMessage}>{result.message}</p>
 
           {result.summary && (
-            <div className="mt-3 text-sm space-y-1">
+            <div className={styles.summaryBox}>
               <div>
                 📊 전체 행: <strong>{result.summary.totalRows}</strong>
               </div>
@@ -176,9 +150,9 @@ export default function AdminUploadPage() {
           )}
 
           {result.errors && result.errors.length > 0 && (
-            <div className="mt-3">
-              <div className="text-sm font-medium text-red-800">오류 목록:</div>
-              <ul className="mt-1 text-sm text-red-700 space-y-1">
+            <div className={styles.errorListBox}>
+              <div className={styles.errorListTitle}>오류 목록:</div>
+              <ul className={styles.errorList}>
                 {result.errors.map((error, index) => (
                   <li key={index}>• {error}</li>
                 ))}
@@ -188,10 +162,9 @@ export default function AdminUploadPage() {
         </div>
       )}
 
-      {/* 테스트용 샘플 다운로드 */}
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h3 className="font-semibold text-gray-800 mb-2">🧪 테스트용 샘플</h3>
-        <p className="text-sm text-gray-600 mb-3">
+      {/* <div className={styles.sampleBox}>
+        <h3 className={styles.sampleTitle}>🧪 테스트용 샘플</h3>
+        <p className={styles.sampleText}>
           테스트용 엑셀 파일을 만들어서 업로드해보세요.
         </p>
         <button
@@ -206,11 +179,11 @@ export default function AdminUploadPage() {
             link.download = "sample_users.csv";
             link.click();
           }}
-          className="text-blue-600 hover:text-blue-800 text-sm underline"
+          className={styles.sampleDownloadLink}
         >
           📥 샘플 CSV 다운로드
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }

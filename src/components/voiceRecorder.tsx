@@ -15,13 +15,13 @@ import { useMobileOptimizedRecorder } from "@/hooks/useMobileOptimizedRecorder";
 import SuccessPopup from "@/components/SuccessPopup";
 import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
 
-// import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
 import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
 import SttWhisper from "@/components/stt/SttWhisper";
 import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { useCompleteScriptMutation } from "@/hooks/mutations/useUserMutations";
 import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
+import { queryClient } from "@/utils/queryClient";
 // 🎯 간단한 품질 검증 결과 인터페이스
 interface SimpleQualityResult {
   isGoodQuality: boolean;
@@ -536,6 +536,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       const gender = fullUser ? fullUser.gender : "불명";
       const ageGroup = fullUser ? fullUser.ageGroup : "불명";
+      const userName = fullUser ? fullUser.userName : "불명";
 
       const typedScript = scriptData as {
         service_name: string;
@@ -570,6 +571,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         // === 화자 정보 ===
         gender, // "male" | "female"
         ageGroup, // "60-64세" 등
+        userName,
 
         // === 품질 평가 ===
 
@@ -592,8 +594,21 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         status: "completed", // 또는 "in_progress", "not_started"
         audioRecordId: uploadResult.recordingId,
       });
-      console.log("스크립트 완료 처리 완료:", completeResult);
+      console.log("✅ completeResult:", completeResult);
 
+      // 🔥 이 부분 추가 - 캐시 상태 확인
+      console.log(
+        "📊 제출 직전 fullUser:",
+        fullUser?.participation?.sets?.[0]?.tasks
+      );
+
+      // 잠시 후 캐시 상태 다시 확인
+      setTimeout(() => {
+        console.log("📊 제출 3초 후 캐시 상태 확인");
+        // 현재 캐시된 user 데이터 확인
+        const cachedUser = queryClient.getQueryData(["user", authToken.userId]);
+        console.log("캐시된 사용자 데이터:", cachedUser);
+      }, 3000);
       // 완료 단계
       setUploadProgress({
         step: "complete",

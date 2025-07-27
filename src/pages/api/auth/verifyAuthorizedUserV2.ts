@@ -39,7 +39,10 @@ export default async function handler(
       message: "POST 방식만 지원합니다.",
     });
   }
-
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+  const registeredUserCollectionName =
+    process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION || "registered-temp";
   const { name, socialNumber } = req.body;
 
   // 입력 검증
@@ -90,7 +93,7 @@ export default async function handler(
     console.log(`🔒 생성된 해시: ${userHash.substring(0, 8)}...`);
 
     // 2. 해시 기반 직접 조회 (O(1) 시간복잡도)
-    const authorizedDocRef = doc(db, "authorizedUsersV2", userHash);
+    const authorizedDocRef = doc(db, registeredUserCollectionName, userHash);
     const authorizedDocSnap = await getDoc(authorizedDocRef);
 
     if (!authorizedDocSnap.exists()) {
@@ -155,7 +158,7 @@ export default async function handler(
     let existingData: UserData | undefined;
     if (isExistingUser && userId) {
       // 기존 사용자인 경우에만 usersV2 데이터 조회
-      const userDocRef = doc(db, "usersV2", userId);
+      const userDocRef = doc(db, userCollectionName, userId);
       const existingUserDoc = await getDoc(userDocRef);
       if (existingUserDoc.exists()) {
         existingData = existingUserDoc.data() as UserData;

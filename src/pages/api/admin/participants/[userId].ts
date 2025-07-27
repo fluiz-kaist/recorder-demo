@@ -58,6 +58,11 @@ export default async function handler(
     });
   }
 
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+  const audioCollectionName =
+    process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
+
   try {
     // 관리자 권한 확인
     const adminToken = req.cookies["admin-token"];
@@ -78,7 +83,7 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userDoc = await getDoc(doc(db, "usersV2", userId));
+    const userDoc = await getDoc(doc(db, userCollectionName, userId));
 
     if (!userDoc.exists()) {
       return res.status(404).json({
@@ -94,7 +99,7 @@ export default async function handler(
 
     try {
       const recordingsQuery = query(
-        collection(db, "audioRecordingsV2"),
+        collection(db, audioCollectionName),
         where("userId", "==", userId)
       );
 

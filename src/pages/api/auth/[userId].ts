@@ -10,6 +10,9 @@ export default async function handler(
     return res.status(405).json({ message: "Method not allowed" });
   }
 
+  const userCollectionName =
+  process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
   const { userId } = req.query;
   const authToken = req.cookies["auth-token"];
 
@@ -31,7 +34,7 @@ export default async function handler(
 
   try {
     // Firestore에서 사용자 정보 조회
-    const userDoc = await getDoc(doc(db, "users", userId as string));
+    const userDoc = await getDoc(doc(db, userCollectionName, userId as string));
 
     if (!userDoc.exists()) {
       return res.status(404).json({

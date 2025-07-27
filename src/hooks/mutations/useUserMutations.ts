@@ -182,7 +182,7 @@ export const useUpdateUserMutation = (): UseMutationResult<
       return data.user as User;
     },
     onSuccess: (updatedUser, variables) => {
-      // 통합된 캐시 업데이트 함수 사용
+      // ✅ variables.userId는 string이므로 문제없음
       updateUserRelatedCache(queryClient, variables.userId, updatedUser);
       console.log("사용자 정보 업데이트 완료:", updatedUser);
     },
@@ -377,7 +377,10 @@ export const useCompleteScriptMutation = (): UseMutationResult<
 
     onSuccess: (_, variables) => {
       // 유저 participation 정보가 갱신되었으므로 관련 캐시 무효화 또는 갱신
-      queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
+      queryClient.invalidateQueries({
+        queryKey: ["user"],
+        exact: false, // ["user"], ["user", userId] 모두 무효화
+      });
       console.log("스크립트 완료 처리 성공:", variables.taskKey);
     },
 

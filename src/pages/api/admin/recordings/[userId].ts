@@ -11,9 +11,8 @@ import {
 import { db } from "@/lib/firebase/config";
 import { AudioRecording } from "@/types/audio";
 import { User } from "@/types/firebase";
-import { RecordingOverview } from "@/pages/api/admin/recordings";
 import { calculateQualityGrade } from "@/pages/api/admin/recordings";
-import { SERVICE_CONFIG } from "@/lib/serviceMapping";
+
 interface UserRecordingsResponse {
   success: boolean;
   data?: {
@@ -23,7 +22,7 @@ interface UserRecordingsResponse {
       gender: string;
       ageGroup: string;
     };
-    recordings: RecordingOverview[];
+    recordings: AudioRecording[];
     statistics: {
       totalRecordings: number;
       averageDuration: number;
@@ -59,6 +58,12 @@ export default async function handler(
         message: "관리자 권한이 필요합니다.",
       });
     }
+    const userCollectionName =
+      process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
+    const audioCollectionName =
+      process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION ||
+      "recording-temp";
 
     const { userId } = req.query;
 
@@ -70,7 +75,7 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userDoc = await getDoc(doc(db, "usersV2", userId));
+    const userDoc = await getDoc(doc(db, userCollectionName, userId));
     if (!userDoc.exists()) {
       return res.status(404).json({
         success: false,
@@ -78,10 +83,12 @@ export default async function handler(
       });
     }
     const userData = userDoc.data() as User;
+
+    // 수정: uploadedAt 필드로 정렬
     const recordingsQuery = query(
-      collection(db, "audioRecordingsV2"),
+      collection(db, audioCollectionName),
       where("userId", "==", userId),
-      orderBy("recordedAt", "desc")
+      orderBy("uploadedAt", "desc")
     );
 
     const recordingsSnapshot = await getDocs(recordingsQuery);
@@ -90,38 +97,8 @@ export default async function handler(
       ...doc.data(),
     })) as AudioRecording[];
 
-    // 녹음 데이터 변환
-    const recordings: RecordingOverview[] = userRecordings.map((recording) => ({
-      recordingId: recording.id,
-      userId: recording.userId,
-      userName: userData.userName,
-      taskKey: recording.taskKey,
-      taskType: recording.taskType,
-
-      audioUrl: recording.audioUrl,
-      fileName: recording.fileName,
-      fileSize: recording.qualityCheck.fileSize,
-      duration: recording.qualityCheck.duration,
-
-      originalScript: recording.textData.originalScript,
-      sttTranscription: recording.textData.sttTranscription,
-      domain: recording.textData.domain,
-      intent: recording.textData.intent,
-      category: recording.textData.category,
-
-      gender: recording.speakerInfo.gender,
-      ageGroup: recording.speakerInfo.ageGroup,
-
-      volumeLevel: recording.qualityCheck.volumeLevel,
-      backgroundNoise: recording.qualityCheck.backgroundNoise,
-      hasClipping: recording.qualityCheck.hasClipping,
-      audioFormat: recording.qualityCheck.audioFormat,
-
-      recordedAt: recording.recordedAt,
-      uploadedAt: recording.uploadedAt,
-      status: recording.status,
-    }));
-
+    // 클라이언트 표시용으로만 평탄화 (DB 처리는 원본 구조 사용)
+    const recordings: AudioRecording[] = userRecordings;
     // 통계 계산
     const totalRecordings = userRecordings.length;
     const totalDuration = userRecordings.reduce(

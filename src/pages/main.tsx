@@ -9,7 +9,6 @@ import {
   useAuthStatusQuery,
   useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
-import { useScriptLoader } from "@/hooks/useScriptUtils";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
 
 const LOCK_ICON =
@@ -33,11 +32,6 @@ const MainSelectionPage = () => {
   const { data: fullUser, isLoading: isFullUserLoading } = useUserQuery();
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
 
-  const currentSetNumber = useCurrentSetNumber();
-  const { loadScriptsFromServer, isLoading: isScriptLoading } = useScriptLoader(
-    currentSetNumber,
-    1 // setId
-  );
 
   console.log("fullUser?", fullUser);
   console.log("🔍 완전한 상태 체크:", {
@@ -133,9 +127,6 @@ const MainSelectionPage = () => {
         console.error("사용자 정보가 없습니다.");
         return;
       }
-      // 스크립트를 로드
-      await loadScriptsFromServer();
-      console.log("✅ 스크립트 초기화 완료, 튜토리얼로 이동");
       router.push("/tutorial");
     } catch (error) {
       console.error("❌ 스크립트 초기화 실패:", error);

@@ -255,7 +255,7 @@ export interface User {
   // 기본 정보
   id: string;
   authorizedUserId: string;
-  userName?: string;
+  userName: string;
   gender: "남성" | "여성";
   ageGroup: string;
   hasConsented: boolean;

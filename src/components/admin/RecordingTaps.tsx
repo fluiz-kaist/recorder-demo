@@ -3,6 +3,8 @@ import styles from "@/styles/AdminDashboard.module.css";
 import { formatFirestoreTimestampKST } from "@/utils/time";
 import { useAdminRecordings } from "@/hooks/queries/useAdminQueries";
 import RecordingTabSearchFilters from "@/components/admin/RecordingTabSeach";
+import { AudioRecording } from "@/types/audio";
+
 // 녹음 데이터 탭
 const AdminRecordingsTab = () => {
   const [appliedFilters, setAppliedFilters] = useState({
@@ -73,13 +75,13 @@ const AdminRecordingsTab = () => {
           </div>
 
           <div className={styles.tableBody}>
-            {recordingsData.recordings.map((recording: any) => {
+            {recordingsData.recordings.map((recording: AudioRecording) => {
               return (
-                <div key={recording.recordingId} className={styles.tableRow}>
+                <div key={recording.id} className={styles.tableRow}>
                   <div className={styles.tableCell}>
                     <span className={styles.userId}>
                       {/* {recording.userId.slice(0, 8)}... */}
-                      {recording.userName}
+                      {recording.speakerInfo.userName}
                     </span>
                   </div>
                   <div className={styles.tableCell}>
@@ -96,44 +98,45 @@ const AdminRecordingsTab = () => {
                       {recording.taskType === "situational" ? "상황" : "정형"}
                     </span>
                   </div>
-                  <div className={styles.tableCell}>{recording.domain}</div>
                   <div className={styles.tableCell}>
-                    {formatDuration(recording.duration)}
+                    {recording.textData.domain}
                   </div>
                   <div className={styles.tableCell}>
-                    {formatFileSize(recording.fileSize)}
+                    {formatDuration(recording.qualityCheck.duration)}
+                  </div>
+                  <div className={styles.tableCell}>
+                    {formatFileSize(recording.qualityCheck.fileSize)}
                   </div>
                   <div className={styles.tableCell}>
                     <div className={styles.qualityIndicator}>
                       <div
                         className={`${styles.qualityDot} ${
-                          recording.volumeLevel > 0.7
+                          recording.qualityCheck.volumeLevel > 0.7
                             ? styles.qualityHigh
-                            : recording.volumeLevel > 0.4
+                            : recording.qualityCheck.volumeLevel > 0.4
                             ? styles.qualityMedium
                             : styles.qualityLow
                         }`}
                       />
-                      <span>{Math.round(recording.volumeLevel * 100)}%</span>
+                      <span>
+                        {Math.round(recording.qualityCheck.volumeLevel * 100)}%
+                      </span>
                     </div>
                   </div>
                   <div className={styles.tableCell}>
                     <pre style={{ margin: 0, whiteSpace: "pre-line" }}>
-                      {formatFirestoreTimestampKST(recording.recordedAt)}
+                      {formatFirestoreTimestampKST(recording.uploadedAt)}
                     </pre>
                   </div>
                   <div className={styles.tableCell}>
-                    <button
+                    <a
+                      href={recording.audioUrl}
+                      download={recording.fileName}
                       className={styles.downloadButton}
-                      onClick={() =>
-                        window.open(
-                          `/api/admin/recordings/download/${recording.recordingId}`,
-                          "_blank"
-                        )
-                      }
+                      target="_blank"
                     >
                       다운로드
-                    </button>
+                    </a>
                   </div>
                 </div>
               );

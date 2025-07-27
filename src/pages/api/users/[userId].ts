@@ -16,6 +16,8 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { userId } = req.query;
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
   // userId 유효성 검사
   if (!userId || typeof userId !== "string") {
@@ -25,7 +27,7 @@ export default async function handler(
     });
   }
 
-  const userDocRef = doc(db, "usersV2", userId);
+  const userDocRef = doc(db, userCollectionName, userId);
 
   try {
     if (req.method === "GET") {
