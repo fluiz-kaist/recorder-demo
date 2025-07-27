@@ -77,22 +77,6 @@ export const useAudioRecordingByTaskKeyQuery = (
 };
 
 /**
- * 완료된 녹음 기록만 조회
- */
-export const useCompletedAudioRecordings = (
-  userId?: string
-): AudioRecording[] => {
-  const { data: recordings } = useUserAudioRecordingsQuery(userId);
-
-  return useMemo(() => {
-    if (!recordings) return [];
-    return recordings.filter(
-      (recording) => recording.status === AudioStatus.COMPLETED
-    );
-  }, [recordings]);
-};
-
-/**
  * 오디오 관련 유틸리티 함수들
  */
 export const audioUtils = {

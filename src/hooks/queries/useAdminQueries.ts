@@ -306,9 +306,11 @@ export const useAdminUserRecordings = (
  * 관리자 권한 확인 훅 (API 호출 없음!)
  */
 export const useAdminAuth = (): {
-  isAdmin: boolean;
-  adminName?: string;
-  adminId?: string;
+  data: {
+    isAdmin: boolean;
+    adminName?: string;
+    adminId?: string;
+  };
   isLoading: boolean;
 } => {
   const [adminInfo, setAdminInfo] = useState<{
@@ -321,7 +323,6 @@ export const useAdminAuth = (): {
   useEffect(() => {
     const checkAdminFromJWT = () => {
       try {
-        // 쿠키에서 admin-token 가져오기
         const token = document.cookie
           .split("; ")
           .find((row) => row.startsWith("admin-token="))
@@ -333,17 +334,14 @@ export const useAdminAuth = (): {
           return;
         }
 
-        // JWT 토큰 디코딩 (Base64 디코딩)
         const payload = JSON.parse(atob(token.split(".")[1]));
 
-        // 토큰 만료 확인
         if (payload.exp && Date.now() >= payload.exp * 1000) {
           setAdminInfo({ isAdmin: false });
           setIsLoading(false);
           return;
         }
 
-        // 관리자 정보 설정
         setAdminInfo({
           isAdmin: true,
           adminName: payload.name,
@@ -360,7 +358,10 @@ export const useAdminAuth = (): {
     checkAdminFromJWT();
   }, []);
 
-  return { ...adminInfo, isLoading };
+  return {
+    data: adminInfo,
+    isLoading,
+  };
 };
 
 /**

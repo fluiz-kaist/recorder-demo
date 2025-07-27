@@ -39,21 +39,5 @@ export const clearAllLocalData = (): void => {
   }
 };
 
-/**
- * 로컬에 저장된 사용자 ID 조회 (간편 함수)
- */
-export const getLocalUserId = (): string | null => {
-  const user = getUserFromLocal();
-  return user?.id || null;
-};
-
-/**
- * 온보딩 완료 여부 확인 (간편 함수)
- */
-export const isOnboardingCompleted = (): boolean => {
-  const user = getUserFromLocal();
-  return !!user?.completedAt;
-};
-
 // 레거시 호환용 별칭들
 export const clearLocalUserData = clearAllLocalData;

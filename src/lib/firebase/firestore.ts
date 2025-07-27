@@ -1,6 +1,8 @@
 // src/lib/firebase/firestore.ts - Firestore 관련 CRUD 유틸
+import { db } from "./config";
 import {
-  db,
+  DocumentData,
+  DocumentReference,
   collection,
   doc,
   getDoc,
@@ -9,9 +11,7 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
-} from "./config";
-
-import { DocumentData, DocumentReference } from "firebase/firestore";
+} from "firebase/firestore";
 
 // 🔹 Create or Update (with specific id)
 export async function saveDoc(

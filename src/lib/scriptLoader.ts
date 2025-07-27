@@ -66,7 +66,7 @@ export async function loadFormalScripts(): Promise<FormalScript[]> {
 }
 
 export async function loadAllScripts() {
-  const [situational, formal, qaScenario] = await Promise.all([
+  const [situational, formal] = await Promise.all([
     loadSituationalScripts(),
     loadFormalScripts(),
   ]);
@@ -74,7 +74,6 @@ export async function loadAllScripts() {
   return {
     situational,
     formal,
-    qaScenario,
   };
 }
 

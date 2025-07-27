@@ -46,7 +46,8 @@ export const AdminLogoutButton = () => {
 };
 
 const AdminDashboard = () => {
-  const { adminName, isLoading: authLoading } = useAdminAuth();
+  const { data: authData, isLoading: authLoading } = useAdminAuth();
+  const { adminName } = authData;
   const { participants, progress, isLoading, hasError, isReady } =
     useAdminDashboard();
   const [activeTab, setActiveTab] = useState<
