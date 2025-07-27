@@ -258,9 +258,9 @@ export const useAllScriptsByServiceQuery = (
   setNumber: number,
   setId: number = 1
 ) => {
-  console.log("저기?-7");
+  // console.log("저기?-7");
   const scriptDataQuery = useScriptDataQuery(setNumber, setId);
-  console.log("scriptDataQuery?", scriptDataQuery);
+  // console.log("scriptDataQuery?", scriptDataQuery);
 
   return useQuery({
     queryKey: ["allScriptsByService", serviceName, setNumber, setId],

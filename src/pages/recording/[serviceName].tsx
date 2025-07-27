@@ -62,7 +62,7 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
     return <div>로딩 중...</div>;
   }
 
-  console.log("assl", allScripts);
+  // console.log("assl", allScripts);
 
   if (isLoading) return <div>로딩 중...</div>;
   if (isError) return <div>에러 발생</div>;
