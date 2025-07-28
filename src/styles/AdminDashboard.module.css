@@ -443,3 +443,533 @@
     width: 100%;
   }
 }
+
+/* 페이지네이션 관련 스타일 (AdminDashboard.module.css에 추가) */
+
+/* 로딩 상태 */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 에러 상태 */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  gap: 16px;
+  color: #dc2626;
+}
+
+.retryButton {
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background: #2563eb;
+}
+
+/* 데이터 없음 상태 */
+.noDataContainer {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+/* 헤더 개선 */
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.titleRow h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* 페이지 크기 선택기 */
+.pageSizeSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.pageSizeSelector label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.pageSizeSelect {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  font-size: 0.9rem;
+}
+
+/* 통계 정보 개선 */
+.statsRow {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.totalCount {
+  font-size: 1.1rem;
+  color: #1f2937;
+}
+
+.currentShowing {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.taskStats {
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.taskStats strong {
+  color: #1f2937;
+}
+
+/* 페이지 정보 */
+.pageInfo {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.searchInfo {
+  color: #059669;
+  font-weight: 500;
+}
+
+/* 빈 상태 */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.emptyState p {
+  margin: 8px 0;
+}
+
+/* 테이블 개선 */
+.timestamp {
+  font-size: 0.85rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.downloadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.downloadButton:hover {
+  background: #2563eb;
+}
+
+/* 페이지네이션 컨테이너 */
+.paginationContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 0;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 24px;
+}
+
+/* 페이지네이션 버튼들 */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  text-decoration: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pageButton:hover:not(.disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pageButton.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.pageButton.disabled {
+  background: #f9fafb;
+  color: #d1d5db;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+}
+
+/* 페이지네이션 정보 텍스트 */
+.paginationInfo {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .titleRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .statsRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .pageInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pageButton {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+}
+
+/* 검색 필터 관련 스타일 (AdminDashboard.module.css에 추가) */
+
+/* 필터 컨테이너 */
+.filtersContainer {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 검색 섹션 */
+.searchSection {
+  margin-bottom: 20px;
+}
+
+.searchInputGroup {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  max-width: 600px;
+  margin-bottom: 8px;
+}
+
+/* 검색 모드 토글 버튼 */
+.searchModeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.searchModeToggle:hover {
+  background: #cbd5e1;
+}
+
+/* 검색 입력창 */
+.searchInput {
+  flex: 1;
+  height: 30px;
+  padding: 0 16px;
+  border: 1px solid #cbd5e1;
+  border-left: none;
+  border-right: none;
+  outline: none;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  margin: 2px;
+}
+
+.searchInput:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.searchInput::placeholder {
+  color: #9ca3af;
+}
+
+/* 검색 버튼 */
+.searchButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 44px;
+  padding: 0 20px;
+  background: #3b82f6;
+  color: white;
+  border: 1px solid #3b82f6;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.searchButton:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.searchButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.searchButton.searching {
+  background: #6b7280;
+  border-color: #6b7280;
+}
+
+.searchSpinner {
+  animation: spin 1s linear infinite;
+}
+
+/* 검색 도움말 */
+.searchHelp {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* 필터 섹션 */
+.filtersSection {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+}
+
+.filtersRow {
+  display: flex;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* 필터 그룹 */
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+  flex: 1;
+}
+
+.filterLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.filterSelect {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filterSelect:hover {
+  border-color: #9ca3af;
+}
+
+/* 필터 액션 */
+.filterActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.activeFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activeFiltersCount {
+  font-size: 0.9rem;
+  color: #059669;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: #d1fae5;
+  border-radius: 4px;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.clearButton:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.clearButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .filtersContainer {
+    padding: 16px;
+  }
+
+  .searchInputGroup {
+    max-width: 100%;
+  }
+
+  .filtersRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .filterActions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .activeFilters {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .searchInputGroup {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .searchModeToggle {
+    width: 100%;
+    border-radius: 8px;
+    border-right: 1px solid #cbd5e1;
+  }
+
+  .searchInput {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+  }
+
+  .searchButton {
+    width: 100%;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+  }
+}

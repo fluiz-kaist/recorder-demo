@@ -225,6 +225,8 @@ interface UseAdminRecordingsParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   search?: string;
+  targetUserId?: string; //검색대상유저아이디
+  targetUserName?: string;
 }
 
 export const useAdminRecordings = (
@@ -241,6 +243,8 @@ export const useAdminRecordings = (
     sortOrder = "desc",
     search,
   } = params;
+
+  console.log("여기서 param?", params);
 
   return useQuery({
     queryKey: ["adminRecordings", params],

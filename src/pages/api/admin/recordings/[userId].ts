@@ -11,7 +11,7 @@ import {
 import { db } from "@/lib/firebase/config";
 import { AudioRecording } from "@/types/audio";
 import { User } from "@/types/firebase";
-import { calculateQualityGrade } from "@/pages/api/admin/recordings";
+// ✅ calculateQualityGrade import 제거 (더 이상 필요 없음)
 
 interface UserRecordingsResponse {
   success: boolean;
@@ -58,6 +58,7 @@ export default async function handler(
         message: "관리자 권한이 필요합니다.",
       });
     }
+
     const userCollectionName =
       process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
@@ -84,7 +85,7 @@ export default async function handler(
     }
     const userData = userDoc.data() as User;
 
-    // 수정: uploadedAt 필드로 정렬
+    // 사용자별 녹음 데이터 조회
     const recordingsQuery = query(
       collection(db, audioCollectionName),
       where("userId", "==", userId),
@@ -97,8 +98,8 @@ export default async function handler(
       ...doc.data(),
     })) as AudioRecording[];
 
-    // 클라이언트 표시용으로만 평탄화 (DB 처리는 원본 구조 사용)
-    const recordings: AudioRecording[] = userRecordings;
+    console.log(`📊 사용자 ${userId} 녹음 데이터: ${userRecordings.length}개`);
+
     // 통계 계산
     const totalRecordings = userRecordings.length;
     const totalDuration = userRecordings.reduce(
@@ -113,15 +114,29 @@ export default async function handler(
     const qualityDistribution = { high: 0, medium: 0, low: 0 };
     const domainBreakdown: Record<string, number> = {};
 
+    // ✅ 최적화: 미리 저장된 qualityGrade 필드 사용
     userRecordings.forEach((recording) => {
-      // 품질 분포
-      const quality = calculateQualityGrade(recording);
-      qualityDistribution[quality]++;
+      // 품질 분포 - 미리 계산된 값 사용 (calculateQualityGrade 호출 제거!)
+      const quality = recording.qualityCheck.qualityGrade || "medium"; // fallback to medium
+
+      if (quality === "high" || quality === "medium" || quality === "low") {
+        qualityDistribution[quality]++;
+      } else {
+        // 만약 qualityGrade 필드가 없는 기존 데이터라면 medium으로 처리
+        console.warn(
+          `⚠️ 레코딩 ${recording.id}에 qualityGrade 필드가 없습니다. 'medium'으로 처리합니다.`
+        );
+        qualityDistribution["medium"]++;
+      }
 
       // 도메인 분포
       const domain = recording.textData.domain;
       domainBreakdown[domain] = (domainBreakdown[domain] || 0) + 1;
     });
+
+    console.log(
+      `✅ 통계 완료: 품질 분포 - High: ${qualityDistribution.high}, Medium: ${qualityDistribution.medium}, Low: ${qualityDistribution.low}`
+    );
 
     return res.status(200).json({
       success: true,
@@ -132,7 +147,7 @@ export default async function handler(
           gender: userData.gender,
           ageGroup: userData.ageGroup,
         },
-        recordings,
+        recordings: userRecordings,
         statistics: {
           totalRecordings,
           averageDuration:

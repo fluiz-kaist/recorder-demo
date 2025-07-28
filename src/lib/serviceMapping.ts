@@ -72,7 +72,7 @@ export const fromSlug = (slug: ServiceSlug): ServiceName =>
   SLUG_TO_SERVICE_NAME[slug];
 
 // 서비스 순서 정의
-const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
+export const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
 export const getNextServiceSlug = (
   currentServiceName: ServiceName
 ): string | null => {

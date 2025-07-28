@@ -1,30 +1,165 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "@/styles/AdminDashboard.module.css";
 import { formatFirestoreTimestampKST } from "@/utils/time";
 import { useAdminRecordings } from "@/hooks/queries/useAdminQueries";
 import RecordingTabSearchFilters from "@/components/admin/RecordingTabSeach";
 import { AudioRecording } from "@/types/audio";
 
-// 녹음 데이터 탭
+// 페이지네이션 컴포넌트
+const Pagination = ({ 
+  currentPage, 
+  totalPages, 
+  hasNextPage, 
+  hasPrevPage, 
+  onPageChange 
+}: {
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  onPageChange: (page: number) => void;
+}) => {
+  // 표시할 페이지 번호들 계산 (현재 페이지 기준 ±2)
+  const getPageNumbers = () => {
+    const pages = [];
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  return (
+    <div className={styles.pagination}>
+      {/* 첫 페이지 */}
+      <button
+        onClick={() => onPageChange(1)}
+        disabled={currentPage === 1}
+        className={`${styles.pageButton} ${currentPage === 1 ? styles.disabled : ''}`}
+      >
+        ««
+      </button>
+
+      {/* 이전 페이지 */}
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={!hasPrevPage}
+        className={`${styles.pageButton} ${!hasPrevPage ? styles.disabled : ''}`}
+      >
+        ‹
+      </button>
+
+      {/* 페이지 번호들 */}
+      {getPageNumbers().map(page => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`${styles.pageButton} ${
+            page === currentPage ? styles.active : ''
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      {/* 다음 페이지 */}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={!hasNextPage}
+        className={`${styles.pageButton} ${!hasNextPage ? styles.disabled : ''}`}
+      >
+        ›
+      </button>
+
+      {/* 마지막 페이지 */}
+      <button
+        onClick={() => onPageChange(totalPages)}
+        disabled={currentPage === totalPages}
+        className={`${styles.pageButton} ${currentPage === totalPages ? styles.disabled : ''}`}
+      >
+        »»
+      </button>
+    </div>
+  );
+};
+
+// 페이지 크기 선택 컴포넌트
+const PageSizeSelector = ({ 
+  pageSize, 
+  onPageSizeChange 
+}: {
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
+}) => {
+  const pageSizes = [20, 50, 100, 200];
+
+  return (
+    <div className={styles.pageSizeSelector}>
+      <label>페이지당 항목 수:</label>
+      <select 
+        value={pageSize} 
+        onChange={(e) => onPageSizeChange(Number(e.target.value))}
+        className={styles.pageSizeSelect}
+      >
+        {pageSizes.map(size => (
+          <option key={size} value={size}>{size}개</option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+// 녹음 데이터 탭 (페이지네이션 포함)
 const AdminRecordingsTab = () => {
+  // 🔥 페이지네이션 상태 추가
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // 필터 상태
   const [appliedFilters, setAppliedFilters] = useState({
-    // 실제 API 요청용
     search: "",
     taskType: "" as "" | "situational" | "formal",
     domain: "",
   });
 
+  // 🔥 페이지네이션 파라미터 포함한 API 호출
   const recordingsQuery = useAdminRecordings({
-    limit: 50,
+    page: currentPage,          // 현재 페이지
+    limit: pageSize,           // 페이지 크기
     search: appliedFilters.search || undefined,
     taskType: appliedFilters.taskType || undefined,
     domain: appliedFilters.domain || undefined,
   });
+
   const recordingsData = recordingsQuery.data;
 
-  if (recordingsQuery.isLoading) return <div>로딩 중...</div>;
-  if (!recordingsData) return <div>데이터 없음</div>;
+  // 🔄 필터가 변경되면 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [appliedFilters.search, appliedFilters.taskType, appliedFilters.domain]);
 
+  // 🔄 페이지 크기가 변경되면 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [pageSize]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // 스크롤을 테이블 상단으로 이동
+    document.querySelector(`.${styles.tableContainer}`)?.scrollIntoView({ 
+      behavior: 'smooth' 
+    });
+  };
+
+  // 페이지 크기 변경 핸들러
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+  };
+
+  // 유틸리티 함수들
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 B";
     const k = 1024;
@@ -39,26 +174,85 @@ const AdminRecordingsTab = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  // 로딩 상태
+  if (recordingsQuery.isLoading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>녹음 데이터를 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (recordingsQuery.isError) {
+    return (
+      <div className={styles.errorContainer}>
+        <p>❌ 데이터를 불러오는데 실패했습니다.</p>
+        <button 
+          onClick={() => recordingsQuery.refetch()}
+          className={styles.retryButton}
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
+  // 데이터 없음
+  if (!recordingsData) {
+    return <div className={styles.noDataContainer}>데이터가 없습니다.</div>;
+  }
+
   console.log("[admin/recordingTab] recordingsData?", recordingsData);
 
   return (
     <>
+      {/* 검색 필터 */}
       <RecordingTabSearchFilters onFiltersChange={setAppliedFilters} />
+      
       <div className={styles.tableContainer}>
+        {/* 헤더 정보 */}
         <div className={styles.tableHeader}>
-          <h3>최근 녹음 데이터 ({recordingsData.recordings.length}개)</h3>
+          <div className={styles.titleRow}>
+            <h3>
+              녹음 데이터 목록 
+              {appliedFilters.search && ` - "${appliedFilters.search}" 검색 결과`}
+            </h3>
+            <PageSizeSelector 
+              pageSize={pageSize}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          </div>
 
+          {/* 통계 정보 */}
           <div className={styles.statsRow}>
-            <span>총 {recordingsData.totalCount}개</span>
-            <span>
-              상황발화: {recordingsData.statistics.byTaskType.situational}개
+            <span className={styles.totalCount}>
+              📊 총 <strong>{recordingsData.totalCount.toLocaleString()}</strong>개
             </span>
-            <span>
-              정형발화: {recordingsData.statistics.byTaskType.formal}개
+            <span className={styles.currentShowing}>
+              (현재 {recordingsData.recordings.length}개 표시)
             </span>
+            <span className={styles.taskStats}>
+              상황발화: <strong>{recordingsData.statistics.byTaskType.situational}</strong>개
+            </span>
+            <span className={styles.taskStats}>
+              정형발화: <strong>{recordingsData.statistics.byTaskType.formal}</strong>개
+            </span>
+          </div>
+
+          {/* 페이지 정보 */}
+          <div className={styles.pageInfo}>
+            📄 {recordingsData.pagination.currentPage} / {recordingsData.pagination.totalPages} 페이지
+            {appliedFilters.search && (
+              <span className={styles.searchInfo}>
+                🔍 검색 결과: {recordingsData.totalCount}개 발견
+              </span>
+            )}
           </div>
         </div>
 
+        {/* 테이블 */}
         <div className={styles.table}>
           <div className={styles.tableHead}>
             <div className={styles.tableRow}>
@@ -75,13 +269,19 @@ const AdminRecordingsTab = () => {
           </div>
 
           <div className={styles.tableBody}>
-            {recordingsData.recordings.map((recording: AudioRecording) => {
-              return (
+            {recordingsData.recordings.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p>🔍 검색 조건에 맞는 녹음 데이터가 없습니다.</p>
+                {appliedFilters.search && (
+                  <p>다른 검색어를 시도해보세요.</p>
+                )}
+              </div>
+            ) : (
+              recordingsData.recordings.map((recording: AudioRecording) => (
                 <div key={recording.id} className={styles.tableRow}>
                   <div className={styles.tableCell}>
                     <span className={styles.userId}>
-                      {/* {recording.userId.slice(0, 8)}... */}
-                      {recording.speakerInfo.userName}
+                      {recording.speakerInfo?.userName || '이름 없음'}
                     </span>
                   </div>
                   <div className={styles.tableCell}>
@@ -99,34 +299,34 @@ const AdminRecordingsTab = () => {
                     </span>
                   </div>
                   <div className={styles.tableCell}>
-                    {recording.textData.domain}
+                    {recording.textData?.domain || '도메인 없음'}
                   </div>
                   <div className={styles.tableCell}>
-                    {formatDuration(recording.qualityCheck.duration)}
+                    {formatDuration(recording.qualityCheck?.duration || 0)}
                   </div>
                   <div className={styles.tableCell}>
-                    {formatFileSize(recording.qualityCheck.fileSize)}
+                    {formatFileSize(recording.qualityCheck?.fileSize || 0)}
                   </div>
                   <div className={styles.tableCell}>
                     <div className={styles.qualityIndicator}>
                       <div
                         className={`${styles.qualityDot} ${
-                          recording.qualityCheck.volumeLevel > 0.7
+                          (recording.qualityCheck?.volumeLevel || 0) > 0.7
                             ? styles.qualityHigh
-                            : recording.qualityCheck.volumeLevel > 0.4
+                            : (recording.qualityCheck?.volumeLevel || 0) > 0.4
                             ? styles.qualityMedium
                             : styles.qualityLow
                         }`}
                       />
                       <span>
-                        {Math.round(recording.qualityCheck.volumeLevel * 100)}%
+                        {Math.round((recording.qualityCheck?.volumeLevel || 0) * 100)}%
                       </span>
                     </div>
                   </div>
                   <div className={styles.tableCell}>
-                    <pre style={{ margin: 0, whiteSpace: "pre-line" }}>
+                    <span className={styles.timestamp}>
                       {formatFirestoreTimestampKST(recording.uploadedAt)}
-                    </pre>
+                    </span>
                   </div>
                   <div className={styles.tableCell}>
                     <a
@@ -134,15 +334,42 @@ const AdminRecordingsTab = () => {
                       download={recording.fileName}
                       className={styles.downloadButton}
                       target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      다운로드
+                      📥 다운로드
                     </a>
                   </div>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
+
+        {/* 🔥 페이지네이션 UI */}
+        {recordingsData.pagination.totalPages > 1 && (
+          <div className={styles.paginationContainer}>
+            <Pagination
+              currentPage={recordingsData.pagination.currentPage}
+              totalPages={recordingsData.pagination.totalPages}
+              hasNextPage={recordingsData.pagination.hasNextPage}
+              hasPrevPage={recordingsData.pagination.hasPrevPage}
+              onPageChange={handlePageChange}
+            />
+            
+            {/* 페이지 정보 텍스트 */}
+            <div className={styles.paginationInfo}>
+              {recordingsData.totalCount > 0 && (
+                <span>
+                  {((recordingsData.pagination.currentPage - 1) * pageSize) + 1} - {' '}
+                  {Math.min(
+                    recordingsData.pagination.currentPage * pageSize, 
+                    recordingsData.totalCount
+                  )} / {recordingsData.totalCount.toLocaleString()} 항목
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

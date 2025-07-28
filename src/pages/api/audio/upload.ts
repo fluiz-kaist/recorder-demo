@@ -9,6 +9,8 @@ import { storage, db } from "@/lib/firebase/config";
 import { VerificationStatus, AudioFormat } from "@/types/audio";
 import { AudioUploadResponse } from "@/types/api";
 import { AudioRecording } from "@/types/audio";
+const audioCollectionName =
+  process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
 // Next.js API Route의 body parser 비활성화
 export const config = {
   api: {
@@ -36,35 +38,104 @@ const getAudioFormatFromFileName = (fileName: string): AudioFormat => {
 };
 
 /**
- * 기본 음성 품질 분석 (간단한 버전)
+ * 품질 등급 계산 함수 (조회 API와 동일한 로직)
+ */
+const calculateQualityGrade = (qualityCheck: {
+  volumeLevel: number;
+  backgroundNoise: "low" | "medium" | "high";
+  hasClipping: boolean;
+  duration: number;
+}): "high" | "medium" | "low" => {
+  const { volumeLevel, backgroundNoise, hasClipping, duration } = qualityCheck;
+
+  // 고품질 조건
+  if (
+    volumeLevel >= 0.7 &&
+    backgroundNoise === "low" &&
+    !hasClipping &&
+    duration >= 3
+  ) {
+    return "high";
+  }
+
+  // 저품질 조건
+  if (
+    volumeLevel < 0.4 ||
+    backgroundNoise === "high" ||
+    hasClipping ||
+    duration < 2
+  ) {
+    return "low";
+  }
+
+  return "medium";
+};
+
+/**
+ * 향상된 음성 품질 분석
  */
 const analyzeAudioQuality = (
   fileBuffer: Buffer,
-  duration: number
+  duration: number,
+  audioFormat: AudioFormat
 ): {
   volumeLevel: number;
   hasClipping: boolean;
   backgroundNoise: "low" | "medium" | "high";
+  qualityGrade: "high" | "medium" | "low"; // 추가!
 } => {
-  // 간단한 품질 분석 (실제로는 더 정교한 분석 필요)
   const fileSize = fileBuffer.length;
 
-  // 파일 크기와 길이 기반으로 대략적인 음량 계산
-  const bytesPerSecond = fileSize / duration;
-  const volumeLevel = Math.min(bytesPerSecond / 16000, 1); // 16kbps 기준 정규화
+  // 포맷별 예상 비트레이트 (더 정확한 계산)
+  const expectedBitrates = {
+    [AudioFormat.WAV]: 1411, // kbps (CD 품질)
+    [AudioFormat.MP3]: 128, // kbps (일반적인 MP3)
+    [AudioFormat.M4A]: 128, // kbps
+    [AudioFormat.WEBM]: 128, // kbps
+  };
 
-  // 간단한 클리핑 감지 (파일 크기 기반 추정)
-  const hasClipping = volumeLevel > 0.95;
+  const expectedBitrate = expectedBitrates[audioFormat] || 128;
+  const expectedFileSize = (expectedBitrate * 1000 * duration) / 8; // bytes
+  const actualBitrate = (fileSize * 8) / (duration * 1000); // kbps
 
-  // 배경 소음 추정 (파일 크기와 음량의 비율로 추정)
+  // 실제 비트레이트 기반 음량 추정
+  const volumeLevel = Math.min(actualBitrate / expectedBitrate, 1);
+
+  // 클리핑 감지 개선
+  const hasClipping = volumeLevel > 0.98 || fileSize > expectedFileSize * 1.5;
+
+  // 배경 소음 추정 개선
   let backgroundNoise: "low" | "medium" | "high" = "low";
-  if (volumeLevel < 0.3) backgroundNoise = "high";
-  else if (volumeLevel < 0.6) backgroundNoise = "medium";
 
-  return {
+  // 파일 크기가 예상보다 너무 크면 노이즈 의심
+  if (fileSize > expectedFileSize * 2) {
+    backgroundNoise = "high";
+  } else if (volumeLevel < 0.3) {
+    backgroundNoise = "high";
+  } else if (volumeLevel < 0.6 || fileSize > expectedFileSize * 1.3) {
+    backgroundNoise = "medium";
+  }
+
+  // 최소 녹음 시간 체크
+  if (duration < 1) {
+    backgroundNoise = "high"; // 너무 짧으면 품질 문제로 간주
+  }
+
+  const qualityResult = {
     volumeLevel: Math.round(volumeLevel * 100) / 100,
     hasClipping,
     backgroundNoise,
+  };
+
+  // 품질 등급 미리 계산
+  const qualityGrade = calculateQualityGrade({
+    ...qualityResult,
+    duration,
+  });
+
+  return {
+    ...qualityResult,
+    qualityGrade, // 추가!
   };
 };
 
@@ -251,7 +322,11 @@ export default async function handler(
     const fileSize = fileBuffer.length;
 
     // 품질 분석
-    const qualityAnalysis = analyzeAudioQuality(fileBuffer, actualDuration);
+    const qualityAnalysis = analyzeAudioQuality(
+      fileBuffer,
+      actualDuration,
+      audioFormat
+    );
 
     // Firebase Storage에 업로드
     const collectionName =
@@ -321,7 +396,7 @@ export default async function handler(
     // Firestore에 AudioRecording 저장
     const audioRecordingRef = doc(
       db,
-      "audioRecordingsV2", // 단일 컬렉션
+      audioCollectionName, // 단일 컬렉션
       recordingId
     );
     await setDoc(audioRecordingRef, {

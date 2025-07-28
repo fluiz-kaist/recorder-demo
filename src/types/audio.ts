@@ -104,6 +104,7 @@ export interface AudioRecording {
     volumeLevel: number; // 음량 레벨 (0-1, 너무 작으면 자동 reject)
     hasClipping: boolean; // 클리핑 발생 여부 (있으면 품질 경고)
     backgroundNoise: "low" | "medium" | "high"; // 배경 소음 수준 (높으면 reject)
+    qualityGrade: "high" | "medium" | "low";
 
     // STT 관련 품질 지표
     sttConfidence?: number; // STT 결과 신뢰도 (0-1, 낮으면 재검토)
