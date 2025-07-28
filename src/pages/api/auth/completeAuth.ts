@@ -38,8 +38,7 @@ export default async function handler(
       userId: userId,
     });
 
-    // 🔧 디버깅 추가
-    console.log("🍪 서버에서 쿠키 설정:", { userId, cookie });
+
   } catch (error) {
     console.error("completeAuth 오류:", error);
     return res.status(500).json({

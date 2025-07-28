@@ -5,7 +5,6 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User } from "@/types/firebase";
-import { getKoreanTime } from "@/utils/auth";
 import {
   updateUserRelatedCache,
   updateAuthStatusCache,
@@ -13,7 +12,8 @@ import {
 } from "@/utils/queryCache";
 import { clearLocalUserData } from "@/utils/localStorage";
 import { RegisterUserRequest } from "@/types/api";
-
+import { getKoreanTimeISO } from "@/utils/time";
+import { serverTimestamp } from "firebase/firestore";
 /**
  * 사용자 정보 업데이트 요청 데이터 타입
  */
@@ -111,8 +111,6 @@ export const useRegisterUserMutation = (): UseMutationResult<
       userName,
       authorizedUserId,
     }: RegisterUserRequest): Promise<User> => {
-      const now = getKoreanTime();
-
       const response = await fetch(`/api/users/${userId}`, {
         method: "POST",
         headers: {
@@ -123,7 +121,6 @@ export const useRegisterUserMutation = (): UseMutationResult<
           gender,
           ageGroup,
           hasConsented,
-          completedAt: now,
           userName,
           authorizedUserId,
         }),
@@ -253,7 +250,7 @@ export const useUpdateLastAccessMutation = (): UseMutationResult<
 
   return useMutation({
     mutationFn: async (userId: string): Promise<void> => {
-      const now = getKoreanTime();
+      const now = getKoreanTimeISO();
 
       const response = await fetch(`/api/users/${userId}`, {
         method: "PATCH",

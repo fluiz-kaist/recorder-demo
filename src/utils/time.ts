@@ -28,7 +28,7 @@ export function getKoreanTime(): Date {
  * 한국시간 기준 현재 시간을 ISO 문자열로 반환
  * @returns {string} KST 기준 ISO 문자열 (예: "2025-07-03T14:30:15.123Z")
  */
-function getKoreanTimeISO(): string {
+export function getKoreanTimeISO(): string {
   return getKoreanTime().toISOString();
 }
 

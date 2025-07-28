@@ -1,6 +1,6 @@
 // pages/api/admin/uploadAuthorizedUsers.ts - Windows 호환 수정버전
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, writeBatch } from "firebase/firestore";
+import { doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { generateUserHash } from "@/utils/hash";
 import formidable from "formidable";
@@ -141,11 +141,18 @@ export default async function handler(
         // 해시 생성
         const userHash = generateUserHash(cleanName, cleanSocialNumber);
 
+        console.log(
+          ">>>>",
+          cleanName,
+          "를 업로드할 때 생성하는 hash:",
+          userHash
+        );
+
         processedUsers.push({
           userHash,
           name: cleanName,
           socialNumber: cleanSocialNumber,
-          createdAt: new Date().toISOString(),
+          createdAt: serverTimestamp(),
           isActive: true,
           source: "excel_upload",
           rowNumber: rowNum,

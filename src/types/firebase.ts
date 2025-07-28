@@ -1,3 +1,4 @@
+import { FieldValue, Timestamp } from "firebase/firestore";
 export enum ScriptType {
   FORMAL = "formal", // 정식/공식 (이미지에서 보이는 것)
   QA_SCENARIO = "qaScenario", // 질의응답 시나리오
@@ -262,7 +263,7 @@ export interface User {
 
   // 시간 정보
   createdAt: string;
-  completedAt?: string; // 온보딩 완료
+  completedAt?: string | FieldValue | Timestamp; // 온보딩 완료
   lastAccessAt: string;
 
   // 🎯 참가 관리

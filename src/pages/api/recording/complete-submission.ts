@@ -10,6 +10,8 @@
  * 3. 사용자 진도 정보 업데이트 (users/{userId}/progress 서브컬렉션)
  *
  * 모든 작업이 성공하거나 모든 작업이 실패하여 데이터 일관성을 보장합니다.
+ *
+ * 사용 안 하는 듯?
  */
 
 import { NextApiRequest, NextApiResponse } from "next";

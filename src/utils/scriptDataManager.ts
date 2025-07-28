@@ -1,7 +1,7 @@
 //utils/scriptDataManager.ts - 스크립트 데이터 전담
 
 import { SituationalScript, FormalScript } from "@/types/firebase";
-
+import { getKoreanTimeISO } from "@/utils/time";
 interface LocalScriptData {
   version: string;
   loadedAt: string;
@@ -46,10 +46,10 @@ export class ScriptDataManager {
     }
   ): void {
     if (typeof window === "undefined") return; // SSR 체크
-
+    const now = getKoreanTimeISO();
     const scriptData: LocalScriptData = {
       version: "1.0",
-      loadedAt: new Date().toISOString(),
+      loadedAt: now,
       userId,
       setNumber,
       setId,

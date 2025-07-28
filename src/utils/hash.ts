@@ -11,8 +11,7 @@ export function generateUserHash(name: string, socialNumber: string): string {
   const normalizedSocialNumber = socialNumber.trim();
 
   // 솔트 추가 (환경변수에서 관리)
-  const salt =
-    process.env.USER_HASH_SALT || "default-salt-change-in-production";
+  const salt = process.env.NEXT_PUBLIC_USER_HASH_SALT || "fallback";
 
   console.log("salt 확인용(지워야함)", salt);
 

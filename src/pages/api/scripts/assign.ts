@@ -103,6 +103,7 @@ export default async function handler(
     const scripts = await loadScriptData(setId);
 
     // 4. 새로운 ParticipationSet 생성
+    // task 내부의 데이터이므로 date string사용
     const now = new Date().toISOString();
     const newParticipationSet: ParticipationSet = {
       setNumber,

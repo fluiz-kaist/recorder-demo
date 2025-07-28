@@ -1,15 +1,15 @@
 //api/users/[userId].ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { User } from "@/types/firebase";
-
-// 한국 시간 생성 유틸리티
-const getKoreanTime = (): string => {
-  const now = new Date();
-  const koreanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return koreanTime.toISOString();
-};
+import { getKoreanTimeISO } from "@/utils/time";
 
 export default async function handler(
   req: NextApiRequest,
@@ -28,6 +28,7 @@ export default async function handler(
   }
 
   const userDocRef = doc(db, userCollectionName, userId);
+  const now = getKoreanTimeISO();
 
   try {
     if (req.method === "GET") {
@@ -45,7 +46,6 @@ export default async function handler(
         }
 
         const userData = userSnap.data() as User;
-        const now = getKoreanTime();
 
         // lastAccessAt 업데이트 (에러 무시 - 조회가 목적이므로)
         updateDoc(userDocRef, {
@@ -74,7 +74,6 @@ export default async function handler(
         gender,
         ageGroup,
         hasConsented = true, // 기본값 true (동의 후 등록이므로)
-        completedAt,
         userName,
         authorizedUserId,
       } = req.body;
@@ -98,9 +97,9 @@ export default async function handler(
       // 사용자 존재 여부 확인
       const existingUser = await getDoc(userDocRef);
       if (existingUser.exists()) {
+        const now = getKoreanTimeISO();
         // 기존 사용자 데이터 반환 + lastAccessAt 업데이트
         const userData = existingUser.data() as User;
-        const now = getKoreanTime();
 
         // lastAccessAt 업데이트
         await updateDoc(userDocRef, {
@@ -116,8 +115,30 @@ export default async function handler(
           },
         });
       }
-      // 현재 한국 시간
-      const now = getKoreanTime();
+
+      // 신규 사용자 등록 절차 시작
+
+      console.log(">>>>authorizedUserId?", authorizedUserId);
+
+      // 먼저 authorized collection에 생성한 user id를 갱신 해주어야 함
+      // 그래야 로그인할 때 알 수 있음
+      const registeredUserCollectionName =
+        process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION ||
+        "registered-temp";
+      const authorizedDocRef = doc(
+        db,
+        registeredUserCollectionName,
+        authorizedUserId
+      );
+
+      // console.log("authorizedDocRef?", authorizedDocRef);
+
+      const updatedAuthDoc = await updateDoc(authorizedDocRef, {
+        accountCreatedAt: now,
+        userId: userId,
+      });
+
+      console.log("auth user 정보 갱신 완료");
 
       // 🆕 새로운 데이터 구조로 초기 participation 설정
       const initialParticipation = {
@@ -181,7 +202,7 @@ export default async function handler(
         // 시간 정보
         createdAt: now,
         lastAccessAt: now,
-        completedAt: completedAt ? now : undefined, // 온보딩 완료 시점
+        completedAt: serverTimestamp(), // 온보딩 완료 시점
 
         // 🎯 새로운 참가 관리 구조
         participation: initialParticipation,
@@ -234,7 +255,7 @@ export default async function handler(
       const currentUserData = userSnap.data() as User;
 
       // 현재 한국 시간
-      const now = getKoreanTime();
+      const now = getKoreanTimeISO();
 
       const updateData: Partial<User> = {
         lastAccessAt: now,
@@ -258,7 +279,7 @@ export default async function handler(
       if (ageGroup) updateData.ageGroup = ageGroup;
       if (hasConsented !== undefined) updateData.hasConsented = hasConsented;
       if (completedAt !== undefined) {
-        updateData.completedAt = completedAt ? now : undefined;
+        updateData.completedAt = serverTimestamp();
       }
       if (scriptAssignments !== undefined) {
         updateData.scriptAssignments = scriptAssignments;

@@ -37,7 +37,7 @@ export const useAuthMutation = (): UseMutationResult<
 
       try {
         // 1. 먼저 새로운 해시 기반 방식 시도
-        console.log("🔄 등록된 사용자인지 확인 중...");
+        console.log("🔄 사전에 신청한 사용자인지 확인 중...");
         const hashResponse = await fetch("/api/auth/verifyAuthorizedUserV2", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -45,12 +45,10 @@ export const useAuthMutation = (): UseMutationResult<
           body: JSON.stringify({ name, socialNumber }),
         });
 
-        console.log("이거 뭐라고 떠? ", hashResponse);
-
         const hashData = await hashResponse.json();
 
         if (hashResponse.ok && hashData.success) {
-          console.log("✅ 등록된 사용자 확인 성공!");
+          console.log("✅ 신청한 사용자 확인 성공!");
           return {
             ...hashData,
             method: "hash-based" as const,

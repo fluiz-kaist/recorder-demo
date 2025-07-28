@@ -1,6 +1,6 @@
 // pages/api/auth/verifyAuthorizedUserV2.ts - 새로 생성 (해시 기반 인증)
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { serialize } from "cookie";
 import {
@@ -136,18 +136,20 @@ export default async function handler(
     // 4. 기존 userId 확인 (생성하지 않음)
     const userId = authorizedData.userId;
 
+    console.log("authorizedData?", authorizedData);
+
     if (!userId) {
       console.log(`👤 신규 사용자 - userId 없음 (동의 미완료)`);
       // lastLogin만 업데이트 (userId 생성하지 않음)
       await updateDoc(authorizedDocRef, {
-        lastLogin: new Date().toISOString(),
+        lastLogin: serverTimestamp(),
         loginAttempts: 0,
       });
     } else {
       console.log(`🔄 기존 사용자 - userId 있음: ${userId}`);
       // 기존 userId 있으면 lastLogin만 업데이트
       await updateDoc(authorizedDocRef, {
-        lastLogin: new Date().toISOString(),
+        lastLogin: serverTimestamp(),
         loginAttempts: 0,
       });
     }

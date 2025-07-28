@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { useMutation } from "@tanstack/react-query";
 import styles from "@/styles/AdminPages.module.css";
-
+import { FieldValue, Timestamp } from 'firebase/firestore';
 interface AdminLoginData {
   adminId: string;
   password: string;
@@ -15,7 +15,7 @@ interface AdminLoginResponse {
   admin?: {
     name: string;
     sessionToken: string;
-    lastLogin: string;
+    lastLogin: string| FieldValue | Timestamp;
   };
 }
 
