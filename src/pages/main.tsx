@@ -32,20 +32,19 @@ const MainSelectionPage = () => {
   const { data: fullUser, isLoading: isFullUserLoading } = useUserQuery();
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
 
-
-  console.log("fullUser?", fullUser);
-  console.log("🔍 완전한 상태 체크:", {
-    "1. authStatus": authStatus,
-    "2. authLoading": authLoading,
-    "3. userCompletionStatus": userCompletionStatus,
-    "4. completionLoading": completionLoading,
-    // "5. 쿠키": document.cookie,
-    "6. useUserQuery enabled":
-      !!authStatus?.isAuthenticated && !!authStatus?.userId,
-    "7. fullUser": fullUser,
-    "8. fullUserLoading": isFullUserLoading,
-  });
-  const [showContent, setShowContent] = useState(false);
+  // console.log("fullUser?", fullUser);
+  // console.log("🔍 완전한 상태 체크:", {
+  //   "1. authStatus": authStatus,
+  //   "2. authLoading": authLoading,
+  //   "3. userCompletionStatus": userCompletionStatus,
+  //   "4. completionLoading": completionLoading,
+  //   // "5. 쿠키": document.cookie,
+  //   "6. useUserQuery enabled":
+  //     !!authStatus?.isAuthenticated && !!authStatus?.userId,
+  //   "7. fullUser": fullUser,
+  //   "8. fullUserLoading": isFullUserLoading,
+  // });
+  // const [showContent, setShowContent] = useState(false);
 
   // 각 서비스별 완료 상태 (situational + formal 태스크 모두 확인)
   const getServiceCompletionStatus = (serviceName: string) => {

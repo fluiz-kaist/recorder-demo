@@ -7,6 +7,8 @@ import {
   query,
   where,
   getDocs,
+  FieldValue,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { User } from "@/types/firebase";
@@ -18,7 +20,7 @@ interface UserProgressDetail {
     gender: "남성" | "여성";
     ageGroup: string;
     createdAt: string;
-    completedAt?: string;
+    completedAt?: string | FieldValue | Timestamp;
     lastAccessAt: string;
   };
 
