@@ -278,7 +278,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     try {
       console.log("[vr]녹음 시작 요청");
 
-        // 이전 녹음 결과 초기화
+      // 이전 녹음 결과 초기화
       setAudioUrl(null);
       setAudioDuration(null);
       setTranscription(null);
@@ -593,7 +593,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       // 완료 단계
       setUploadProgress({
         step: "complete",
-        message: "업로드가 완료되었습니다!",
+        message: "제출이 완료되었습니다!",
       });
 
       // 잠시 후 팝업 표시

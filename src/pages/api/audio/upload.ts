@@ -387,6 +387,7 @@ export default async function handler(
         backgroundNoise: qualityAnalysis.backgroundNoise,
         audioFormat,
         deviceInfo: deviceInfo || "undefined_device",
+        qualityGrade: qualityAnalysis.qualityGrade || "unknown",
       },
 
       fileName,
@@ -415,7 +416,7 @@ export default async function handler(
 
     return res.status(200).json({
       success: true,
-      message: "오디오 업로드가 완료되었습니다.",
+      message: "녹음한 음성 제출이 완료되었습니다.",
       recordingId,
       audioUrl,
       fileName,
@@ -427,7 +428,7 @@ export default async function handler(
 
     return res.status(500).json({
       success: false,
-      message: "오디오 업로드 중 오류가 발생했습니다.",
+      message: "녹음한 음성 파일 제출 중 오류가 발생했습니다.",
       recordingId: "",
       audioUrl: "",
       fileName: "",

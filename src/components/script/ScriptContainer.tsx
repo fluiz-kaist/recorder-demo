@@ -74,13 +74,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
   // 🎯 핵심 함수: 실제 tasks 배열에서 직접 상태 확인
   const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
-    if (!fullUser?.participation?.sets?.[0]) {
-      return false;
-    }
-
-    const set = fullUser.participation.sets[0];
-
-    // task_key 우선, 없으면 id 사용
+    // ✅ 재녹음 모드 체크를 맨 앞으로 이동
     const taskKey = String(
       "task_key" in script && script.task_key
         ? script.task_key
@@ -88,6 +82,19 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
         ? script.id
         : ""
     );
+
+    const scriptKey = `${type}-${taskKey}`;
+
+    // 재녹음 모드면 항상 false 반환
+    if (reRecordingScripts.has(scriptKey)) {
+      return false;
+    }
+
+    if (!fullUser?.participation?.sets?.[0]) {
+      return false;
+    }
+
+    const set = fullUser.participation.sets[0];
 
     if (!taskKey) {
       console.warn("⚠️ taskKey를 찾을 수 없음:", script);
