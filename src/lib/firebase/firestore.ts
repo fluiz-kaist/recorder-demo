@@ -96,7 +96,7 @@ export async function updateDocById(
 ): Promise<void> {
   try {
     await updateDoc(doc(db, colName, id), data);
-    console.log(`✅ 업데이트 완료: ${colName}/${id}`);
+    // console.log(`✅ 업데이트 완료: ${colName}/${id}`);
   } catch (err) {
     console.error("❌ 업데이트 실패:", err);
     throw err;

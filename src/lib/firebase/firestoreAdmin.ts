@@ -40,24 +40,20 @@ export async function getDocByIdAdmin(
   id: string
 ): Promise<DocumentData | null> {
   try {
-    console.log("여기서?", colName);
-    console.log("✅ Firestore 조회 시도:", `/${colName}/${id}`);
-    console.log("✅ userId 타입:", typeof id, "| 값:", id);
-    console.log("🔑 조회하려는 문서 ID:", id, "| 길이:", id.length);
-    // const docSnap = await adminDb.collection(colName).doc(id).get();
+    const docSnap = await adminDb.collection(colName).doc(id).get();
     try {
-      console.log("1️⃣ Firestore 연결 객체 확인:", adminDb !== undefined);
-      const col = adminDb.collection(colName);
-      console.log("2️⃣ 컬렉션 접근 성공:", col.id); // col.id는 컬렉션 이름
+      //   console.log("1️⃣ Firestore 연결 객체 확인:", adminDb !== undefined);
+      //   const col = adminDb.collection(colName);
+      //   console.log("2️⃣ 컬렉션 접근 성공:", col.id); // col.id는 컬렉션 이름
 
-      const docRef = col.doc(id);
-      console.log("3️⃣ 문서 레퍼런스 생성됨:", docRef.id); // 예상대로면 id 출력
+      //   const docRef = col.doc(id);
+      //   console.log("3️⃣ 문서 레퍼런스 생성됨:", docRef.id); // 예상대로면 id 출력
 
-      const docSnap = await docRef.get();
-      console.log("4️⃣ 문서 읽기 성공 여부:", docSnap.exists);
+      //   const docSnap = await docRef.get();
+      //   console.log("4️⃣ 문서 읽기 성공 여부:", docSnap.exists);
 
       if (docSnap.exists) {
-        console.log("5️⃣ 문서 내용:", docSnap.data());
+        // console.log("5️⃣ 문서 내용:", docSnap.data());
         return docSnap.data() || null;
       } else {
         console.warn("⚠️ 문서가 존재하지 않음:", colName, id);
@@ -105,7 +101,7 @@ export async function updateDocByIdAdmin(
 ): Promise<void> {
   try {
     await adminDb.collection(colName).doc(id).update(data);
-    console.log(`✅ 업데이트 완료: ${colName}/${id}`);
+    // console.log(`✅ 업데이트 완료: ${colName}/${id}`);
   } catch (err) {
     console.error("❌ 업데이트 실패:", err);
     throw err;
