@@ -70,7 +70,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
   const [showTutorialComplete, setShowTutorialComplete] = useState(false);
 
   const totalSteps = 6;
-  const isDev = process.env.NODE_ENV === "development";
+  const isDevMode = process.env.NODE_ENV === "development";
   // 햅틱 피드백
   const triggerHapticFeedback = () => {
     if ("vibrate" in navigator) {
@@ -436,7 +436,7 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
           </button>
         </div>
       </div>
-      {isDev && (
+      {isDevMode && (
         <>
           <div>
             <div className={styles.tutorialDetailedInstruction}>

@@ -488,6 +488,10 @@ const MainSelectionPage = () => {
             <div className={styles.congratulationsMessage}>
               <h3>모든 녹음을 완료했습니다!</h3>
               <p>수고하셨습니다.</p>
+
+              <button className={styles.finishAllTasks}>
+                <span>모든 작업 완료</span>
+              </button>
             </div>
           )}
 
