@@ -156,3 +156,16 @@ export function formatFirestoreTimestampKST(timestamp: any): string {
 
   return `${yyyy}-${mm}-${dd}\n${hh}:${min}:${ss}`;
 }
+
+// formating
+// 시간을 mm:ss 형식으로 변환
+export const formatTime = (seconds: number): string => {
+  if (!seconds || !isFinite(seconds) || isNaN(seconds)) {
+    return "00:00";
+  }
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, "0")}:${secs
+    .toString()
+    .padStart(2, "0")}`;
+};

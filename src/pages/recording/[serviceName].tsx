@@ -14,8 +14,8 @@ import { SERVICE_NAME_TO_SLUG, ServiceName } from "@/lib/serviceMapping";
 import {
   useAllScriptsByServiceQuery, // 선택사항: 상황발화 + 정형발화 모두
 } from "@/hooks/queries/useScriptQueries";
-
 import { ScriptType, SituationalScript, FormalScript } from "@/types/firebase";
+import ReAssignScript from "@/components/ReassignScriptBtn";
 interface ScriptPageProps {
   serviceName: ServiceName;
 }
@@ -66,7 +66,13 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
 
   if (isLoading) return <div>로딩 중...</div>;
   if (isError) return <div>에러 발생</div>;
-  if (!allScripts) return <div>해당 스크립트 없음</div>;
+  if (!allScripts)
+    return (
+      <>
+        <div>해당 스크립트 없음</div>
+        <ReAssignScript />
+      </>
+    );
 
   console.log("allScripts?", allScripts);
 

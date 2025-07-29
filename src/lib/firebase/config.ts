@@ -64,7 +64,6 @@ if (process.env.NODE_ENV === "development") {
   }
 }
 
-
 // Storage 초기화
 const storage = getStorage(app);
 
@@ -76,10 +75,10 @@ export { app, db, storage, auth };
 
 // 유틸리티 함수들 (필요시)
 export function printFirebaseEnvInfo() {
-  const isDev = process.env.NODE_ENV === "development";
+  const isDevMode = process.env.NODE_ENV === "development";
 
   console.group("🔥 [Firebase] 환경 정보");
-  console.log(`환경: ${isDev ? "Development" : "Production"}`);
+  console.log(`환경: ${isDevMode ? "Development" : "Production"}`);
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("프로젝트 ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
   console.groupEnd();

@@ -230,7 +230,7 @@
 }
 
 .activeDot {
-  background: var(--color-primary);
+  background: var(--color-primary); /* special */
   transform: scale(1.5);
 }
 
@@ -366,11 +366,7 @@
 
 /* 홈으로 돌아가기 버튼 */
 .returnHomeButton {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-secondary) 100%
-  );
+  background: var(--color-primary); /* special */
   color: var(--color-bg-primary);
   padding: var(--space-md) var(--space-lg);
   font-size: var(--font-base);
