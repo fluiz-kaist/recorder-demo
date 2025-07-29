@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import styles from "@/styles/VoiceRecorder.module.css";
+import { useRouter } from "next/router";
 //types
 import {
   ScriptType,
@@ -38,6 +39,13 @@ const { isPreview, isDev } = getEnv();
 const isDevMode = isPreview || isDev;
 //  최소 녹음 시간 설정 (초 단위, 개발모드에서는 1, 실사용에서는 10)
 const MINIMUM_RECORDING_SECONDS = isDevMode ? 1 : 10;
+// 최대 녹음 시간 설정(초 단위, 개발모드에서는 20, 실사용에서는 120)
+const MAXIMUM_RECORDING_SECONDS = isDevMode ? 10 : 120;
+
+// : 경고 타이밍 설정(개발모드에서는 종료 전 5초, 실사용에서는 30초 전에 경고)
+const WARNING_BEFORE_MAX_SECONDS = isDevMode ? 5 : 30; // 최대 시간 30초 전에 경고
+const WARNING_START_TIME =
+  MAXIMUM_RECORDING_SECONDS - WARNING_BEFORE_MAX_SECONDS; // 90초
 
 /** interfaces */
 type AnyScript = SituationalScript | FormalScript | TutorialScript;
@@ -76,11 +84,18 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   /** UI 관련 */
   // 스크롤 훅 사용
   const scrollToTop = useScrollToTop();
+  const router = useRouter();
   // 카운트 다운
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCountingDown, setIsCountingDown] = useState(false);
   //녹음 정지 강제 관리
   const [canStopRecording, setCanStopRecording] = useState(false);
+  //  최대 시간 관련 상태
+  const [isNearMaxTime, setIsNearMaxTime] = useState(false); // 90초 지나면 true
+  const [autoStopTimer, setAutoStopTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
+
   //녹음 파일 다시듣기 상태
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -153,6 +168,29 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       audioUrlRef.current = null;
     }
   }, []);
+
+  // 일반적인 정리 (리렌더링 시)
+  const cleanup = useCallback(() => {
+    // 1. 타이머 정리
+    if (autoStopTimer) {
+      clearTimeout(autoStopTimer);
+    }
+
+    // 2. Blob URL 정리
+    cleanupAudioUrl();
+  }, [autoStopTimer, cleanupAudioUrl]);
+
+  // 페이지 떠날 때만 완전 정리
+  const cleanupForPageUnload = useCallback(() => {
+    // 1. 기본 정리
+    cleanup();
+
+    // 2. resetRecorder() 대신 직접 스트림만 정리
+    if (typeof stopMobileRecording === "function") {
+      stopMobileRecording().catch(console.error);
+    }
+  }, [cleanup, stopMobileRecording]);
+
   // =====================================
   // ========== useEffect 훅 =============
   // =====================================
@@ -167,6 +205,11 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       // 이전 URL 정리
       cleanupAudioUrl();
+
+      // 타이머 정리
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+      }
 
       let url = "";
 
@@ -191,7 +234,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       setAudioDuration(recordingTime);
 
-      // 🎯 즉시 간단한 품질 검증 (1-5ms 완료)
+      // 즉시 간단한 품질 검증 (1-5ms 완료)
       const quality = validateAudioQualitySimple(audioBlob, recordingTime);
       setQualityResult(quality);
 
@@ -222,11 +265,66 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         }, 100);
       }
     }
-  }, [audioBlob, recordingTime, hasSTTStarted, cleanupAudioUrl]);
+  }, [audioBlob, recordingTime, hasSTTStarted, cleanupAudioUrl, autoStopTimer]);
 
   useEffect(() => {
     return cleanupAudioUrl;
   }, [cleanupAudioUrl]);
+
+  //녹음 중 뒤로가기, 새로고침 대응
+  useEffect(() => {
+    const handleRouteChangeStart = (url: string) => {
+      if (isRecording && url !== router.asPath) {
+        const shouldLeave = window.confirm(
+          "녹음이 진행 중입니다.\n\n페이지를 떠나면 녹음이 중단됩니다.\n정말로 떠나시겠습니까?"
+        );
+
+        if (!shouldLeave) {
+          router.events.emit("routeChangeError");
+          throw "Route change cancelled";
+        } else {
+          // 녹음 정리
+          cleanupForPageUnload();
+        }
+      }
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // 녹음 중이면 경고 메시지
+      if (isRecording) {
+        const message =
+          "녹음이 진행 중입니다.\n\n페이지를 떠나면 녹음이 중단됩니다.\n정말로 떠나시겠습니까?";
+        event.preventDefault();
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore: Deprecated, but required for cross-browser support
+        event.returnValue = message;
+        return message;
+      }
+
+      // 강제 정리 작업
+      cleanupForPageUnload();
+    };
+
+    // 이벤트 리스너 등록
+    if (isRecording) {
+      //  Next.js 라우터 이벤트
+      router.events.on("routeChangeStart", handleRouteChangeStart);
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", cleanup); // iOS Safari용
+
+    return () => {
+      // : Next.js 라우터 이벤트 정리
+      router.events.off("routeChangeStart", handleRouteChangeStart);
+
+      //  브라우저 이벤트 정리
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("unload", cleanup);
+      // 컴포넌트 언마운트 시에만 완전 정리
+      cleanup();
+    };
+  }, [isRecording, router, cleanupForPageUnload, cleanup]);
 
   // =====================================
   // ========== 이벤트 핸들러 =============
@@ -246,6 +344,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       setShowSTT(false);
       setQualityResult(null);
       setShowQualityWarning(false);
+
+      // 최대 시간 관련 상태 초기화
+      setIsNearMaxTime(false);
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+        setAutoStopTimer(null);
+      }
 
       // 카운트다운 시작
       setIsCountingDown(true);
@@ -270,13 +375,24 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       // MobileOptimizedRecorder의 startRecording 호출
       await startMobileRecording();
 
-      // 추가: 녹음 시작 시간 기록 및 5초 타이머 시작
+      // 최소 녹음 시간 타이머 (기존)
       setCanStopRecording(false);
-
-      // 5초 후에 정지 가능하도록 설정
       setTimeout(() => {
         setCanStopRecording(true);
       }, MINIMUM_RECORDING_SECONDS * 1000);
+
+      // : 90초 경고 타이머
+      setTimeout(() => {
+        setIsNearMaxTime(true);
+      }, WARNING_START_TIME * 1000); // 90초
+
+      //  최대 시간 자동 종료 타이머
+      const maxTimer = setTimeout(() => {
+        console.log("⏰ 최대 녹음 시간 도달 - 자동 종료");
+        stopRecording();
+      }, MAXIMUM_RECORDING_SECONDS * 1000);
+
+      setAutoStopTimer(maxTimer);
 
       console.log("✅ 녹음 시작 완료");
     } catch (err) {
@@ -293,6 +409,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       console.log("🛑 녹음 종료 요청");
       const actualEndTime = new Date();
       setRecordingEndTime(actualEndTime);
+
+      //  타이머 정리
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+        setAutoStopTimer(null);
+      }
+      setIsNearMaxTime(false);
 
       await stopMobileRecording();
       console.log("✅ 녹음 종료 완료");
@@ -489,7 +612,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       });
       console.log("✅ completeResult:", completeResult);
 
-      // 🔥 이 부분 추가 - 캐시 상태 확인
+      //  - 캐시 상태 확인
       console.log(
         "📊 제출 직전 fullUser:",
         fullUser?.participation?.sets?.[0]?.tasks
@@ -537,6 +660,12 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     // 기존 오디오 URL 정리 (개선된 방식)
     cleanupAudioUrl();
 
+    //  타이머 정리
+    if (autoStopTimer) {
+      clearTimeout(autoStopTimer);
+      setAutoStopTimer(null);
+    }
+
     // 훅의 audioBlob과 모든 리소스 초기화
     resetRecorder();
     // 모든 상태 초기화
@@ -565,6 +694,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       audioRef.currentTime = 0;
     }
     setAudioRef(null);
+
+    //  최대 시간 관련 상태 초기화
+    setIsNearMaxTime(false);
 
     console.log("✅ 새 녹음 준비 완료");
   };
@@ -599,7 +731,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               녹음 중: {formatTime(recordingTime)}
             </span>
           </div>
-
+          {/* 최대 시간 경고 */}
+          {isNearMaxTime && (
+            <div className={styles.maxTimeWarning}>
+              ⚠️ {MAXIMUM_RECORDING_SECONDS - recordingTime}초 후 자동
+              종료됩니다.
+            </div>
+          )}
           {!canStopRecording && (
             <div className={styles.minimumTimeNotice}>
               최소 {MINIMUM_RECORDING_SECONDS}초 이상 녹음해주세요 (남은 시간:{" "}
