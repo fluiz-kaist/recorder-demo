@@ -1,15 +1,13 @@
 //api/users/[userId].ts
 import { NextApiRequest, NextApiResponse } from "next";
 import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+  getDocByIdAdmin,
+  saveDocAdmin,
+  updateDocByIdAdmin,
+} from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
 import { User } from "@/types/firebase";
 import { getKoreanTimeISO } from "@/utils/time";
+import { FieldValue } from "firebase-admin/firestore"; // Admin SDK 추가
 
 export default async function handler(
   req: NextApiRequest,
@@ -27,28 +25,26 @@ export default async function handler(
     });
   }
 
-  const userDocRef = doc(db, userCollectionName, userId);
   const now = getKoreanTimeISO();
 
   try {
     if (req.method === "GET") {
-      // 🔍 사용자 조회 + lastAccessAt 업데이트 (1회 호출)
-      console.log("🔍 사용자 조회:", userId);
+      // 사용자 조회 + lastAccessAt 업데이트 (1회 호출)
+      console.log("사용자 조회:", userId);
 
       try {
-        const userSnap = await getDoc(userDocRef);
+        const userData = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
 
-        if (!userSnap.exists()) {
+        if (!userData) {
           return res.status(404).json({
             success: false,
             message: "사용자를 찾을 수 없습니다.",
           });
         }
 
-        const userData = userSnap.data() as User;
-
         // lastAccessAt 업데이트 (에러 무시 - 조회가 목적이므로)
-        updateDoc(userDocRef, {
+        updateDocByIdAdmin(userCollectionName, userId, {
+          // Admin SDK로 변경
           lastAccessAt: now,
         }).catch((err) => console.warn("lastAccessAt 업데이트 실패:", err));
 
@@ -60,15 +56,15 @@ export default async function handler(
           },
         });
       } catch (error) {
-        console.error("❌에러 발생:", error);
+        console.error("에러 발생:", error);
         return res.status(404).json({
           success: false,
           message: "사용자를 찾을 수 없습니다.",
         });
       }
     } else if (req.method === "POST") {
-      // 🏪 사용자 등록
-      console.log("🏪 사용자 등록:", userId);
+      // 사용자 등록
+      console.log("사용자 등록:", userId);
 
       const {
         gender,
@@ -95,14 +91,13 @@ export default async function handler(
       }
 
       // 사용자 존재 여부 확인
-      const existingUser = await getDoc(userDocRef);
-      if (existingUser.exists()) {
+      const existingUser = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
+      if (existingUser) {
         const now = getKoreanTimeISO();
-        // 기존 사용자 데이터 반환 + lastAccessAt 업데이트
-        const userData = existingUser.data() as User;
 
         // lastAccessAt 업데이트
-        await updateDoc(userDocRef, {
+        await updateDocByIdAdmin(userCollectionName, userId, {
+          // Admin SDK로 변경
           lastAccessAt: now,
         });
 
@@ -110,110 +105,79 @@ export default async function handler(
           success: true,
           message: "기존 사용자로 로그인되었습니다.",
           user: {
-            ...userData,
+            ...existingUser,
             lastAccessAt: now,
           },
         });
       }
 
       // 신규 사용자 등록 절차 시작
-
       console.log(">>>>authorizedUserId?", authorizedUserId);
 
-      // 먼저 authorized collection에 생성한 user id를 갱신 해주어야 함
-      // 그래야 로그인할 때 알 수 있음
+      // authorized collection에 생성한 user id를 갱신
       const registeredUserCollectionName =
         process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION ||
         "registered-temp";
-      const authorizedDocRef = doc(
-        db,
-        registeredUserCollectionName,
-        authorizedUserId
-      );
 
-      // console.log("authorizedDocRef?", authorizedDocRef);
-
-      const updatedAuthDoc = await updateDoc(authorizedDocRef, {
+      await updateDocByIdAdmin(registeredUserCollectionName, authorizedUserId, {
+        // Admin SDK로 변경
         accountCreatedAt: now,
         userId: userId,
       });
 
       console.log("auth user 정보 갱신 완료");
 
-      // 🆕 새로운 데이터 구조로 초기 participation 설정
+      // 새로운 데이터 구조로 초기 participation 설정
       const initialParticipation = {
-        currentSetNumber: 1, // 첫 번째 세트부터 시작
-        totalCompletedSets: 0, // 아직 완료된 세트 없음
-        maxAllowedSets: 3, // 최대 3세트 참가 가능 (설정값)
-
-        // 기본 진행 방식 (사용자가 나중에 변경 가능)
-        preferredMode: "mixed" as const, // 혼합 모드가 기본값
-
-        // 아직 세트가 할당되지 않은 상태
-        sets: [], // 빈 배열로 시작
-
-        // 초기 통계
+        currentSetNumber: 1,
+        totalCompletedSets: 0,
+        maxAllowedSets: 3,
+        preferredMode: "mixed" as const,
+        sets: [],
         stats: {
           totalRecordings: 0,
           totalApprovedRecordings: 0,
           averageQualityScore: 0,
-          firstParticipationAt: "", // 첫 세트 시작 시 설정될 예정
+          firstParticipationAt: "",
           lastParticipationAt: "",
         },
       };
 
-      // 🆕 현재 상태 초기화
+      // 현재 상태 초기화
       const initialCurrentStatus = {
-        isTutorialCompleted: false, // 튜토리얼 미완료
-        canStartRecording: false, // 아직 세트 할당 안됨
-
-        // 다음 작업은 아직 없음 (세트 할당 후 결정)
+        isTutorialCompleted: false,
+        canStartRecording: false,
         nextTask: null,
-
-        // 초기 진행률
         progress: {
           completedPercentage: 0,
           submittedPercentage: 0,
           approvedPercentage: 0,
         },
-
-        // 대기 상태
         pendingApproval: false,
-        canStartNextSet: false, // 첫 세트도 아직 할당 안됨
+        canStartNextSet: false,
       };
 
-      // 🆕 초기 설정값
+      // 초기 설정값
       const initialSettings = {
-        autoSubmitAfterRecording: false, // 수동 제출이 기본값
-        requireManualReview: true, // 수동 검토가 기본값 (나중에 자동화 가능)
-        allowAutoApproval: false, // 자동 승인 비활성화 (안전을 위해)
+        autoSubmitAfterRecording: false,
+        requireManualReview: true,
+        allowAutoApproval: false,
       };
 
-      // 새 사용자 데이터 (모든 타임스탬프를 string으로 통일)
+      // 새 사용자 데이터
       const newUserData: User = {
-        // 기본 정보
         id: userId,
         gender,
         ageGroup,
         userName,
         authorizedUserId,
         hasConsented,
-
-        // 시간 정보
         createdAt: now,
         lastAccessAt: now,
-        completedAt: serverTimestamp(), // 온보딩 완료 시점
-
-        // 🎯 새로운 참가 관리 구조
+        completedAt: FieldValue.serverTimestamp(), // Admin SDK로 변경
         participation: initialParticipation,
-
-        // 🎯 현재 상태
         currentStatus: initialCurrentStatus,
-
-        // 🎯 설정
         settings: initialSettings,
-
-        // 🔄 레거시 호환용 (기존 코드들이 아직 이 필드를 참조할 수 있음)
         recordingStatus: {
           isTutorialCompleted: false,
           isAllRecordingCompleted: false,
@@ -226,11 +190,11 @@ export default async function handler(
             lastRecordedAt: "",
           },
         },
-        scriptAssignments: [], // 빈 배열로 초기화
+        scriptAssignments: [],
       };
 
-      // Firestore에 사용자 생성 (string 타임스탬프로 저장)
-      await setDoc(userDocRef, newUserData);
+      // Firestore에 사용자 생성
+      await saveDocAdmin(userCollectionName, userId, newUserData); // Admin SDK로 변경
 
       return res.status(201).json({
         success: true,
@@ -238,23 +202,20 @@ export default async function handler(
         user: newUserData,
       });
     } else if (req.method === "PATCH") {
-      // 🔄 사용자 정보 수정
-      console.log("🔄 사용자 정보 수정:", userId);
-      console.log("🔄 수정 데이터:", req.body);
+      // 사용자 정보 수정
+      console.log("사용자 정보 수정:", userId);
+      console.log("수정 데이터:", req.body);
 
       // 사용자 존재 여부 확인
-      const userSnap = await getDoc(userDocRef);
+      const currentUserData = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
 
-      if (!userSnap.exists()) {
+      if (!currentUserData) {
         return res.status(404).json({
           success: false,
           message: "사용자를 찾을 수 없습니다.",
         });
       }
 
-      const currentUserData = userSnap.data() as User;
-
-      // 현재 한국 시간
       const now = getKoreanTimeISO();
 
       const updateData: Partial<User> = {
@@ -268,10 +229,10 @@ export default async function handler(
         hasConsented,
         completedAt,
         scriptAssignments,
-        currentStatus, // 🆕 추가
-        participation, // 🆕 추가
-        settings, // 🆕 추가
-        recordingStatus, // 레거시 호환용
+        currentStatus,
+        participation,
+        settings,
+        recordingStatus,
       } = req.body;
 
       // 기본 필드 업데이트
@@ -279,19 +240,19 @@ export default async function handler(
       if (ageGroup) updateData.ageGroup = ageGroup;
       if (hasConsented !== undefined) updateData.hasConsented = hasConsented;
       if (completedAt !== undefined) {
-        updateData.completedAt = serverTimestamp();
+        updateData.completedAt = FieldValue.serverTimestamp(); // Admin SDK로 변경
       }
       if (scriptAssignments !== undefined) {
         updateData.scriptAssignments = scriptAssignments;
       }
 
-      // 🆕 새로운 구조 필드들 업데이트
+      // 새로운 구조 필드들 업데이트
       if (currentStatus !== undefined) {
         updateData.currentStatus = {
           ...currentUserData.currentStatus,
           ...currentStatus,
         };
-        console.log("🔄 currentStatus 업데이트:", updateData.currentStatus);
+        console.log("currentStatus 업데이트:", updateData.currentStatus);
       }
 
       if (participation !== undefined) {
@@ -299,7 +260,7 @@ export default async function handler(
           ...currentUserData.participation,
           ...participation,
         };
-        console.log("🔄 participation 업데이트:", updateData.participation);
+        console.log("participation 업데이트:", updateData.participation);
       }
 
       if (settings !== undefined) {
@@ -307,30 +268,29 @@ export default async function handler(
           ...currentUserData.settings,
           ...settings,
         };
-        console.log("🔄 settings 업데이트:", updateData.settings);
+        console.log("settings 업데이트:", updateData.settings);
       }
 
-      // 🔄 레거시 호환용
+      // 레거시 호환용
       if (recordingStatus !== undefined) {
         updateData.recordingStatus = {
           ...currentUserData.recordingStatus,
           ...recordingStatus,
         };
-        console.log("🔄 recordingStatus 업데이트:", updateData.recordingStatus);
+        console.log("recordingStatus 업데이트:", updateData.recordingStatus);
       }
 
-      console.log("🔄 최종 업데이트 데이터:", updateData);
+      console.log("최종 업데이트 데이터:", updateData);
 
       // Firestore 문서 업데이트
-      await updateDoc(userDocRef, updateData);
+      await updateDocByIdAdmin(userCollectionName, userId, updateData); // Admin SDK로 변경
 
-      // 업데이트된 사용자 데이터 반환 (추가 조회 없이)
-      const updatedUserData: User = {
+      // 업데이트된 사용자 데이터 반환
+      const updatedUserData = {
         ...currentUserData,
         ...updateData,
-      };
-
-      console.log("🔄 업데이트 완료:", updatedUserData);
+      } as User;
+      console.log("업데이트 완료:", updatedUserData);
 
       return res.status(200).json({
         success: true,
@@ -346,7 +306,7 @@ export default async function handler(
       });
     }
   } catch (error) {
-    console.error("🚨 Firestore 오류:", error);
+    console.error("Firestore 오류:", error);
 
     // Firestore 특정 오류 처리
     if (error instanceof Error) {

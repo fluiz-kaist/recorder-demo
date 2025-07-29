@@ -1,16 +1,7 @@
-// pages/api/admin/progress/[userId].ts
+// pages/api/admin/progress/[userId].ts - Admin SDK로 변경
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  FieldValue,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { getDocByIdAdmin } from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
+import { FieldValue, Timestamp } from "firebase-admin/firestore"; // Admin SDK로 변경
 import { User } from "@/types/firebase";
 
 interface UserProgressDetail {
@@ -134,26 +125,24 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userDoc = await getDoc(doc(db, userCollectionName, userId));
+    const userData = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
 
-    if (!userDoc.exists()) {
+    if (!userData) {
       return res.status(404).json({
         success: false,
         message: "사용자를 찾을 수 없습니다.",
       });
     }
 
-    const userData = userDoc.data() as User;
-
     // 전체 진행률 계산
     const totalTasks =
       userData.participation?.sets?.reduce(
-        (sum, set) => sum + set.progress.totalTasks,
+        (sum: any, set: any) => sum + set.progress.totalTasks,
         0
       ) || 0;
     const completedTasks =
       userData.participation?.sets?.reduce(
-        (sum, set) => sum + set.progress.completedTasks,
+        (sum: any, set: any) => sum + set.progress.completedTasks,
         0
       ) || 0;
     const overallPercentage =
@@ -161,7 +150,7 @@ export default async function handler(
 
     // 세트별 상세 정보
     const setDetails =
-      userData.participation?.sets?.map((set) => ({
+      userData.participation?.sets?.map((set: any) => ({
         setNumber: set.setNumber,
         setId: set.setId,
         status: set.status,
@@ -186,7 +175,7 @@ export default async function handler(
             remaining:
               set.progress.situational.total -
               set.progress.situational.completed,
-            tasks: set.tasks.situational.map((task) => ({
+            tasks: set.tasks.situational.map((task: any) => ({
               taskKey: task.taskKey,
               status: task.status,
               completedAt: task.completedAt,
@@ -197,7 +186,7 @@ export default async function handler(
             completed: set.progress.formal.completed,
             remaining:
               set.progress.formal.total - set.progress.formal.completed,
-            tasks: set.tasks.formal.map((task) => ({
+            tasks: set.tasks.formal.map((task: any) => ({
               taskKey: task.taskKey,
               status: task.status,
               completedAt: task.completedAt,

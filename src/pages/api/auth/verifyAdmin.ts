@@ -1,9 +1,10 @@
 // pages/api/auth/verifyAdmin.ts
+
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { adminDb } from "@/lib/firebase/admin"; // Admin SDK Firestore 인스턴스
 import { serialize } from "cookie";
 import { generateAdminToken } from "@/lib/jwt-node";
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -25,10 +26,13 @@ export default async function handler(
   }
 
   try {
-    const adminDocRef = doc(db, "admin", adminId);
-    const adminDoc = await getDoc(adminDocRef);
+    const adminDocRef = adminDb.collection("admin").doc(adminId);
 
-    if (!adminDoc.exists()) {
+    const adminDoc = await adminDocRef.get();
+
+    console.log("adminDoc?", adminDoc.data());
+
+    if (!adminDoc.exists) {
       return res.status(401).json({
         success: false,
         message: "존재하지 않는 관리자 계정입니다.",
@@ -37,20 +41,20 @@ export default async function handler(
 
     const adminData = adminDoc.data();
 
-    if (adminData.password !== password) {
+    if (!adminData || adminData.password !== password) {
       return res.status(401).json({
         success: false,
         message: "비밀번호가 올바르지 않습니다.",
       });
     }
 
-    // JWT 토큰 생성 (Node.js Runtime용)
+    // JWT 토큰 생성
     const jwtToken = generateAdminToken({
       adminId: adminDoc.id,
       name: adminData.name,
     });
 
-    // JWT 쿠키 설정
+    // JWT를 쿠키로 설정
     const cookie = serialize("admin-token", jwtToken, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",

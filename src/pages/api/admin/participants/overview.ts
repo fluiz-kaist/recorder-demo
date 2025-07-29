@@ -1,16 +1,6 @@
-// pages/api/admin/participants/overview.ts
+// pages/api/admin/participants/overview.ts - Admin SDK로 변경
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-  startAfter,
-  documentId,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { adminDb } from "@/lib/firebase/admin"; // Admin SDK 추가
 import { User } from "@/types/firebase";
 
 export interface ParticipantOverview {
@@ -141,22 +131,21 @@ export default async function handler(
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(queryLimit as string, 10);
 
-    // 기본 쿼리 생성
-    let q = query(
-      collection(db, userCollectionName),
-      orderBy(sortBy as string, sortOrder as "asc" | "desc")
-    );
+    // Admin SDK 쿼리 생성
+    let query = adminDb // Admin SDK로 변경
+      .collection(userCollectionName)
+      .orderBy(sortBy as string, sortOrder as "asc" | "desc");
 
     // 필터 적용
     if (gender) {
-      q = query(q, where("gender", "==", gender));
+      query = query.where("gender", "==", gender);
     }
     if (ageGroup) {
-      q = query(q, where("ageGroup", "==", ageGroup));
+      query = query.where("ageGroup", "==", ageGroup);
     }
 
-    // 페이지네이션을 위한 쿼리 실행
-    const allUsersSnapshot = await getDocs(q);
+    // 쿼리 실행
+    const allUsersSnapshot = await query.get(); // Admin SDK로 변경
     const totalCount = allUsersSnapshot.size;
 
     // 페이지네이션 계산

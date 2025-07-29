@@ -1,8 +1,6 @@
 // pages/api/admin/recordings/download/[recordingId].ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc } from "firebase/firestore";
-import { ref, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase/config";
+import { adminDb, adminStorage } from "@/lib/firebase/admin";
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,8 +12,10 @@ export default async function handler(
       message: "Method not allowed",
     });
   }
+
   const audioCollectionName =
     process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
+
   try {
     // 관리자 권한 확인
     const adminToken = req.cookies["admin-token"];
@@ -28,47 +28,54 @@ export default async function handler(
 
     const { recordingId } = req.query;
 
-    if (!recordingId) {
+    if (!recordingId || typeof recordingId !== "string") {
       return res.status(400).json({
         success: false,
         message: "녹음 ID가 필요합니다.",
       });
     }
 
-    // 녹음 정보 조회
-    const recordingDoc = await getDoc(
-      doc(db, audioCollectionName, recordingId as string)
-    );
+    // 녹음 정보 조회 (Firestore Admin SDK)
+    const recordingSnap = await adminDb
+      .collection(audioCollectionName)
+      .doc(recordingId)
+      .get();
 
-    if (!recordingDoc.exists()) {
+    if (!recordingSnap.exists) {
       return res.status(404).json({
         success: false,
         message: "녹음을 찾을 수 없습니다.",
       });
     }
 
-    const recordingData = recordingDoc.data();
+    const recordingData = recordingSnap.data();
+    const audioUrl = recordingData?.audioUrl;
 
-    // Firebase Storage에서 직접 다운로드 URL 생성
-    try {
-      const audioRef = ref(storage, recordingData.audioUrl);
-      const downloadUrl = await getDownloadURL(audioRef);
-
-      // 다운로드 URL로 리다이렉트
-      res.redirect(307, downloadUrl);
-    } catch (storageError) {
-      console.error("Storage 접근 오류:", storageError);
-
-      // 이미 다운로드 URL인 경우 그대로 리다이렉트
-      if (recordingData.audioUrl.includes("firebasestorage.googleapis.com")) {
-        res.redirect(307, recordingData.audioUrl);
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "오디오 파일에 접근할 수 없습니다.",
-        });
-      }
+    if (!audioUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "audioUrl 정보가 없습니다.",
+      });
     }
+
+    // audioUrl이 이미 firebase storage 전체 URL인 경우 그대로 리다이렉트
+    if (audioUrl.includes("firebasestorage.googleapis.com")) {
+      return res.redirect(307, audioUrl);
+    }
+
+    // audioUrl이 storage 경로일 경우 → signed URL 생성
+    const decodedPath = decodeURIComponent(
+      audioUrl.replace(/^.*\/o\//, "").replace(/\?.*$/, "")
+    );
+
+    const file = adminStorage.bucket().file(decodedPath);
+
+    const [signedUrl] = await file.getSignedUrl({
+      action: "read",
+      expires: Date.now() + 10 * 60 * 1000, // 10분 후 만료
+    });
+
+    return res.redirect(307, signedUrl);
   } catch (error) {
     console.error("녹음 다운로드 오류:", error);
     return res.status(500).json({

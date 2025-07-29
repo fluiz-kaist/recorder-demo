@@ -1,7 +1,5 @@
 // pages/api/scripts/assign.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
 import {
   User,
   ParticipationSet,
@@ -13,6 +11,12 @@ import {
 } from "@/types/firebase";
 import path from "path";
 import fs from "fs";
+
+import {
+  getDocByIdTypedAdmin,
+  updateDocByIdAdmin,
+} from "@/lib/firebase/firestoreAdmin";
+import { FieldValue } from "firebase-admin/firestore"; // 시간용
 
 // API 요청/응답 타입
 interface AssignScriptsRequest {
@@ -70,18 +74,17 @@ export default async function handler(
     });
 
     // 1. 사용자 존재 확인
-    const userRef = doc(db, userCollectionName, userId);
-    const userDoc = await getDoc(userRef);
-
-    if (!userDoc.exists()) {
+    const userData = await getDocByIdTypedAdmin<User>(
+      userCollectionName,
+      userId
+    );
+    if (!userData) {
       return res.status(404).json({
         success: false,
         message: "사용자를 찾을 수 없습니다. 먼저 회원가입을 완료해주세요.",
         scripts: { situational: [], formal: [] },
       });
     }
-
-    const userData = userDoc.data() as User;
 
     // 2. 이미 해당 세트가 할당되어 있는지 확인
     const existingSet = userData.participation?.sets?.find(
@@ -170,10 +173,10 @@ export default async function handler(
     };
 
     // 6. Firestore 업데이트
-    await updateDoc(userRef, {
+    await updateDocByIdAdmin(userCollectionName, userId, {
       participation: updatedParticipation,
       currentStatus: updatedCurrentStatus,
-      lastAccessAt: serverTimestamp(),
+      lastAccessAt: FieldValue.serverTimestamp(),
     });
 
     console.log("✅ [assign] 스크립트 할당 완료:", {

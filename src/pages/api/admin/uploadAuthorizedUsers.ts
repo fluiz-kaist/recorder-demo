@@ -1,7 +1,7 @@
-// pages/api/admin/uploadAuthorizedUsers.ts - Windows 호환 수정버전
+// pages/api/admin/uploadAuthorizedUsers.ts - Admin SDK로 변경
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, writeBatch, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { adminDb } from "@/lib/firebase/admin"; // Admin SDK 추가
+import { FieldValue } from "firebase-admin/firestore"; // Admin SDK 추가
 import { generateUserHash } from "@/utils/hash";
 import formidable from "formidable";
 import * as XLSX from "xlsx";
@@ -152,7 +152,7 @@ export default async function handler(
           userHash,
           name: cleanName,
           socialNumber: cleanSocialNumber,
-          createdAt: serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(), // Admin SDK로 변경
           isActive: true,
           source: "excel_upload",
           rowNumber: rowNum,
@@ -182,13 +182,15 @@ export default async function handler(
       });
     }
 
-    // 5. Firestore에 배치로 저장
-    const batch = writeBatch(db);
+    // 5. Firestore에 배치로 저장 (Admin SDK 방식)
+    const batch = adminDb.batch(); // Admin SDK로 변경
     let savedCount = 0;
 
     for (const user of processedUsers) {
       try {
-        const docRef = doc(db, regiUserCollectionName, user.userHash);
+        const docRef = adminDb
+          .collection(regiUserCollectionName)
+          .doc(user.userHash); // Admin SDK로 변경
 
         batch.set(
           docRef,
@@ -210,6 +212,9 @@ export default async function handler(
         if (savedCount % 450 === 0) {
           await batch.commit();
           console.log(`${savedCount}개 저장 완료...`);
+          // 새 배치 생성
+          const newBatch = adminDb.batch(); // Admin SDK로 변경
+          Object.assign(batch, newBatch);
         }
       } catch (error) {
         console.error(`해시 ${user.userHash} 저장 실패:`, error);
@@ -260,3 +265,5 @@ export default async function handler(
     });
   }
 }
+
+//주의사항: Admin SDK의 batch는 클라이언트 SDK와 사용법이 약간 다르므로, 배치 크기 제한 부분에서 새 배치 생성 로직을 확인해보시기 바랍니다.

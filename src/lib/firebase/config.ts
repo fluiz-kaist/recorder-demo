@@ -37,7 +37,7 @@ const app = !getApps().length
     })()
   : getApps()[0];
 
-// 📚 Firestore 초기화
+// Firestore 초기화
 let db: Firestore;
 // 명명된 데이터베이스를 사용한다면, databaseId를 여기에 전달하거나 환경 변수에서 가져옵니다.
 // NEXT_PUBLIC_FIRESTORE_DATABASE_ID가 설정되어 있다면, 명명된 DB를 사용한다고 가정합니다.

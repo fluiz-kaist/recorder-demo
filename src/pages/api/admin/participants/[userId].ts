@@ -1,13 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+  getDocByIdAdmin,
+  getAllDocsAdmin,
+} from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
+import { adminDb } from "@/lib/firebase/admin"; // Admin SDK 추가
 import { User } from "@/types/firebase";
 
 export interface ParticipantDetail extends User {
@@ -83,27 +79,23 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userDoc = await getDoc(doc(db, userCollectionName, userId));
+    const userData = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
 
-    if (!userDoc.exists()) {
+    if (!userData) {
       return res.status(404).json({
         success: false,
         message: "사용자를 찾을 수 없습니다.",
       });
     }
 
-    const userData = userDoc.data() as User;
-
-    // 녹음 기록 조회 (단일 컬렉션에서)
+    // 녹음 기록 조회 (Admin SDK 방식)
     const recordingHistory: ParticipantDetail["recordingHistory"] = [];
 
     try {
-      const recordingsQuery = query(
-        collection(db, audioCollectionName),
-        where("userId", "==", userId)
-      );
-
-      const recordingsSnapshot = await getDocs(recordingsQuery);
+      const recordingsSnapshot = await adminDb // Admin SDK로 변경
+        .collection(audioCollectionName)
+        .where("userId", "==", userId)
+        .get();
 
       recordingsSnapshot.docs.forEach((doc) => {
         const recording = doc.data();
@@ -120,9 +112,10 @@ export default async function handler(
     } catch (error) {
       console.warn("녹음 기록 조회 실패:", error);
     }
+
     // 세트별 상세 진행률 계산
     const setDetails =
-      userData.participation?.sets?.map((set) => ({
+      userData.participation?.sets?.map((set: any) => ({
         setNumber: set.setNumber,
         setId: set.setId,
         status: set.status,
@@ -144,14 +137,14 @@ export default async function handler(
         },
       })) || [];
 
-    const participantDetail: ParticipantDetail = {
+    const participantDetail = {
       ...userData,
       recordingHistory: recordingHistory.sort(
         (a, b) =>
           new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
       ),
       setDetails,
-    };
+    } as ParticipantDetail;
 
     return res.status(200).json({
       success: true,

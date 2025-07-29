@@ -58,6 +58,7 @@ export async function getDocById(
   id: string
 ): Promise<DocumentData | null> {
   try {
+    console.log("colname?", colName);
     const docSnap = await getDoc(doc(db, colName, id));
     if (docSnap.exists()) {
       return docSnap.data();

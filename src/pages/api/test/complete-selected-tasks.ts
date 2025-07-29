@@ -1,22 +1,20 @@
 // pages/api/test/complete-selected-tasks.ts - 선택한 태스크만 완료 처리하는 API
-
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { adminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { User } from "@/types/firebase";
 
 interface TaskSelection {
   setIndex: number;
   taskType: "situational" | "formal";
   taskIndex: number;
-  taskKey?: string; // 확인용
+  taskKey?: string;
 }
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // 테스트 환경에서만 사용
   if (process.env.NODE_ENV === "production") {
     return res.status(403).json({
       success: false,
@@ -70,18 +68,18 @@ async function completeSelectedTasks(
     });
   }
 
-  // 사용자 문서 조회
-  const userRef = doc(db, userCollectionName, userId);
-  const userDoc = await getDoc(userRef);
+  // 🔁 Firestore Admin SDK로 사용자 조회
+  const userRef = adminDb.collection(userCollectionName).doc(userId);
+  const userSnap = await userRef.get();
 
-  if (!userDoc.exists()) {
+  if (!userSnap.exists) {
     return res.status(404).json({
       success: false,
       message: "사용자를 찾을 수 없습니다.",
     });
   }
 
-  const userData = userDoc.data() as User;
+  const userData = userSnap.data() as User;
 
   if (!userData.participation?.sets?.length) {
     return res.status(400).json({
@@ -95,11 +93,9 @@ async function completeSelectedTasks(
   const completedTasks: string[] = [];
   const errors: string[] = [];
 
-  // 선택된 태스크들을 완료 처리
   selectedTasks.forEach((selection: TaskSelection) => {
     const { setIndex, taskType, taskIndex, taskKey } = selection;
 
-    // 유효성 검사
     if (setIndex < 0 || setIndex >= updatedSets.length) {
       errors.push(`잘못된 setIndex: ${setIndex}`);
       return;
@@ -114,26 +110,20 @@ async function completeSelectedTasks(
     }
 
     const task = tasksArray[taskIndex];
-
-    // taskKey 확인 (선택사항)
     if (taskKey && task.taskKey !== taskKey) {
       errors.push(`taskKey 불일치: ${task.taskKey} !== ${taskKey}`);
       return;
     }
 
-    // 이미 완료된 태스크는 건너뛰기
-    if (task.status === "completed") {
-      return;
-    }
+    if (task.status === "completed") return;
 
-    // 태스크 완료 처리
     task.status = "completed";
     task.completedAt = now;
     task.recordingId = task.recordingId || `test_${task.taskKey}_${Date.now()}`;
     task.quality = task.quality || {
-      duration: Math.random() * 5 + 8, // 8-13초 랜덤
-      volumeLevel: Math.random() * 0.3 + 0.7, // 0.7-1.0 랜덤
-      silenceRatio: Math.random() * 0.2, // 0-0.2 랜덤
+      duration: Math.random() * 5 + 8,
+      volumeLevel: Math.random() * 0.3 + 0.7,
+      silenceRatio: Math.random() * 0.2,
       isValidRecording: true,
     };
 
@@ -142,7 +132,6 @@ async function completeSelectedTasks(
     );
   });
 
-  // 오류가 있으면 처리 중단
   if (errors.length > 0) {
     return res.status(400).json({
       success: false,
@@ -151,7 +140,6 @@ async function completeSelectedTasks(
     });
   }
 
-  // completeAllInSet이 true면 해당 세트의 나머지 태스크들도 완료 처리
   if (completeAllInSet) {
     const affectedSets = new Set(
       selectedTasks.map((t: TaskSelection) => t.setIndex)
@@ -160,7 +148,6 @@ async function completeSelectedTasks(
     affectedSets.forEach((setIndex) => {
       const set = updatedSets[setIndex];
 
-      // situational 태스크들 완료
       set.tasks.situational.forEach((task) => {
         if (task.status !== "completed") {
           task.status = "completed";
@@ -179,7 +166,6 @@ async function completeSelectedTasks(
         }
       });
 
-      // formal 태스크들 완료
       set.tasks.formal.forEach((task) => {
         if (task.status !== "completed") {
           task.status = "completed";
@@ -198,72 +184,64 @@ async function completeSelectedTasks(
     });
   }
 
-  // 각 세트의 진행률 재계산
-  updatedSets.forEach((set, setIndex) => {
-    const situationalCompleted = set.tasks.situational.filter(
+  updatedSets.forEach((set) => {
+    const sitComp = set.tasks.situational.filter(
       (t) => t.status === "completed"
     ).length;
-    const formalCompleted = set.tasks.formal.filter(
+    const forComp = set.tasks.formal.filter(
       (t) => t.status === "completed"
     ).length;
-    const totalCompleted = situationalCompleted + formalCompleted;
+    const totalComp = sitComp + forComp;
     const totalTasks = set.tasks.situational.length + set.tasks.formal.length;
 
-    // 진행률 업데이트
     set.progress = {
       ...set.progress,
       totalTasks,
-      completedTasks: totalCompleted,
-      submittedTasks: totalCompleted,
-      approvedTasks: totalCompleted,
+      completedTasks: totalComp,
+      submittedTasks: totalComp,
+      approvedTasks: totalComp,
       situational: {
         total: set.tasks.situational.length,
-        completed: situationalCompleted,
-        submitted: situationalCompleted,
-        approved: situationalCompleted,
+        completed: sitComp,
+        submitted: sitComp,
+        approved: sitComp,
       },
       formal: {
         total: set.tasks.formal.length,
-        completed: formalCompleted,
-        submitted: formalCompleted,
-        approved: formalCompleted,
+        completed: forComp,
+        submitted: forComp,
+        approved: forComp,
       },
     };
 
-    // 세트 상태 업데이트
-    if (totalCompleted === totalTasks) {
+    if (totalComp === totalTasks) {
       set.status = "completed";
       set.completedAt = now;
       set.submittedAt = now;
       set.approvedAt = now;
-    } else if (totalCompleted > 0) {
+    } else if (totalComp > 0) {
       set.status = "in_progress";
     } else {
       set.status = "assigned";
     }
   });
 
-  // 전체 통계 계산
   const totalCompletedSets = updatedSets.filter(
     (set) => set.status === "completed"
   ).length;
   const totalRecordings = updatedSets.reduce(
-    (sum, set) => sum + set.progress.completedTasks,
+    (sum, s) => sum + s.progress.completedTasks,
     0
   );
-  const totalPossibleRecordings = updatedSets.reduce(
-    (sum, set) => sum + set.progress.totalTasks,
+  const totalPossible = updatedSets.reduce(
+    (sum, s) => sum + s.progress.totalTasks,
     0
   );
-
-  // 전체 진행률 계산
   const overallProgress =
-    totalPossibleRecordings > 0
-      ? Math.round((totalRecordings / totalPossibleRecordings) * 100)
-      : 0;
+    totalPossible > 0 ? Math.round((totalRecordings / totalPossible) * 100) : 0;
 
-  // 현재 상태 업데이트
-  const isAllCompleted = totalRecordings === totalPossibleRecordings;
+  const isAllCompleted = totalRecordings === totalPossible;
+
   const updatedCurrentStatus = {
     isTutorialCompleted: true,
     canStartRecording: !isAllCompleted,
@@ -277,19 +255,17 @@ async function completeSelectedTasks(
       totalCompletedSets < (userData.participation.maxAllowedSets || 1),
   };
 
-  // Firestore 업데이트
   const updateData: any = {
     "participation.sets": updatedSets,
     "participation.totalCompletedSets": totalCompletedSets,
     "participation.stats.totalRecordings": totalRecordings,
     "participation.stats.totalApprovedRecordings": totalRecordings,
-    "participation.stats.averageQualityScore": Math.random() * 15 + 80, // 80-95 랜덤
+    "participation.stats.averageQualityScore": Math.random() * 15 + 80,
     "participation.stats.lastParticipationAt": now,
     currentStatus: updatedCurrentStatus,
-    updatedAt: serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 
-  // 모든 태스크가 완료되었다면 전체 완료 상태 업데이트
   if (isAllCompleted) {
     updateData["recordingStatus.isAllRecordingCompleted"] = true;
     updateData["recordingStatus.allRecordingCompletedAt"] = now;
@@ -300,10 +276,11 @@ async function completeSelectedTasks(
     updateData["recordingStatus.progress.lastRecordedAt"] = now;
   }
 
-  await updateDoc(userRef, updateData);
+  await userRef.update(updateData);
 
-  console.log(`테스트: 사용자 ${userId}의 선택된 태스크 완료 처리 완료`);
-  console.log("완료된 태스크:", completedTasks);
+  console.log(
+    `✅ 테스트 완료 처리: 사용자 ${userId}, 완료된 태스크 ${completedTasks.length}개`
+  );
 
   return res.status(200).json({
     success: true,

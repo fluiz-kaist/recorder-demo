@@ -1,8 +1,8 @@
 // pages/api/admin/progress/overview.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
 import { User } from "@/types/firebase";
+import { adminDb } from "@/lib/firebase/admin";
+
 
 export interface ProgressOverview {
   // 전체 통계
@@ -89,18 +89,13 @@ export default async function handler(
     }
 
     // 모든 사용자 데이터 조회 (200명 이하이므로 전체 조회)
-    const usersQuery = query(
-      collection(db, userCollectionName),
-      orderBy("createdAt", "desc")
-    );
+    const usersSnapshot = await adminDb
+      .collection(userCollectionName)
+      .orderBy("createdAt", "desc")
+      .get();
 
-    const usersSnapshot = await getDocs(usersQuery);
     const allUsers = usersSnapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          ...doc.data(),
-        } as User)
+      (doc) => ({ id: doc.id, ...doc.data() } as User)
     );
 
     // 시간 기준점 설정

@@ -1,7 +1,10 @@
 // api/scripts/complete.ts - 수정된 버전
 
-import { db } from "@/lib/firebase/config";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  getDocByIdTypedAdmin,
+  updateDocByIdAdmin,
+} from "@/lib/firebase/firestoreAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 import { NextApiRequest, NextApiResponse } from "next";
 import { CompleteScriptRequest } from "@/hooks/mutations/useUserMutations";
 
@@ -162,9 +165,15 @@ export default async function handler(
   });
 
   try {
-    const userRef = doc(db, userCollectionName, userId);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.data();
+    const userData = await getDocByIdTypedAdmin<any>(
+      userCollectionName,
+      userId
+    );
+    if (!userData?.participation?.sets) {
+      return res
+        .status(404)
+        .json({ message: "User participation data not found" });
+    }
 
     if (!userData?.participation?.sets) {
       return res
@@ -242,7 +251,10 @@ export default async function handler(
       newCurrentStatus,
     });
 
-    await updateDoc(userRef, updateData);
+    await updateDocByIdAdmin(userCollectionName, userId, {
+      ...updateData,
+      lastAccessAt: FieldValue.serverTimestamp(), // if you prefer server timestamp
+    });
 
     return res.status(200).json({
       message: "Participation status updated successfully",
