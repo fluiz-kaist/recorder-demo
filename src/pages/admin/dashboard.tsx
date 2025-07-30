@@ -7,6 +7,7 @@ import {
 } from "@/hooks/queries/useAdminQueries";
 import styles from "@/styles/AdminDashboard.module.css";
 import AdminRecordingsTab from "@/components/admin/RecordingTaps";
+import { formatFirestoreTimestampKST } from "@/utils/time";
 // 로그아웃 버튼 컴포넌트
 export const AdminLogoutButton = () => {
   const router = useRouter();
@@ -341,7 +342,9 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
                 {getStatusBadge(participant.status)}
               </div>
               <div className={styles.tableCell}>
-                {new Date(participant.lastAccessAt).toLocaleDateString()}
+                {participant.lastAccessAt
+                  ? formatFirestoreTimestampKST(participant.lastAccessAt)
+                  : "정보 없음"}
               </div>
             </div>
           ))}

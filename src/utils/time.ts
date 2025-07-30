@@ -129,10 +129,14 @@ export function formatFirestoreTimestampKST(timestamp: any): string {
     date = timestamp.toDate();
   }
   // { seconds, nanoseconds } 형태인 경우
-  else if (timestamp?.seconds) {
-    date = new Date(
-      timestamp.seconds * 1000 + Math.floor(timestamp.nanoseconds / 1e6)
-    );
+  else if (
+    typeof timestamp.seconds === "number" ||
+    typeof timestamp._seconds === "number"
+  ) {
+    // Admin SDK 또는 REST API 형태
+    const seconds = timestamp.seconds ?? timestamp._seconds;
+    const nanos = timestamp.nanoseconds ?? timestamp._nanoseconds ?? 0;
+    date = new Date(seconds * 1000 + Math.floor(nanos / 1e6));
   }
   // 이미 Date 객체인 경우
   else if (timestamp instanceof Date) {
