@@ -18,6 +18,9 @@ const ReAssignScript = () => {
         currentSetNumber: user.participation?.currentSetNumber || 1,
       });
       console.log("스크립트 재할당 성공:", assignResult);
+      if (confirm("성공적으로 다시 할당 받았습니다!")) {
+        window.location.reload();
+      }
     } catch (err) {
       console.error("스크립트 재할당 실패:", err);
       alert("스크립트 재할당 중 오류가 발생했습니다.");

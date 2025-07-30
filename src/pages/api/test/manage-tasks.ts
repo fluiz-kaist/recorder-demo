@@ -1,8 +1,7 @@
-// pages/api/test/manage-tasks.ts - 테스트용 태스크 관리 API
-
+// pages/api/test/manage-tasks-admin.ts - Admin SDK 기반 테스트 API
 import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { adminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { User, RecordingTask } from "@/types/firebase";
 
 export default async function handler(
@@ -19,16 +18,15 @@ export default async function handler(
 
   try {
     if (req.method === "GET") {
-      // 사용자의 태스크 목록 조회
       return await getUserTasks(req, res);
     } else if (req.method === "POST") {
-      // 태스크 상태 업데이트
       return await updateTaskStatus(req, res);
     } else if (req.method === "PUT") {
-      // 모든 태스크 완료
       return await completeAllTasks(req, res);
     } else if (req.method === "PATCH") {
       return await updateTutorialStatus(req, res);
+    } else if (req.method === "DELETE") {
+      return await resetUserData(req, res);
     } else {
       return res.status(405).json({
         success: false,
@@ -36,16 +34,16 @@ export default async function handler(
       });
     }
   } catch (error) {
-    console.error("API 처리 중 오류:", error);
+    console.error("Admin API 처리 중 오류:", error);
     return res.status(500).json({
       success: false,
-      message: "API 처리 중 오류가 발생했습니다.",
+      message: "Admin API 처리 중 오류가 발생했습니다.",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
 
-// 사용자 태스크 목록 조회
+// 🔥 Admin SDK로 사용자 태스크 목록 조회 (보안 규칙 무시)
 async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = req.query;
   const userCollectionName =
@@ -58,10 +56,13 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const userRef = doc(db, userCollectionName, userId);
-  const userDoc = await getDoc(userRef);
+  // 🔥 Admin SDK 사용 - 보안 규칙 우회
+  const userDoc = await adminDb
+    .collection(userCollectionName)
+    .doc(userId)
+    .get();
 
-  if (!userDoc.exists()) {
+  if (!userDoc.exists) {
     return res.status(404).json({
       success: false,
       message: "사용자를 찾을 수 없습니다.",
@@ -120,11 +121,12 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-// 개별 태스크 상태 업데이트
+// 🔥 Admin SDK로 개별 태스크 상태 업데이트
 async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
   const { userId, updates } = req.body;
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
   if (!userId || !updates || !Array.isArray(updates)) {
     return res.status(400).json({
       success: false,
@@ -132,10 +134,11 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const userRef = doc(db, userCollectionName, userId);
-  const userDoc = await getDoc(userRef);
+  // 🔥 Admin SDK 사용
+  const userDocRef = adminDb.collection(userCollectionName).doc(userId);
+  const userDoc = await userDocRef.get();
 
-  if (!userDoc.exists()) {
+  if (!userDoc.exists) {
     return res.status(404).json({
       success: false,
       message: "사용자를 찾을 수 없습니다.",
@@ -165,11 +168,10 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
         const task = updatedSets[setIndex].tasks[taskType][taskIndex];
 
         if (status === "completed" && task.status !== "completed") {
-          // 완료 처리
           task.status = "completed";
           task.completedAt = now;
           task.recordingId =
-            task.recordingId || `test_${task.taskKey}_${Date.now()}`;
+            task.recordingId || `admin_test_${task.taskKey}_${Date.now()}`;
           task.quality = task.quality || {
             duration: 10.0,
             volumeLevel: 0.8,
@@ -177,7 +179,6 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
             isValidRecording: true,
           };
         } else if (status === "not_started") {
-          // 미완료 처리
           task.status = "not_started";
           task.completedAt = undefined;
           task.recordingId = undefined;
@@ -218,7 +219,6 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
       },
     };
 
-    // 세트 상태 업데이트
     if (totalCompleted === totalTasks) {
       set.status = "completed";
       set.completedAt = now;
@@ -229,186 +229,175 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
     }
   });
 
-  // Firestore 업데이트
-  await updateDoc(userRef, {
+  // 🔥 Admin SDK로 Firestore 업데이트 (보안 규칙 우회)
+  await userDocRef.update({
     "participation.sets": updatedSets,
-    updatedAt: serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   return res.status(200).json({
     success: true,
-    message: "태스크 상태가 업데이트되었습니다.",
+    message: "Admin API로 태스크 상태가 업데이트되었습니다.",
   });
 }
 
-// 모든 태스크 완료 (기존 코드)
+// 🔥 Admin SDK로 모든 태스크 완료
 async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = req.body;
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
-  try {
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "userId는 필수입니다.",
-      });
-    }
 
-    // 사용자 문서 조회
-    const userRef = doc(db, userCollectionName, userId);
-    const userDoc = await getDoc(userRef);
-
-    if (!userDoc.exists()) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자를 찾을 수 없습니다.",
-      });
-    }
-
-    const userData = userDoc.data() as User;
-
-    if (!userData.participation?.sets?.length) {
-      return res.status(400).json({
-        success: false,
-        message: "할당된 세트가 없습니다.",
-      });
-    }
-
-    const now = new Date().toISOString();
-    const updatedSets = userData.participation.sets.map((set) => {
-      // 모든 태스크를 완료 상태로 변경
-      const updatedSituationalTasks = set.tasks.situational.map((task) => ({
-        ...task,
-        status: "completed" as const,
-        completedAt: task.completedAt || now,
-        recordingId: task.recordingId || `test_${task.taskKey}_${Date.now()}`,
-        quality: task.quality || {
-          duration: 10.5,
-          volumeLevel: 0.8,
-          silenceRatio: 0.1,
-          isValidRecording: true,
-        },
-      }));
-
-      const updatedFormalTasks = set.tasks.formal.map((task) => ({
-        ...task,
-        status: "completed" as const,
-        completedAt: task.completedAt || now,
-        recordingId: task.recordingId || `test_${task.taskKey}_${Date.now()}`,
-        quality: task.quality || {
-          duration: 8.2,
-          volumeLevel: 0.75,
-          silenceRatio: 0.15,
-          isValidRecording: true,
-        },
-      }));
-
-      // 진행률 계산
-      const totalTasks =
-        updatedSituationalTasks.length + updatedFormalTasks.length;
-      const completedTasks = totalTasks; // 모든 태스크가 완료됨
-
-      return {
-        ...set,
-        tasks: {
-          situational: updatedSituationalTasks,
-          formal: updatedFormalTasks,
-        },
-        progress: {
-          ...set.progress,
-          totalTasks,
-          completedTasks,
-          submittedTasks: completedTasks,
-          approvedTasks: completedTasks,
-          situational: {
-            total: updatedSituationalTasks.length,
-            completed: updatedSituationalTasks.length,
-            submitted: updatedSituationalTasks.length,
-            approved: updatedSituationalTasks.length,
-          },
-          formal: {
-            total: updatedFormalTasks.length,
-            completed: updatedFormalTasks.length,
-            submitted: updatedFormalTasks.length,
-            approved: updatedFormalTasks.length,
-          },
-        },
-        status: "completed" as const,
-        completedAt: now,
-        submittedAt: now,
-        approvedAt: now,
-      };
-    });
-
-    // 전체 참가 통계 업데이트
-    const totalCompletedSets = updatedSets.filter(
-      (set) => set.status === "completed"
-    ).length;
-    const totalRecordings = updatedSets.reduce(
-      (sum, set) => sum + set.progress.completedTasks,
-      0
-    );
-
-    // 현재 상태 업데이트
-    const updatedCurrentStatus = {
-      isTutorialCompleted: true,
-      canStartRecording: false, // 모든 태스크 완료됨
-      progress: {
-        completedPercentage: 100,
-        submittedPercentage: 100,
-        approvedPercentage: 100,
-      },
-      pendingApproval: false,
-      canStartNextSet:
-        totalCompletedSets < userData.participation.maxAllowedSets,
-    };
-
-    // Firestore 업데이트
-    await updateDoc(userRef, {
-      "participation.sets": updatedSets,
-      "participation.totalCompletedSets": totalCompletedSets,
-      "participation.stats.totalRecordings": totalRecordings,
-      "participation.stats.totalApprovedRecordings": totalRecordings,
-      "participation.stats.averageQualityScore": 85, // 테스트용 점수
-      "participation.stats.lastParticipationAt": now,
-      currentStatus: updatedCurrentStatus,
-      "recordingStatus.isAllRecordingCompleted": true,
-      "recordingStatus.allRecordingCompletedAt": now,
-      "recordingStatus.progress.mainSituationalCompleted": updatedSets.reduce(
-        (sum, set) => sum + set.tasks.situational.length,
-        0
-      ),
-      "recordingStatus.progress.mainFormalCompleted": updatedSets.reduce(
-        (sum, set) => sum + set.tasks.formal.length,
-        0
-      ),
-      "recordingStatus.progress.lastRecordedAt": now,
-      updatedAt: serverTimestamp(),
-    });
-
-    console.log(`테스트: 사용자 ${userId}의 모든 태스크 완료 처리 완료`);
-
-    return res.status(200).json({
-      success: true,
-      message: "모든 태스크가 완료 상태로 업데이트되었습니다.",
-      data: {
-        userId,
-        totalSets: updatedSets.length,
-        completedSets: totalCompletedSets,
-        totalTasks: totalRecordings,
-        completedAt: now,
-      },
-    });
-  } catch (error) {
-    console.error("테스트 완료 처리 중 오류:", error);
-    return res.status(500).json({
+  if (!userId) {
+    return res.status(400).json({
       success: false,
-      message: "테스트 완료 처리 중 오류가 발생했습니다.",
-      error: error instanceof Error ? error.message : "Unknown error",
+      message: "userId는 필수입니다.",
     });
   }
+
+  // 🔥 Admin SDK 사용
+  const userDocRef = adminDb.collection(userCollectionName).doc(userId);
+  const userDoc = await userDocRef.get();
+
+  if (!userDoc.exists) {
+    return res.status(404).json({
+      success: false,
+      message: "사용자를 찾을 수 없습니다.",
+    });
+  }
+
+  const userData = userDoc.data() as User;
+
+  if (!userData.participation?.sets?.length) {
+    return res.status(400).json({
+      success: false,
+      message: "할당된 세트가 없습니다.",
+    });
+  }
+
+  const now = new Date().toISOString();
+  const updatedSets = userData.participation.sets.map((set) => {
+    // 모든 태스크를 완료 상태로 변경
+    const updatedSituationalTasks = set.tasks.situational.map((task) => ({
+      ...task,
+      status: "completed" as const,
+      completedAt: task.completedAt || now,
+      recordingId:
+        task.recordingId || `admin_complete_${task.taskKey}_${Date.now()}`,
+      quality: task.quality || {
+        duration: 10.5,
+        volumeLevel: 0.8,
+        silenceRatio: 0.1,
+        isValidRecording: true,
+      },
+    }));
+
+    const updatedFormalTasks = set.tasks.formal.map((task) => ({
+      ...task,
+      status: "completed" as const,
+      completedAt: task.completedAt || now,
+      recordingId:
+        task.recordingId || `admin_complete_${task.taskKey}_${Date.now()}`,
+      quality: task.quality || {
+        duration: 8.2,
+        volumeLevel: 0.75,
+        silenceRatio: 0.15,
+        isValidRecording: true,
+      },
+    }));
+
+    const totalTasks =
+      updatedSituationalTasks.length + updatedFormalTasks.length;
+    const completedTasks = totalTasks;
+
+    return {
+      ...set,
+      tasks: {
+        situational: updatedSituationalTasks,
+        formal: updatedFormalTasks,
+      },
+      progress: {
+        ...set.progress,
+        totalTasks,
+        completedTasks,
+        submittedTasks: completedTasks,
+        approvedTasks: completedTasks,
+        situational: {
+          total: updatedSituationalTasks.length,
+          completed: updatedSituationalTasks.length,
+          submitted: updatedSituationalTasks.length,
+          approved: updatedSituationalTasks.length,
+        },
+        formal: {
+          total: updatedFormalTasks.length,
+          completed: updatedFormalTasks.length,
+          submitted: updatedFormalTasks.length,
+          approved: updatedFormalTasks.length,
+        },
+      },
+      status: "completed" as const,
+      completedAt: now,
+      submittedAt: now,
+      approvedAt: now,
+    };
+  });
+
+  const totalCompletedSets = updatedSets.length;
+  const totalRecordings = updatedSets.reduce(
+    (sum, set) => sum + set.progress.completedTasks,
+    0
+  );
+
+  const updatedCurrentStatus = {
+    isTutorialCompleted: true,
+    canStartRecording: false,
+    progress: {
+      completedPercentage: 100,
+      submittedPercentage: 100,
+      approvedPercentage: 100,
+    },
+    pendingApproval: false,
+    canStartNextSet: totalCompletedSets < userData.participation.maxAllowedSets,
+  };
+
+  // 🔥 Admin SDK로 업데이트 (보안 규칙 우회)
+  await userDocRef.update({
+    "participation.sets": updatedSets,
+    "participation.totalCompletedSets": totalCompletedSets,
+    "participation.stats.totalRecordings": totalRecordings,
+    "participation.stats.totalApprovedRecordings": totalRecordings,
+    "participation.stats.averageQualityScore": 85,
+    "participation.stats.lastParticipationAt": now,
+    currentStatus: updatedCurrentStatus,
+    "recordingStatus.isAllRecordingCompleted": true,
+    "recordingStatus.allRecordingCompletedAt": now,
+    "recordingStatus.progress.mainSituationalCompleted": updatedSets.reduce(
+      (sum, set) => sum + set.tasks.situational.length,
+      0
+    ),
+    "recordingStatus.progress.mainFormalCompleted": updatedSets.reduce(
+      (sum, set) => sum + set.tasks.formal.length,
+      0
+    ),
+    "recordingStatus.progress.lastRecordedAt": now,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  console.log(`Admin API: 사용자 ${userId}의 모든 태스크 완료 처리`);
+
+  return res.status(200).json({
+    success: true,
+    message: "Admin API로 모든 태스크가 완료되었습니다.",
+    data: {
+      userId,
+      totalSets: updatedSets.length,
+      completedSets: totalCompletedSets,
+      totalTasks: totalRecordings,
+      completedAt: now,
+    },
+  });
 }
-// updateTutorialStatus 함수 추가 (completeAllTasks 함수 아래에)
+
+// 🔥 Admin SDK로 튜토리얼 상태 업데이트
 async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
@@ -421,55 +410,144 @@ async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const userRef = doc(db, userCollectionName, userId);
-  const userDoc = await getDoc(userRef);
+  // 🔥 Admin SDK 사용
+  const userDocRef = adminDb.collection(userCollectionName).doc(userId);
+  const userDoc = await userDocRef.get();
 
-  if (!userDoc.exists()) {
+  if (!userDoc.exists) {
     return res.status(404).json({
       success: false,
       message: "사용자를 찾을 수 없습니다.",
     });
   }
 
-  await updateDoc(userRef, {
+  await userDocRef.update({
     "currentStatus.isTutorialCompleted": isTutorialCompleted,
     "recordingStatus.isTutorialCompleted": isTutorialCompleted,
-    updatedAt: serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   return res.status(200).json({
     success: true,
-    message: "튜토리얼 상태가 업데이트되었습니다.",
+    message: "Admin API로 튜토리얼 상태가 업데이트되었습니다.",
   });
 }
-// ===== API 사용법 =====
+
+// 🔥 Admin SDK로 사용자 데이터 완전 리셋 (추가 기능)
+async function resetUserData(req: NextApiRequest, res: NextApiResponse) {
+  const { userId } = req.body;
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: "userId는 필수입니다.",
+    });
+  }
+
+  // 🔥 Admin SDK 사용
+  const userDocRef = adminDb.collection(userCollectionName).doc(userId);
+  const userDoc = await userDocRef.get();
+
+  if (!userDoc.exists) {
+    return res.status(404).json({
+      success: false,
+      message: "사용자를 찾을 수 없습니다.",
+    });
+  }
+
+  const userData = userDoc.data() as User;
+
+  // 모든 태스크를 not_started로 리셋
+  if (userData.participation?.sets?.length) {
+    const resetSets = userData.participation.sets.map((set) => ({
+      ...set,
+      tasks: {
+        situational: set.tasks.situational.map((task) => ({
+          ...task,
+          status: "not_started" as const,
+          completedAt: undefined,
+          recordingId: undefined,
+          quality: undefined,
+        })),
+        formal: set.tasks.formal.map((task) => ({
+          ...task,
+          status: "not_started" as const,
+          completedAt: undefined,
+          recordingId: undefined,
+          quality: undefined,
+        })),
+      },
+      progress: {
+        ...set.progress,
+        completedTasks: 0,
+        submittedTasks: 0,
+        approvedTasks: 0,
+        situational: {
+          total: set.tasks.situational.length,
+          completed: 0,
+          submitted: 0,
+          approved: 0,
+        },
+        formal: {
+          total: set.tasks.formal.length,
+          completed: 0,
+          submitted: 0,
+          approved: 0,
+        },
+      },
+      status: "assigned" as const,
+      completedAt: undefined,
+      submittedAt: undefined,
+      approvedAt: undefined,
+    }));
+
+    await userDocRef.update({
+      "participation.sets": resetSets,
+      "participation.totalCompletedSets": 0,
+      "participation.stats.totalRecordings": 0,
+      "participation.stats.totalApprovedRecordings": 0,
+      "participation.stats.averageQualityScore": 0,
+      "currentStatus.isTutorialCompleted": false,
+      "currentStatus.canStartRecording": true,
+      "currentStatus.progress.completedPercentage": 0,
+      "currentStatus.progress.submittedPercentage": 0,
+      "currentStatus.progress.approvedPercentage": 0,
+      "recordingStatus.isAllRecordingCompleted": false,
+      "recordingStatus.isTutorialCompleted": false,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Admin API로 사용자 데이터가 리셋되었습니다.",
+  });
+}
+// ===== Admin API 사용법 =====
 /*
+
+
+환경 변수 추가 필요:
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...} // Firebase Admin SDK JSON
+
 1. 태스크 목록 조회:
-GET /api/test/manage-tasks?userId=user123
+GET /api/test/manage-tasks-admin?userId=user123
 
 2. 개별 태스크 상태 업데이트:
-POST /api/test/manage-tasks
-Body: {
-  "userId": "user123",
-  "updates": [
-    {
-      "setIndex": 0,
-      "taskType": "situational",
-      "taskIndex": 0,
-      "status": "completed"
-    },
-    {
-      "setIndex": 0,
-      "taskType": "formal", 
-      "taskIndex": 2,
-      "status": "not_started"
-    }
-  ]
-}
+POST /api/test/manage-tasks-admin
+Body: { "userId": "user123", "updates": [...] }
 
 3. 모든 태스크 완료:
-PUT /api/test/manage-tasks
-Body: {
-  "userId": "user123"
-}
+PUT /api/test/manage-tasks-admin
+Body: { "userId": "user123" }
+
+4. 튜토리얼 상태 업데이트:
+PATCH /api/test/manage-tasks-admin
+Body: { "userId": "user123", "isTutorialCompleted": true }
+
+5. 사용자 데이터 리셋 (새로 추가):
+DELETE /api/test/manage-tasks-admin
+Body: { "userId": "user123" }
 */

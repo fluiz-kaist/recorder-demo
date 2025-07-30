@@ -28,13 +28,11 @@ interface UpdateUserRequest {
 }
 
 /**
- * 🔥 Firebase Auth 기반 사용자 인증 확인 뮤테이션
- * HTTP API 대신 Custom Token 생성 API 사용
+ * 화이트리스트 체크 전용 뮤테이션
+ * Firebase Auth 로그인이나 Custom Token 생성 없음
+ * 오직 승인된 사용자인지만 확인
  */
 export const useVerifyAuthorizedUserMutation = () => {
-  const queryClient = useQueryClient();
-  const { signInWithToken } = useFirebaseAuth();
-
   return useMutation({
     mutationFn: async ({
       name,
@@ -43,7 +41,7 @@ export const useVerifyAuthorizedUserMutation = () => {
       name: string;
       socialNumber: string;
     }) => {
-      // 🔧 기존 HTTP 인증 API는 유지 (등록된 사용자인지 확인용)
+      // 화이트리스트에 있는 승인된 사용자인지만 확인
       const response = await fetch("/api/auth/verifyAuthorizedUserV2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,56 +57,23 @@ export const useVerifyAuthorizedUserMutation = () => {
 
       return data;
     },
-    onSuccess: async (data) => {
-      console.log("🔥 사용자 인증 성공:", data);
+    onSuccess: (data) => {
+      console.log("화이트리스트 확인 성공:", data);
 
-      // 🔥 기존 사용자인 경우 Firebase Auth 로그인 처리
-      if (data.user.isExistingUser && data.user.userId) {
-        try {
-          // Firebase Custom Token 생성
-          const tokenResponse = await fetch("/api/auth/completeAuth", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              userId: data.user.userId,
-              userHash: data.user.userHash,
-              userName: data.user.name,
-            }),
-          });
-
-          if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            if (tokenData.customToken) {
-              // Firebase Auth 로그인
-              await signInWithToken(tokenData.customToken);
-              console.log("🔥 기존 사용자 Firebase Auth 로그인 완료");
-            }
-          }
-
-          // React Query 캐시 무효화
-          queryClient.invalidateQueries({ queryKey: ["user"] });
-          queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] });
-        } catch (error) {
-          console.error("❌ Firebase Auth 로그인 실패:", error);
-          // Firebase 실패해도 기존 플로우 유지
-        }
-      }
-
-      // 🔧 신규 사용자는 pendingAuth에 저장 (기존 로직 유지)
+      // 신규 사용자인 경우만 pendingAuth에 저장
       if (!data.user.isExistingUser) {
         localStorage.setItem("pendingAuth", JSON.stringify(data.user));
-        console.log("🆕 신규 사용자 인증 성공, 동의 단계로");
+        console.log("신규 사용자 - pendingAuth 저장 완료");
       }
     },
     onError: (error) => {
-      console.error("❌ 사용자 인증 실패:", error);
+      console.error("화이트리스트 확인 실패:", error);
     },
   });
 };
 
 /**
- * 🔥 Firebase Auth + Firestore Client SDK 기반 사용자 등록 뮤테이션
+ * Firebase Auth + Firestore Client SDK 기반 사용자 등록 뮤테이션
  * API 호출 대신 Firestore에 직접 쓰기
  */
 export const useRegisterUserMutation = (): UseMutationResult<
@@ -138,7 +103,7 @@ export const useRegisterUserMutation = (): UseMutationResult<
 
       console.log("🔥 Firestore 직접 사용자 등록 시작:", userId);
 
-      // 🔥 Firestore Client SDK로 직접 등록
+      // Firestore Client SDK로 직접 등록
       const userCollectionName =
         process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
       const userDocRef = doc(db, userCollectionName, userId);

@@ -29,6 +29,11 @@ async function verifyFirebaseToken(token: string): Promise<boolean> {
       // aud (audience) 체크 - Firebase 프로젝트 ID
       const expectedProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
       if (expectedProjectId && payload.aud !== expectedProjectId) {
+        console.log("🔍 토큰 검증:", {
+          expectedProjectId,
+          actualAud: payload.aud,
+          isMatch: payload.aud === expectedProjectId,
+        });
         console.log("🔥 Firebase Token 잘못된 프로젝트 ID");
         return false;
       }
@@ -73,7 +78,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 🔥 통합 인증 상태 확인 (Firebase Token 우선, HTTP 쿠키 fallback)
-  const isAuthenticated = isFirebaseAuthenticated 
+  const isAuthenticated = isFirebaseAuthenticated;
 
   console.log("🛡️[미들웨어] Firebase Auth 기반:", {
     pathname,
@@ -129,6 +134,7 @@ export async function middleware(request: NextRequest) {
     console.log(
       "❌ 미인증 사용자 (Firebase + HTTP 모두 없음), index로 리다이렉트"
     );
+
     return NextResponse.redirect(new URL("/", request.url));
   }
 

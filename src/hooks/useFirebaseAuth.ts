@@ -1,4 +1,4 @@
-// hooks/useFirebaseAuth.ts - 간단한 버전
+// hooks/useFirebaseAuth.ts - 자동 로그인 제거 후 단순화된 버전
 import { useState, useEffect } from "react";
 import { FirebaseAuthManager } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
@@ -7,42 +7,35 @@ export const useFirebaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Firebase Auth 상태 변화 감지
+  // Firebase Auth 상태 변화 감지만 유지
   useEffect(() => {
     const unsubscribe = FirebaseAuthManager.onAuthStateChanged((user) => {
+      console.log("Firebase Auth 상태 변화:", user?.uid || "없음");
       setUser(user);
       setIsLoading(false);
+
+      // 사용자가 로그인되면 ID Token을 쿠키에 저장
+      if (user) {
+        user
+          .getIdToken()
+          .then((idToken: string) => {
+            document.cookie = `firebase-token=${idToken}; path=/; max-age=3600`;
+            console.log("ID Token을 쿠키에 저장 완료");
+          })
+          .catch((error: any) => {
+            console.error("ID Token 저장 실패:", error);
+          });
+      }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // 🆕 쿠키에 Firebase Token이 있으면 자동 로그인 시도
-  useEffect(() => {
-    const attemptAutoLogin = async () => {
-      if (!user && !isLoading) {
-        const firebaseToken = getCookie("firebase-token");
-
-        if (firebaseToken) {
-          try {
-            console.log("🔥 저장된 Firebase Token으로 자동 로그인 시도");
-            await signInWithToken(firebaseToken);
-          } catch (error) {
-            console.error("자동 로그인 실패:", error);
-            // 토큰 갱신 시도
-            await refreshToken();
-          }
-        }
-      }
-    };
-
-    attemptAutoLogin();
-  }, [user, isLoading]);
-
   const signInWithToken = async (customToken: string) => {
     try {
       setIsLoading(true);
       const user = await FirebaseAuthManager.signInWithCustomToken(customToken);
+      console.log("Firebase 로그인 성공:", user.uid);
       return user;
     } catch (error) {
       console.error("Firebase 로그인 실패:", error);
@@ -62,7 +55,7 @@ export const useFirebaseAuth = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.customToken) {
-          console.log("🔄 Firebase Token 갱신 완료");
+          console.log("Firebase Token 갱신 완료");
           await signInWithToken(data.customToken);
         }
       }
@@ -75,6 +68,9 @@ export const useFirebaseAuth = () => {
     try {
       setIsLoading(true);
       await FirebaseAuthManager.signOut();
+
+      // 쿠키에서 토큰 제거
+      document.cookie = "firebase-token=; path=/; max-age=0";
 
       // HTTP 쿠키도 함께 로그아웃
       await fetch("/api/auth/logout", {
@@ -98,23 +94,3 @@ export const useFirebaseAuth = () => {
     isAuthenticated: !!user,
   };
 };
-
-// 쿠키 읽기 유틸리티 함수
-export function getCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
-
-  console.log("🍪 전체 쿠키:", document.cookie); // 🔧 디버그 추가
-  console.log("🍪 찾는 쿠키 이름:", name); // 🔧 디버그 추가
-
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-
-  console.log("🍪 파싱 결과:", parts); // 🔧 디버그 추가
-
-  if (parts.length === 2) {
-    const result = parts.pop()?.split(";").shift() || null;
-    console.log("🍪 최종 결과:", result); // 🔧 디버그 추가
-    return result;
-  }
-  return null;
-}

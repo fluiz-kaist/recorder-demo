@@ -1,4 +1,4 @@
-// pages/index.tsx - 수정된 버전
+// pages/index.tsx - 리팩토링 버전
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
@@ -8,6 +8,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import fs from "fs";
 import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
+
+// Hooks
 import {
   useMinimalUserQuery,
   useUserCompletionStatusQuery,
@@ -15,12 +17,15 @@ import {
 import {
   useRegisterUserMutation,
   useUpdateScriptAssignmentsMutation,
+  useVerifyAuthorizedUserMutation,
 } from "@/hooks/mutations/useUserMutations";
-import { useVerifyAuthorizedUserMutation } from "@/hooks/mutations/useUserMutations";
-
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-import { generateUserHash, generateSecureUserId } from "@/utils/hash";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+
+// Utils
+import { generateUserHash, generateSecureUserId } from "@/utils/hash";
+
+// Constants
 const ageGroups = [
   "55-59세",
   "60-64세",
@@ -32,18 +37,29 @@ const ageGroups = [
 
 const genders = ["남성", "여성"] as const;
 
+// Types
 interface ConsentPageProps {
   consentText: string;
   serviceDescription: string;
 }
 
-export default function ConsentPage({ consentText }: ConsentPageProps) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
+interface UserInput {
+  name: string;
+  socialNumber: string;
+  gender: "남성" | "여성";
+  ageGroup: string;
+  hasConsented: boolean;
+}
 
-  // 🟢 쿠키 기반 인증 상태 확인
+interface PendingAuthData {
+  isExistingUser: boolean;
+  userId?: string;
+  userHash?: string;
+  name: string;
+}
 
-  // 🔥 수정 후 (Firebase Auth만 사용)
+// Custom hook for auth state management
+function useAuthState() {
   const {
     user: firebaseUser,
     isLoading: firebaseLoading,
@@ -54,149 +70,267 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const { data: userCompletionStatus, isLoading: completionLoading } =
     useUserCompletionStatusQuery();
 
-  // 뮤테이션 훅들
+  return {
+    firebaseUser,
+    firebaseLoading,
+    signInWithToken,
+    isAuthenticated,
+    minimalUserInfo,
+    userCompletionStatus,
+    completionLoading,
+    isFullyAuthenticated: isAuthenticated && userCompletionStatus === true,
+  };
+}
+
+// Main component
+export default function ConsentPage({ consentText }: ConsentPageProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // State management hooks
+  const authState = useAuthState();
+
+  // Mutations
   const verifyUserMutation = useVerifyAuthorizedUserMutation();
   const registerUserMutation = useRegisterUserMutation();
   const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
 
-  // 로컬 상태
-  const [userInput, setUserInput] = useState<{
-    name: string;
-    socialNumber: string;
-    gender: "남성" | "여성";
-    ageGroup: string;
-    hasConsented: boolean;
-  }>({
+  // Local state
+  const [userInput, setUserInput] = useState<UserInput>({
     name: "",
     socialNumber: "",
     gender: "남성",
     ageGroup: "",
     hasConsented: false,
   });
-
   const [error, setError] = useState<string>("");
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
-  // 🟢 로컬에서 저장된 사용자 이름 가져오기
-  const userName = minimalUserInfo?.userName || "";
+  const [pendingAuthData, setPendingAuthData] =
+    useState<PendingAuthData | null>(null);
+  const [isProcessed, setIsProcessed] = useState<boolean>(false);
 
-  // 🔧 인증된 사용자가 이미 등록 완료된 경우 메인으로 리다이렉트
-  // 🔥 수정 후
-  useEffect(() => {
-    if (isAuthenticated && userCompletionStatus === true) {
-      console.log("이미 등록 완료된 사용자, 메인으로 리다이렉트");
-      setIsRedirecting(true);
-      router.push("/main");
-    }
-  }, [isAuthenticated, userCompletionStatus, router]);
+  // Auth completion handler
+  const completeAuthFlow = useCallback(
+    async (authData: PendingAuthData) => {
+      if (isRedirecting) return;
 
-  // 🟢 기존 사용자 처리 함수 수정
-  const handleCompleteExistingUser = useCallback(
-    async (authData: any) => {
       try {
-        console.log("🔄 기존 사용자 처리 시작:", authData);
         setIsRedirecting(true);
+        console.log("🔄 인증 플로우 완료 시작:", authData);
 
-        // Firebase Auth 상태 체크
-        if (!isAuthenticated || !firebaseUser) {
-          console.log("🍪 쿠키 및 Firebase Token 생성 시작...");
+        // Step 1: Create auth cookies and Firebase token
+        const response = await fetch("/api/auth/completeAuth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            userId: authData.userId,
+            userHash: authData.userHash,
+            userName: authData.name,
+          }),
+        });
 
-          const response = await fetch("/api/auth/completeAuth", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              userId: authData.userId,
-              userHash: authData.userHash,
-              userName: authData.name,
-            }),
-          });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "인증 실패");
+        }
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "쿠키 생성 실패");
-          }
+        const data = await response.json();
+        console.log("🍪 인증 쿠키 생성 완료");
 
-          const data = await response.json();
-          console.log("🍪 HTTP 쿠키 생성 완료");
-
-          if (data.customToken && !firebaseUser) {
-            try {
-              await signInWithToken(data.customToken);
-              console.log("🔥 Firebase Auth 로그인 완료");
-            } catch (error) {
-              console.error("Firebase Auth 로그인 실패:", error);
-            }
+        // Step 2: Firebase Auth login if needed
+        if (data.customToken && !authState.firebaseUser) {
+          try {
+            const user = await authState.signInWithToken(data.customToken);
+            const idToken = await user.getIdToken();
+            document.cookie = `firebase-token=${idToken}; path=/; max-age=3600`;
+            console.log("🔥 Firebase Auth 완료");
+          } catch (error) {
+            console.error("Firebase Auth 실패:", error);
           }
         }
 
-        console.log("📋 캐시 무효화 시작...");
-        await queryClient.invalidateQueries({ queryKey: ["user"] });
-        await queryClient.invalidateQueries({
-          queryKey: ["userCompletionStatus"],
-        });
+        // Step 3: Invalidate caches
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["user"] }),
+          queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] }),
+        ]);
 
-        console.log("🗑️ localStorage 정리...");
+        // Step 4: Clean up and redirect
         localStorage.removeItem("pendingAuth");
-
-        console.log("🚀 메인 페이지로 이동...");
+        setPendingAuthData(null);
         await router.push("/main");
 
-        console.log("✅ 기존 사용자 처리 완료");
+        console.log("✅ 인증 플로우 완료");
       } catch (error) {
-        console.error("기존 사용자 로그인 실패:", error);
-        localStorage.removeItem("pendingAuth");
-        setError("로그인에 실패했습니다. 다시 시도해주세요.");
+        console.error("인증 플로우 실패:", error);
+
+        setError("인증에 실패했습니다. 다시 시도해주세요.");
         setIsRedirecting(false);
       }
     },
-    [isAuthenticated, firebaseUser, signInWithToken, queryClient, router]
-  ); // 🔧 의존성 명시
-
-  // 🟢 pendingAuth 처리 로직 수정
+    [authState, queryClient, router, isRedirecting, setPendingAuthData]
+  );
   useEffect(() => {
-    const pendingAuth = localStorage.getItem("pendingAuth");
-
-    console.log("🔍 pendingAuth 확인:", {
-      pendingAuth: !!pendingAuth,
-      firebaseLoading,
-      completionLoading,
-      isAuthenticated,
-      userCompletionStatus,
-    });
-
-    if (pendingAuth && !firebaseLoading && !completionLoading) {
+    const savedPendingAuth = localStorage.getItem("pendingAuth");
+    if (savedPendingAuth && !isProcessed) {
       try {
-        const authData = JSON.parse(pendingAuth);
-        console.log("📋 pendingAuth 데이터:", authData);
-
-        if (authData.isExistingUser) {
-          console.log("👤 기존 사용자 감지, 처리 시작");
-          handleCompleteExistingUser(authData);
-        } else {
-          console.log("🆕 신규 사용자 - 동의 폼 표시 예정");
-        }
+        const authData = JSON.parse(savedPendingAuth);
+        setPendingAuthData(authData);
       } catch (error) {
-        console.error("pendingAuth 데이터 파싱 오류:", error);
+        console.error("저장된 pendingAuth 데이터 파싱 오류:", error);
         localStorage.removeItem("pendingAuth");
       }
     }
+  }, [isProcessed]);
+
+  // Auto-redirect for completed users
+  useEffect(() => {
+    if (
+      authState.isFullyAuthenticated &&
+      !authState.firebaseLoading &&
+      !authState.completionLoading &&
+      !pendingAuthData &&
+      !isRedirecting
+    ) {
+      console.log("이미 완료된 사용자, 메인으로 리다이렉트");
+      setIsRedirecting(true);
+      router.push("/main");
+    }
   }, [
-    firebaseLoading,
-    completionLoading,
-    handleCompleteExistingUser, // 🔧 추가
-    isAuthenticated, // 🔧 추가
-    userCompletionStatus, // 🔧 추가
+    authState.isFullyAuthenticated,
+    authState.firebaseLoading,
+    authState.completionLoading,
+    pendingAuthData,
+    isRedirecting,
+    router,
   ]);
 
-  // 🟢 로딩 상태 통합 및 조건 개선
-  if (
-    firebaseLoading ||
-    completionLoading ||
+  // Handle pending auth for existing users (only once)
+  useEffect(() => {
+    if (
+      pendingAuthData?.isExistingUser &&
+      !authState.firebaseLoading &&
+      !authState.completionLoading &&
+      !isRedirecting
+    ) {
+      console.log("기존 사용자 처리");
+      completeAuthFlow(pendingAuthData);
+      setIsProcessed(true); // 중복 실행 방지
+    }
+  }, [
+    pendingAuthData,
+    authState.firebaseLoading,
+    authState.completionLoading,
+    isRedirecting,
+    completeAuthFlow,
+  ]);
+
+  // Input handlers
+  const updateUserInput = useCallback((updates: Partial<UserInput>) => {
+    setUserInput((prev) => ({ ...prev, ...updates }));
+    setError("");
+  }, []);
+
+  // User verification
+  const handleVerifyUser = useCallback(async () => {
+    if (!userInput.name || !userInput.socialNumber) {
+      setError("이름과 주민번호를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const result = await verifyUserMutation.mutateAsync({
+        name: userInput.name,
+        socialNumber: userInput.socialNumber,
+      });
+
+      if (result.user?.isExistingUser) {
+        await completeAuthFlow(result.user);
+      } else {
+        // 신규 사용자인 경우 상태로 설정하고 localStorage에도 저장
+        console.log("신규 사용자 감지, 동의 화면으로 전환");
+        const authData = result.user;
+        setPendingAuthData(authData);
+        localStorage.setItem("pendingAuth", JSON.stringify(authData));
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "인증에 실패했습니다.");
+    }
+  }, [
+    userInput.name,
+    userInput.socialNumber,
+    verifyUserMutation,
+    completeAuthFlow,
+  ]);
+
+  // New user registration
+  const handleCompleteRegistration = useCallback(async () => {
+    if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
+      setError("모든 항목을 선택하고 동의해주세요.");
+      return;
+    }
+
+    if (!pendingAuthData) {
+      setError("인증 정보가 없습니다. 다시 인증해주세요.");
+      return;
+    }
+
+    try {
+      const userId = generateSecureUserId();
+      const userHash = generateUserHash(
+        pendingAuthData.name,
+        userInput.socialNumber || pendingAuthData.name
+      );
+
+      // Complete auth flow first
+      await completeAuthFlow({
+        ...pendingAuthData,
+        userId,
+        userHash,
+      });
+
+      // Register user
+      await registerUserMutation.mutateAsync({
+        userId,
+        gender: userInput.gender,
+        ageGroup: userInput.ageGroup,
+        hasConsented: userInput.hasConsented,
+        userName: pendingAuthData.name || "noName",
+        authorizedUserId: userHash,
+      });
+
+      console.log("✅ 신규 사용자 등록 완료");
+    } catch (error) {
+      console.error("등록 실패:", error);
+      setError(
+        error instanceof Error ? error.message : "등록 중 오류가 발생했습니다."
+      );
+    }
+  }, [userInput, pendingAuthData, completeAuthFlow, registerUserMutation]);
+
+  // Loading states
+  const isLoading =
+    verifyUserMutation.isPending ||
+    registerUserMutation.isPending ||
+    assignScriptsMutation.isPending;
+  const isPageLoading =
+    authState.firebaseLoading ||
+    authState.completionLoading ||
     isRedirecting ||
-    verifyUserMutation.isPending
-  ) {
+    verifyUserMutation.isPending;
+
+  // Error display
+  const displayError =
+    error ||
+    verifyUserMutation.error?.message ||
+    registerUserMutation.error?.message ||
+    updateScriptsMutation.error?.message;
+
+  // Render loading screen
+  if (isPageLoading) {
     return (
       <>
         <Head>
@@ -222,201 +356,8 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     );
   }
 
-  // 입력 핸들러들 (기존과 동일)
-  const handleNameChange = (name: string) => {
-    setUserInput((prev) => ({ ...prev, name }));
-    setError("");
-  };
-
-  const handleSocialNumberChange = (socialNumber: string) => {
-    setUserInput((prev) => ({ ...prev, socialNumber }));
-    setError("");
-  };
-
-  const handleGenderSelect = (gender: (typeof genders)[number]) => {
-    setUserInput((prev) => ({ ...prev, gender }));
-    setError("");
-  };
-
-  const handleAgeGroupSelect = (ageGroup: string) => {
-    setUserInput((prev) => ({ ...prev, ageGroup }));
-    setError("");
-  };
-
-  const handleConsentChange = (checked: boolean) => {
-    setUserInput((prev) => ({ ...prev, hasConsented: checked }));
-    setError("");
-  };
-
-  // 🟢 사용자 인증 함수 (기존과 동일)
-  const handleVerifyUser = async () => {
-    if (!userInput.name || !userInput.socialNumber) {
-      setError("이름과 주민번호를 입력해주세요.");
-      return;
-    }
-
-    try {
-      const result = await verifyUserMutation.mutateAsync({
-        name: userInput.name,
-        socialNumber: userInput.socialNumber,
-      });
-
-      if (result.user?.isExistingUser) {
-        await handleCompleteExistingUser(result.user);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("인증에 실패했습니다. 다시 시도해주세요.");
-      }
-    }
-  };
-
-  // 신규 사용자: 동의 완료 시점에 처음 Firebase Auth 로그인
-  const handleCompleteRegistration = async () => {
-    // 동의 완료 → Firebase Token 생성 → Firebase Auth 로그인
-    if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
-      setError("모든 항목을 선택하고 동의해주세요.");
-      return;
-    }
-
-    try {
-      console.group("사용자 등록 프로세스 시작");
-
-      const pendingAuth = localStorage.getItem("pendingAuth");
-      if (!pendingAuth) {
-        setError("인증 정보가 없습니다. 다시 인증해주세요.");
-        return;
-      }
-
-      const authData = JSON.parse(pendingAuth);
-      const userId = generateSecureUserId();
-      const userHash = generateUserHash(
-        authData.name,
-        userInput.socialNumber || authData.name
-      );
-
-      console.log("1. 생성된 정보:", { userId, userHash });
-
-      // 🔧 쿠키 및 Firebase Token 생성
-      const authResponse = await fetch("/api/auth/completeAuth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          userId: userId,
-          userHash: userHash,
-          userName: authData.name, // 🆕 userName 추가
-        }),
-      });
-
-      if (!authResponse.ok) {
-        throw new Error("인증 실패");
-      }
-
-      const authResult = await authResponse.json();
-      console.log("2. 쿠키 및 Firebase Token 생성 완료");
-
-      // 🆕 Firebase Auth 로그인 (선택사항)
-      if (authResult.customToken && !firebaseUser) {
-        try {
-          await signInWithToken(authResult.customToken);
-          console.log("🔥 Firebase Auth 로그인 완료");
-        } catch (error) {
-          console.error("Firebase Auth 로그인 실패:", error);
-          // 실패해도 계속 진행
-        }
-      }
-
-      // 기존 사용자 등록 로직
-      const registeredUser = await registerUserMutation.mutateAsync({
-        userId,
-        gender: userInput.gender,
-        ageGroup: userInput.ageGroup,
-        hasConsented: userInput.hasConsented,
-        userName: authData.name || "noName",
-        authorizedUserId: userHash,
-      });
-
-      console.log("3. 사용자 등록 완료:", registeredUser);
-
-      queryClient.invalidateQueries({ queryKey: ["authStatus"] });
-      queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] });
-
-      localStorage.removeItem("pendingAuth");
-      console.groupEnd();
-      console.log("✅ 모든 등록 완료");
-
-      setIsRedirecting(true);
-      router.push("/main");
-    } catch (error) {
-      console.error("등록 처리 중 오류:", error);
-      setError(
-        error instanceof Error ? error.message : "등록 중 오류가 발생했습니다."
-      );
-    }
-  };
-  // 제출 가능 여부 확인 함수 (기존과 동일)
-  const isSubmitEnabled = (): boolean => {
-    return (
-      !!userInput.gender &&
-      !!userInput.ageGroup &&
-      userInput.hasConsented &&
-      !registerUserMutation.isPending &&
-      !assignScriptsMutation.isPending
-    );
-  };
-
-  // 버튼 텍스트 생성 함수 (기존과 동일)
-  const getButtonText = (): React.ReactNode => {
-    if (isLoading) {
-      if (registerUserMutation.isPending) return "처리 중...";
-      if (updateScriptsMutation.isPending) return "스크립트 할당 중...";
-      return "처리 중...";
-    }
-
-    if (!userInput.hasConsented) {
-      return "동의 체크가 빠졌어요!";
-    }
-
-    if (!userInput.gender) {
-      return "성별 선택이 빠졌어요!";
-    }
-
-    if (!userInput.ageGroup) {
-      return "연령대 선택이 빠졌어요!";
-    }
-
-    return (
-      <>
-        시작하려면 여기를 눌러주세요
-        <br />
-        <span>동의하고 시작하기</span>
-      </>
-    );
-  };
-
-  // 로딩 상태 통합
-  const isLoading =
-    verifyUserMutation.isPending ||
-    registerUserMutation.isPending ||
-    assignScriptsMutation.isPending;
-
-  // 에러 메시지 통합
-  const displayError =
-    error ||
-    verifyUserMutation.error?.message ||
-    registerUserMutation.error?.message ||
-    updateScriptsMutation.error?.message;
-
-  // 🔧 인증 단계 판별 로직 개선
-  const pendingAuth = localStorage.getItem("pendingAuth");
-  const isInAuthProcess = !!pendingAuth;
-  const isNewUser = pendingAuth && !JSON.parse(pendingAuth).isExistingUser;
-
-  // 🟢 인증되지 않은 사용자를 위한 인증 폼
-  if (!isInAuthProcess && !isAuthenticated) {
+  // Render auth form for non-authenticated users
+  if (!pendingAuthData && !authState.isAuthenticated) {
     return (
       <>
         <Head>
@@ -426,7 +367,6 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
             content="width=device-width, initial-scale=1.0, user-scalable=yes"
           />
         </Head>
-
         <div className={styles.container}>
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
@@ -437,12 +377,11 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
               <input
                 type="text"
                 value={userInput.name}
-                onChange={(e) => handleNameChange(e.target.value)}
+                onChange={(e) => updateUserInput({ name: e.target.value })}
                 placeholder="이름을 입력하세요"
                 className={styles.textInput}
                 disabled={isLoading}
                 autoComplete="name"
-                autoCapitalize="words"
               />
             </div>
 
@@ -451,13 +390,12 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
               <input
                 type="text"
                 value={userInput.socialNumber}
-                onChange={(e) => handleSocialNumberChange(e.target.value)}
+                onChange={(e) =>
+                  updateUserInput({ socialNumber: e.target.value })
+                }
                 placeholder="주민등록번호 앞자리를 입력하세요(123456)"
                 className={styles.textInput}
                 disabled={isLoading}
-                autoComplete="off"
-                inputMode="numeric"
-                pattern="[0-9]*"
                 maxLength={6}
               />
             </div>
@@ -466,7 +404,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
               <button
                 type="button"
                 className={`${styles.submitButton} ${
-                  userInput.name && userInput.socialNumber
+                  userInput.name && userInput.socialNumber.length === 6
                     ? styles.enabled
                     : styles.disabled
                 }`}
@@ -477,13 +415,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
                   isLoading
                 }
               >
-                {!userInput.name ||
-                userInput.socialNumber.length !== 6 ||
-                isLoading
-                  ? "이름과 주민번호를 먼저 입력해주세요"
-                  : verifyUserMutation.isPending
-                  ? "인증 확인 중..."
-                  : "여기를 눌러주세요!"}
+                {isLoading ? "인증 확인 중..." : "여기를 눌러주세요!"}
               </button>
             </div>
           </div>
@@ -491,26 +423,13 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           {displayError && (
             <div className={styles.errorMessage}>❌ {displayError}</div>
           )}
-
-          {process.env.NODE_ENV === "development" && (
-            <div className={styles.debugInfo}>
-              <h4>🐛 개발 정보</h4>
-              <p>하이브리드 인증이 적용되었습니다.</p>
-              <p>승인된 이름과 주민번호를 입력하세요.</p>
-              <p>인증상태: {isAuthenticated ? "인증됨" : "미인증"}</p>
-              <p>Firebase 사용자: {firebaseUser?.uid || "없음"}</p>
-              <p>완료상태: {userCompletionStatus ? "완료" : "미완료"}</p>
-            </div>
-          )}
         </div>
       </>
     );
   }
 
-  // 🔧 신규 사용자만 동의 폼 표시
-  if (isNewUser) {
-    const authData = JSON.parse(pendingAuth);
-
+  // Render consent form for new users
+  if (pendingAuthData && !pendingAuthData.isExistingUser) {
     return (
       <>
         <Head>
@@ -520,14 +439,13 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
             content="width=device-width, initial-scale=1.0, user-scalable=yes"
           />
         </Head>
-
         <div className={styles.container}>
           <div className={styles.header}>
             <h1>서비스 이용 동의</h1>
-            {authData.name && <p>안녕하세요, {authData.name}님!</p>}
+            <p>안녕하세요, {pendingAuthData.name}님!</p>
           </div>
 
-          {/* 동의서 내용 */}
+          {/* Consent Section */}
           <div className={styles.consentSection}>
             <h2>이용약관 및 개인정보처리방침</h2>
             <div className={styles.consentBox}>
@@ -536,19 +454,16 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
                   <p key={index}>{line}</p>
                 ))}
               </div>
-              <div className={styles.scrollHint}>
-                위아래로 스크롤하여 내용을 확인해주세요
-              </div>
             </div>
-
             <div className={styles.consentCheckbox}>
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
                   checked={userInput.hasConsented}
-                  onChange={(e) => handleConsentChange(e.target.checked)}
+                  onChange={(e) =>
+                    updateUserInput({ hasConsented: e.target.checked })
+                  }
                   className={styles.checkboxInput}
-                  disabled={isLoading}
                 />
                 <span className={styles.checkboxText}>
                   위 내용을 모두 읽었으며 동의합니다
@@ -557,7 +472,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
             </div>
           </div>
 
-          {/* 사용자 정보 입력 */}
+          {/* User Info Section */}
           <div className={styles.infoSection}>
             <h2>기본 정보 입력</h2>
 
@@ -571,8 +486,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
                     className={`${styles.selectButton} ${
                       userInput.gender === gender ? styles.selected : ""
                     }`}
-                    onClick={() => handleGenderSelect(gender)}
-                    disabled={isLoading}
+                    onClick={() => updateUserInput({ gender })}
                   >
                     {gender}
                   </button>
@@ -590,8 +504,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
                     className={`${styles.selectButton} ${
                       userInput.ageGroup === age ? styles.selected : ""
                     }`}
-                    onClick={() => handleAgeGroupSelect(age)}
-                    disabled={isLoading}
+                    onClick={() => updateUserInput({ ageGroup: age })}
                   >
                     {age}
                   </button>
@@ -600,34 +513,27 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
             </div>
           </div>
 
-          {/* 디버깅 정보 */}
-          {process.env.NODE_ENV === "development" && (
-            <div className={styles.debugInfo}>
-              <h4>🐛 디버그 정보</h4>
-              <p>인증 상태: {isAuthenticated ? "인증됨" : "미인증"}</p>
-              <p>사용자 ID: {authData?.userId}</p>
-              <p>완료 상태: {userCompletionStatus ? "완료" : "미완료"}</p>
-              <p>신규 사용자: {isNewUser ? "예" : "아니오"}</p>
-              <p>입력 정보: {JSON.stringify(userInput)}</p>
-            </div>
-          )}
-
-          {/* 오류 메시지 */}
           {displayError && (
             <div className={styles.errorMessage}>❌ {displayError}</div>
           )}
 
-          {/* 제출 버튼 */}
           <div className={styles.submitSection}>
             <button
               type="button"
               className={`${styles.submitButton} ${
-                isSubmitEnabled() ? styles.enabled : styles.disabled
+                userInput.gender && userInput.ageGroup && userInput.hasConsented
+                  ? styles.enabled
+                  : styles.disabled
               }`}
               onClick={handleCompleteRegistration}
-              disabled={!isSubmitEnabled() || isLoading}
+              disabled={
+                !userInput.gender ||
+                !userInput.ageGroup ||
+                !userInput.hasConsented ||
+                isLoading
+              }
             >
-              {getButtonText()}
+              {isLoading ? "처리 중..." : "동의하고 시작하기"}
             </button>
           </div>
         </div>
@@ -635,7 +541,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     );
   }
 
-  // 🔧 기타 모든 경우 (이미 처리된 사용자 등) - 로딩 화면
+  // Fallback loading
   return (
     <>
       <Head>
@@ -664,10 +570,7 @@ export const getStaticProps: GetStaticProps = async () => {
     const serviceDescription = fs.readFileSync(servicePath, "utf8");
 
     return {
-      props: {
-        consentText,
-        serviceDescription,
-      },
+      props: { consentText, serviceDescription },
     };
   } catch (error) {
     console.error("파일 읽기 오류:", error);

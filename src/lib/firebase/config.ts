@@ -1,4 +1,4 @@
-// lib/firebase/config.ts - 로그 최적화 버전
+// lib/firebase/config.ts - 수정된 버전
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -29,7 +29,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// 🚀 Firebase 앱 초기화
+//  Firebase 앱 초기화
 const app = !getApps().length
   ? (() => {
       debugLog("Firebase 앱 초기화");
@@ -37,38 +37,68 @@ const app = !getApps().length
     })()
   : getApps()[0];
 
-// Firestore 초기화
+//  Firestore 초기화 (Custom Token 호환성 개선)
 let db: Firestore;
-// 명명된 데이터베이스를 사용한다면, databaseId를 여기에 전달하거나 환경 변수에서 가져옵니다.
-// NEXT_PUBLIC_FIRESTORE_DATABASE_ID가 설정되어 있다면, 명명된 DB를 사용한다고 가정합니다.
-const firestoreDatabaseId = process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID;
 
 if (process.env.NODE_ENV === "development") {
-  debugLog("Firestore 개발 모드 초기화 (long polling 강제)");
-  db = initializeFirestore(
-    app,
-    { experimentalForceLongPolling: true },
-    firestoreDatabaseId // 명명된 DB 사용 시 개발 환경에서 전달
+  debugLog(
+    "Firestore 개발 모드 초기화 (long polling 강제 + Custom Token 최적화)"
   );
-} else {
-  debugLog("Firestore 프로덕션 모드 초기화");
-  // 명명된 데이터베이스를 프로덕션에서도 사용한다면, databaseId를 전달해야 합니다.
-  // getFirestore는 initializeFirestore와 달리 옵션 객체를 받지 않습니다.
-  // 따라서 options는 initializeFirestore에서만 사용 가능합니다.
-  if (firestoreDatabaseId) {
-    debugLog(`명명된 Firestore 데이터베이스 '${firestoreDatabaseId}' 사용 중.`);
-    db = getFirestore(app, firestoreDatabaseId);
-  } else {
-    debugLog("기본 Firestore 데이터베이스 사용 중.");
+
+  //   try {
+  //     db = initializeFirestore(app, {
+  //       experimentalForceLongPolling: true,
+  //       // databaseId 매개변수 없음 = 자동으로 기본 DB 사용
+  //     });
+  //     debugLog("Firestore 초기화 성공");
+  //   } catch (error) {
+  //     debugLog("Firestore initializeFirestore 실패, getFirestore로 폴백");
+  //     console.error("firestore init failed :", error);
+  //     // 이미 초기화된 경우 getFirestore 사용
+  //     db = getFirestore(app);
+  //   }
+  // } else {
+  //   debugLog("Firestore 프로덕션 모드 초기화");
+
+  //   //  명명된 데이터베이스 로직 단순화
+  //   const firestoreDatabaseId = process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID;
+  //   if (firestoreDatabaseId) {
+  //     debugLog(`명명된 Firestore 데이터베이스 '${firestoreDatabaseId}' 사용 중.`);
+  //     db = getFirestore(app, firestoreDatabaseId);
+  //   } else {
+  //     debugLog("기본 Firestore 데이터베이스 사용 중.");
+  //     db = getFirestore(app);
+  //   }
+  // }
+  try {
+    // 🔧 개발 모드: 기본 DB + long polling
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    });
+    debugLog("Firestore 초기화 성공");
+  } catch (error) {
+    debugLog("Firestore initializeFirestore 실패, getFirestore로 폴백");
+    console.error("firestore init failed :", error);
+    // 이미 초기화된 경우 getFirestore 사용
     db = getFirestore(app);
   }
-}
+} else {
+  debugLog("Firestore 프로덕션 모드 초기화 (기본 DB)");
 
+  // 🔧 프로덕션 모드: 기본 DB만 사용
+  db = getFirestore(app);
+}
 // Storage 초기화
 const storage = getStorage(app);
 
 // Auth 초기화
 const auth = getAuth(app);
+
+// 🔧 추가 디버깅 정보
+if (DEBUG_ENABLED) {
+  debugLog(`프로젝트 ID: ${firebaseConfig.projectId}`);
+  debugLog(`인증 도메인: ${firebaseConfig.authDomain}`);
+}
 
 // Export
 export { app, db, storage, auth };
@@ -81,5 +111,6 @@ export function printFirebaseEnvInfo() {
   console.log(`환경: ${isDevMode ? "Development" : "Production"}`);
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("프로젝트 ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+  console.log("DEBUG 모드:", DEBUG_ENABLED);
   console.groupEnd();
 }
