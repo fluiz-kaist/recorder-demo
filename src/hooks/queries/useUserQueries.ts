@@ -35,29 +35,37 @@ export const useAuthStatusQuery = (): UseQueryResult<
  * 🔥 Firebase Auth + Firestore Client SDK 기반 사용자 정보 조회
  * 보안 규칙이 자동으로 적용됩니다
  */
+
 export const useUserQuery = (
   userId?: string | null
 ): UseQueryResult<User, Error> => {
   const { user: firebaseUser, isAuthenticated } = useFirebaseAuth();
   const targetUserId = userId || firebaseUser?.uid;
 
+  // 🔧 등록 과정 중인지 확인 - 한 곳에서만 체크
+  const isPendingRegistration = (() => {
+    try {
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        const authData = JSON.parse(pendingAuth);
+        // 신규 사용자이고 아직 등록 과정 중이면 true
+        return !authData.isExistingUser;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
+
   return useQuery({
     queryKey: targetUserId ? ["user", targetUserId] : ["user", "no-user"],
     queryFn: async (): Promise<User> => {
-      console.log(
-        "🔥 useUserQuery (Firestore 직접 조회) 실행, targetUserId:",
-        targetUserId
-      );
+      console.log("🔥 useUserQuery 실행, targetUserId:", targetUserId);
 
-      if (!targetUserId) {
-        throw new Error("사용자 ID가 없습니다.");
+      if (!targetUserId || !isAuthenticated || !firebaseUser) {
+        throw new Error("인증이 필요합니다.");
       }
 
-      if (!isAuthenticated || !firebaseUser) {
-        throw new Error("Firebase 인증이 필요합니다.");
-      }
-
-      // 🔥 Firestore Client SDK 직접 사용 - 보안 규칙 자동 적용
       const userCollectionName =
         process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
       const userDocRef = doc(db, userCollectionName, targetUserId);
@@ -71,39 +79,23 @@ export const useUserQuery = (
         }
 
         const userData = userDoc.data();
-        console.log("✅ Firestore에서 사용자 데이터 조회 성공:", {
-          id: targetUserId,
-          userName: userData?.userName,
-        });
+        console.log("✅ Firestore에서 사용자 데이터 조회 성공");
 
-        return {
-          id: targetUserId,
-          ...userData,
-        } as User;
+        return { id: targetUserId, ...userData } as User;
       } catch (error: any) {
         console.error("❌ Firestore 사용자 조회 오류:", error);
-
-        // Firebase Auth 권한 오류 처리
-        if (error.code === "permission-denied") {
-          throw new Error("접근 권한이 없습니다.");
-        }
-
-        // 네트워크 오류 처리
-        if (error.code === "unavailable") {
-          throw new Error("네트워크 연결을 확인해주세요.");
-        }
-
         throw error;
       }
     },
-    enabled: isAuthenticated && !!targetUserId && !!firebaseUser,
-    staleTime: 5 * 60 * 1000, // 5분
+    // ✅ 핵심: pendingAuth만으로 등록 과정 중 쿼리 방지
+    enabled:
+      isAuthenticated &&
+      !!targetUserId &&
+      !!firebaseUser &&
+      !isPendingRegistration,
+    staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => {
-      // 등록되지 않은 사용자나 권한 오류는 재시도하지 않음
-      if (
-        error?.message === "USER_NOT_REGISTERED" ||
-        error?.message === "접근 권한이 없습니다."
-      ) {
+      if (error?.message === "USER_NOT_REGISTERED") {
         return false;
       }
       return failureCount < 2;
@@ -131,6 +123,19 @@ export const useMinimalUserQuery = (): UseQueryResult<
     error,
   } = useUserQuery(firebaseUser?.uid);
 
+  const isPendingRegistration = (() => {
+    try {
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        const authData = JSON.parse(pendingAuth);
+        return !authData.isExistingUser;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
+
   return useQuery({
     queryKey: ["minimalUserInfo", firebaseUser?.uid],
     queryFn: async () => {
@@ -147,7 +152,7 @@ export const useMinimalUserQuery = (): UseQueryResult<
       }
       return null;
     },
-    enabled: !!fullUser && !!firebaseUser,
+    enabled: !!fullUser && !!firebaseUser && !isPendingRegistration,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,
@@ -164,6 +169,19 @@ export const useUserCompletionStatusQuery = (
 ): UseQueryResult<boolean, Error> => {
   const { user: firebaseUser, isAuthenticated } = useFirebaseAuth();
   const targetUserId = userId || firebaseUser?.uid;
+
+  const isPendingRegistration = (() => {
+    try {
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        const authData = JSON.parse(pendingAuth);
+        return !authData.isExistingUser;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
 
   return useQuery({
     queryKey: ["userCompletionStatus", targetUserId],
@@ -225,7 +243,11 @@ export const useUserCompletionStatusQuery = (
         return false;
       }
     },
-    enabled: !!targetUserId && isAuthenticated && !!firebaseUser,
+    enabled:
+      !!targetUserId &&
+      isAuthenticated &&
+      !!firebaseUser &&
+      !isPendingRegistration,
     staleTime: 5 * 60 * 1000, // 5분
     retry: 1,
   });

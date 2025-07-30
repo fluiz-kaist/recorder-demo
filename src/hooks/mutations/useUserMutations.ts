@@ -72,6 +72,36 @@ export const useVerifyAuthorizedUserMutation = () => {
   });
 };
 
+export const useUpdateWhitelistedUserMutation = () => {
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      // 화이트리스트 문서의 userId 필드 업데이트
+      const response = await fetch("/api/auth/verifyAuthorizedUserV2", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // 쿠키의 userHash를 전송하기 위해 필요
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "화이트리스트 사용자의 userId 업데이트에 실패했습니다."
+        );
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log("화이트리스트 userId 업데이트 성공:", data);
+    },
+    onError: (error) => {
+      console.error("화이트리스트 userId 업데이트 실패:", error);
+    },
+  });
+};
 /**
  * Firebase Auth + Firestore Client SDK 기반 사용자 등록 뮤테이션
  * API 호출 대신 Firestore에 직접 쓰기

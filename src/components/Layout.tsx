@@ -42,11 +42,11 @@ const Layout = ({ children }: LayoutProps) => {
         const adminCookie = cookies.find((cookie) =>
           cookie.trim().startsWith("admin-token=")
         );
-        console.log("쿠키?", adminCookie);
+        // console.log("쿠키?", adminCookie);
 
         if (adminCookie) {
           const adminToken = adminCookie.split("=")[1]?.trim();
-          console.log("?adminToken", adminToken);
+          // console.log("?adminToken", adminToken);
           // admin-token이 존재하고 값이 있으면 관리자로 인식
           setIsAdmin(!!adminToken && adminToken.startsWith("admin-"));
         } else {

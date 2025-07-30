@@ -198,7 +198,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   //  audioBlob이 생성되면 즉시 간단한 품질 검증 후 STT 준비
   useEffect(() => {
     if (audioBlob && !hasSTTStarted) {
-      console.log("📄 새로운 오디오 blob 생성됨:", {
+      console.log(" 새로운 오디오 blob 생성됨:", {
         size: audioBlob.size,
         type: audioBlob.type,
       });
@@ -334,7 +334,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   // 녹음 시작
   const startRecording = async () => {
     try {
-      console.log("[vr]녹음 시작 요청");
+      console.group("[vr]녹음 시작 요청");
 
       // 이전 녹음 결과 초기화
       setAudioUrl(null);
@@ -388,13 +388,14 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       //  최대 시간 자동 종료 타이머
       const maxTimer = setTimeout(() => {
-        console.log("⏰ 최대 녹음 시간 도달 - 자동 종료");
+        console.log("최대 녹음 시간 도달 - 자동 종료");
         stopRecording();
       }, MAXIMUM_RECORDING_SECONDS * 1000);
 
       setAutoStopTimer(maxTimer);
 
       console.log("✅ 녹음 시작 완료");
+      console.groupEnd();
     } catch (err) {
       console.error("❌ 녹음 시작 실패:", err);
       setIsCountingDown(false);
@@ -406,7 +407,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   // 녹음 중지
   const stopRecording = async () => {
     try {
-      console.log("🛑 녹음 종료 요청");
+      console.log("녹음 종료 요청");
       const actualEndTime = new Date();
       setRecordingEndTime(actualEndTime);
 
@@ -424,7 +425,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         const sessionDuration =
           (actualEndTime.getTime() - recordingStartTime.getTime()) / 1000;
         console.log(
-          `📊 녹음 세션: ${sessionDuration}초, 실제 녹음: ${recordingTime}초`
+          `녹음 세션: ${sessionDuration}초, 실제 녹음: ${recordingTime}초`
         );
       }
     } catch (err) {
@@ -437,7 +438,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const proceedDespiteQuality = () => {
     setShowQualityWarning(false);
     setShowSTT(true);
-    console.log("⚠️ 사용자가 품질 경고를 무시하고 STT 진행");
+    console.warn("⚠️ 사용자가 품질 경고를 무시하고 STT 진행");
   };
 
   //녹음한 음성 다시듣기
@@ -445,7 +446,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const togglePlayback = () => {
     if (!audioRef) return;
 
-    console.log("audioRef?", audioRef);
+    // console.log("audioRef?", audioRef);
 
     if (isPlaying) {
       audioRef.pause();
@@ -614,17 +615,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       //  - 캐시 상태 확인
       console.log(
-        "📊 제출 직전 fullUser:",
+        "제출 직전 fullUser:",
         fullUser?.participation?.sets?.[0]?.tasks
       );
 
       // 잠시 후 캐시 상태 다시 확인
-      setTimeout(() => {
-        console.log("📊 제출 3초 후 캐시 상태 확인");
-        // 현재 캐시된 user 데이터 확인
-        const cachedUser = queryClient.getQueryData(["user", fullUser.id]);
-        console.log("캐시된 사용자 데이터:", cachedUser);
-      }, 3000);
+      // setTimeout(() => {
+      //   console.log("제출 3초 후 캐시 상태 확인");
+      //   // 현재 캐시된 user 데이터 확인
+      //   const cachedUser = queryClient.getQueryData(["user", fullUser.id]);
+      //   console.log("캐시된 사용자 데이터:", cachedUser);
+      // }, 3000);
       // 완료 단계
       setUploadProgress({
         step: "complete",
@@ -734,8 +735,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           {/* 최대 시간 경고 */}
           {isNearMaxTime && (
             <div className={styles.maxTimeWarning}>
-              ⚠️ {MAXIMUM_RECORDING_SECONDS - recordingTime}초 후 자동
-              종료됩니다.
+              {MAXIMUM_RECORDING_SECONDS - recordingTime}초 후 자동 종료됩니다.
             </div>
           )}
           {!canStopRecording && (
@@ -969,7 +969,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 {/* 프로덕션 모드: 간단한 메시지 */}
                 {!isDevMode && (
                   <p className={styles.progressMessageSimple}>
-                    업로드 중입니다... (
+                    제출 중입니다, 잠시만 기다려 주세요... (
                     {uploadProgress.step === "stt"
                       ? "1"
                       : uploadProgress.step === "audio_upload"

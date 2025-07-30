@@ -34,7 +34,7 @@ export const useMobileOptimizedRecorder = (): RecorderState &
     const isAndroid = /Android/.test(navigator.userAgent);
     const isSamsung = /SM-/.test(navigator.userAgent);
 
-    console.log("📱 환경 감지:", { isMobile, isIOS, isAndroid, isSamsung });
+    console.log("환경 감지:", { isMobile, isIOS, isAndroid, isSamsung });
 
     // 모바일에서 가장 호환성 좋은 설정들을 순서대로 시도
     const constraintsList: MediaStreamConstraints[] = [

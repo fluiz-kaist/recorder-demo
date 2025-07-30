@@ -1,4 +1,4 @@
-// hooks/useFirebaseAuth.ts - 자동 로그인 제거 후 단순화된 버전
+// hooks/useFirebaseAuth.ts - 단순화된 버전 (ID Token 자동 저장 제거)
 import { useState, useEffect } from "react";
 import { FirebaseAuthManager } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
@@ -7,25 +7,15 @@ export const useFirebaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Firebase Auth 상태 변화 감지만 유지
+  // Firebase Auth 상태 변화 감지만 - ID Token 저장은 수동으로만
   useEffect(() => {
     const unsubscribe = FirebaseAuthManager.onAuthStateChanged((user) => {
       console.log("Firebase Auth 상태 변화:", user?.uid || "없음");
       setUser(user);
       setIsLoading(false);
 
-      // 사용자가 로그인되면 ID Token을 쿠키에 저장
-      if (user) {
-        user
-          .getIdToken()
-          .then((idToken: string) => {
-            document.cookie = `firebase-token=${idToken}; path=/; max-age=3600`;
-            console.log("ID Token을 쿠키에 저장 완료");
-          })
-          .catch((error: any) => {
-            console.error("ID Token 저장 실패:", error);
-          });
-      }
+      // ✅ ID Token 자동 저장 제거 - 필요한 곳에서만 수동 저장
+      // 이렇게 하면 타이밍 이슈를 방지할 수 있음
     });
 
     return () => unsubscribe();
@@ -42,6 +32,22 @@ export const useFirebaseAuth = () => {
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ✅ ID Token 저장을 위한 유틸리티 메서드 추가
+  const saveIdTokenToCookie = async (user?: User) => {
+    try {
+      const targetUser = user;
+      if (targetUser) {
+        const idToken = await targetUser.getIdToken();
+        document.cookie = `firebase-token=${idToken}; path=/; max-age=3600`;
+        console.log("ID Token을 쿠키에 저장 완료");
+        return idToken;
+      }
+    } catch (error) {
+      console.error("ID Token 저장 실패:", error);
+      throw error;
     }
   };
 
@@ -89,6 +95,7 @@ export const useFirebaseAuth = () => {
     user,
     isLoading,
     signInWithToken,
+    saveIdTokenToCookie, // ✅ 추가된 유틸리티
     signOut,
     refreshToken,
     isAuthenticated: !!user,
