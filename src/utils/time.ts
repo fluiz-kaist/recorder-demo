@@ -28,7 +28,7 @@ export function getKoreanTime(): Date {
  * 한국시간 기준 현재 시간을 ISO 문자열로 반환
  * @returns {string} KST 기준 ISO 문자열 (예: "2025-07-03T14:30:15.123Z")
  */
-function getKoreanTimeISO(): string {
+export function getKoreanTimeISO(): string {
   return getKoreanTime().toISOString();
 }
 
@@ -113,3 +113,63 @@ export function logKoreanTimeFormats(): void {
   console.log("UI용 타임스탬프:", getTimestampForUI());
   //   console.log("오디오 ID 예시:", generateAudioFileId("user123", "script001"));
 }
+
+/**
+ * Firebase Timestamp 객체를 한국시간 기준으로 읽기 쉬운 문자열로 변환
+ * @param timestamp - Firestore Timestamp 또는 { seconds, nanoseconds } 객체 또는 Date
+ * @returns {string} 예: "2025-07-27\n14:29:51"
+ */
+export function formatFirestoreTimestampKST(timestamp: any): string {
+  if (!timestamp) return "-";
+
+  let date: Date;
+
+  // Firebase Timestamp 객체인 경우
+  if (timestamp?.toDate && typeof timestamp.toDate === "function") {
+    date = timestamp.toDate();
+  }
+  // { seconds, nanoseconds } 형태인 경우
+  else if (
+    typeof timestamp.seconds === "number" ||
+    typeof timestamp._seconds === "number"
+  ) {
+    // Admin SDK 또는 REST API 형태
+    const seconds = timestamp.seconds ?? timestamp._seconds;
+    const nanos = timestamp.nanoseconds ?? timestamp._nanoseconds ?? 0;
+    date = new Date(seconds * 1000 + Math.floor(nanos / 1e6));
+  }
+  // 이미 Date 객체인 경우
+  else if (timestamp instanceof Date) {
+    date = timestamp;
+  }
+  // 문자열인 경우
+  else {
+    date = new Date(timestamp);
+  }
+
+  const kst = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+
+  const yyyy = kst.getFullYear();
+  const mm = String(kst.getMonth() + 1).padStart(2, "0");
+  const dd = String(kst.getDate()).padStart(2, "0");
+  const hh = String(kst.getHours()).padStart(2, "0");
+  const min = String(kst.getMinutes()).padStart(2, "0");
+  const ss = String(kst.getSeconds()).padStart(2, "0");
+
+  return `${yyyy}-${mm}-${dd}\n${hh}:${min}:${ss}`;
+}
+
+// formating
+// 시간을 mm:ss 형식으로 변환
+export const formatTime = (seconds: number): string => {
+  if (!seconds || !isFinite(seconds) || isNaN(seconds)) {
+    return "00:00";
+  }
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, "0")}:${secs
+    .toString()
+    .padStart(2, "0")}`;
+};

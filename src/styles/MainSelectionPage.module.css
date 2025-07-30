@@ -7,7 +7,7 @@
 }
 
 .content {
-  max-width: 480px;
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
 }
@@ -15,7 +15,7 @@
 /* 헤더 영역 */
 .header {
   text-align: center;
-  margin-bottom: var(--space-3xl);
+  margin-bottom: var(--space-sm);
 }
 
 .title {
@@ -26,25 +26,15 @@
   line-height: var(--line-height-tight);
 }
 
-.subtitle {
-  font-size: var(--font-lg);
-  color: var(--color-text-muted);
-  margin: 0;
-  line-height: var(--line-height-normal);
-}
-
 /* 카드 컨테이너 */
 .cardContainer {
   display: grid;
-  grid-template-columns: 1fr; /* 1열 */
-  grid-template-rows: repeat(3, 1fr); /* 3행 */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-lg);
   margin-bottom: var(--space-3xl);
-  /* 필요하다면 최소 높이 설정 */
-  min-height: 600px; /* 옵션: 전체 높이 조정 */
 }
 
-/* 카드 공통 스타일 - Grid 아이템 조정 */
+/* 카드 공통 스타일 */
 .card {
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
@@ -56,8 +46,6 @@
   border: 3px solid transparent;
   text-align: center;
   position: relative;
-  /* min-height 제거하고 Grid가 높이 결정하도록 */
-  /* min-height: 200px; */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -66,57 +54,14 @@
 
 .card:hover,
 .card:focus {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-md);
   outline: none;
 }
 
-.card:active {
-  transform: translateY(-2px);
-}
-
-/* 카드 색상 테마 */
-.cardBlue {
-  border-left: 6px solid var(--color-primary);
-}
-
-.cardBlue:hover,
-.cardBlue:focus {
-  border-color: var(--color-primary);
-  background: var(--color-primary-bg);
-}
-
-.cardGreen {
-  border-left: 6px solid var(--color-secondary);
-}
-
-.cardGreen:hover,
-.cardGreen:focus {
-  border-color: var(--color-secondary);
-  background: var(--color-secondary-bg);
-}
-
-.cardPurple {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-light) 0%,
-    var(--color-primary) 100%
-  );
-  border-color: var(--color-primary);
-}
-
-.cardPurple:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-hover) 100%
-  );
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.cardPurple:active {
-  transform: translateY(-2px);
+.card:focus-visible {
+  outline: 3px solid var(--color-success-light);
+  outline-offset: 2px;
 }
 
 /* 카드 아이콘 */
@@ -128,18 +73,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.cardGreen .cardIcon {
-  color: var(--color-secondary);
-}
-
-.cardBlue .cardIcon {
-  color: var(--color-primary);
-}
-
-.cardPurple .cardIcon {
-  color: var(--color-primary-light);
 }
 
 .cardIcon svg {
@@ -175,10 +108,6 @@
   color: var(--color-primary);
 }
 
-.cardGreen .cardAction {
-  color: var(--color-secondary);
-}
-
 .arrow {
   font-size: var(--font-xl);
   transition: transform var(--transition-fast);
@@ -186,6 +115,201 @@
 
 .card:hover .arrow {
   transform: translateX(4px);
+}
+
+/* 카드 상태별 스타일 */
+.cardTutorial {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+}
+
+.cardTutorial:hover {
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+}
+
+.cardCompleted {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border: 2px solid #10b981 !important;
+}
+
+.cardCompleted .cardTitle {
+  color: #065f46 !important;
+}
+
+.cardCompleted .cardDescription {
+  color: #047857 !important;
+}
+
+.cardInProgress {
+  position: relative;
+}
+
+.cardInProgress::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  background: #f59e0b;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.cardLocked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border: 2px solid #ddd;
+}
+
+.cardLocked:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cardLocked .cardIcon {
+  color: #999;
+}
+
+.cardLocked .cardTitle {
+  color: #666;
+}
+
+.cardLocked .cardDescription {
+  color: #888;
+}
+
+.unlockText {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.nextUnlock {
+  color: #2196f3;
+  font-weight: 500;
+}
+
+/* 전체 진행률 표시 */
+.overallProgress {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background-color: #e5e7eb;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  transition: width 0.5s ease;
+}
+
+.progressText {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #374151;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* 서비스별 진행률 바 */
+.serviceProgress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.5rem 0;
+}
+
+.serviceProgressBar {
+  flex: 1;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.serviceProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  transition: width 0.3s ease;
+}
+
+.serviceProgressText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* 완료 축하 메시지 */
+.congratulationsMessage {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.congratulationsMessage h3 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-size: 1.5rem;
+}
+
+.congratulationsMessage p {
+  margin: 0;
+  color: #047857;
+  font-size: 1.1rem;
+}
+
+/* 경고 메시지 */
+.warningMessage {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.warningMessage p {
+  margin: 0;
+  color: #92400e;
+  font-weight: 500;
+}
+
+/* 로딩 상태 */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: var(--space-4xl);
+  text-align: center;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-gray-100);
+  border-top: 4px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--space-base);
 }
 
 /* 하단 정보 */
@@ -201,18 +325,68 @@
   line-height: var(--line-height-normal);
 }
 
-/* 모바일 최적화 (작은 화면) */
-@media (max-width: 360px) {
+/* 디버그 정보 (필요시 추가) */
+.debugInfo {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+/* 애니메이션 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
   .container {
-    padding: var(--space-base) var(--space-sm);
+    padding: var(--space-base);
   }
 
-  .title {
-    font-size: var(--font-3xl);
+  .overallProgress {
+    padding: 0.75rem;
+    margin-top: 0.75rem;
   }
 
-  .subtitle {
-    font-size: var(--font-lg);
+  .congratulationsMessage {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .congratulationsMessage h3 {
+    font-size: 1.25rem;
+  }
+
+  .congratulationsMessage p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardContainer {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
   .card {
@@ -226,13 +400,28 @@
   }
 
   .cardTitle {
-    font-size: var(--font-2xl);
+    font-size: var(--font-xl);
   }
 
   .cardDescription {
-    font-size: var(--font-lg);
+    font-size: var(--font-sm);
+  }
+
+  .serviceProgress {
+    margin: 0.5rem 0;
   }
 }
+
+@media (max-width: 360px) {
+  .container {
+    padding: var(--space-base) var(--space-sm);
+  }
+
+  .title {
+    font-size: var(--font-2xl);
+  }
+}
+
 /* 접근성 향상 */
 @media (prefers-reduced-motion: reduce) {
   .card {
@@ -242,9 +431,18 @@
   .arrow {
     transition: none;
   }
+
+  .loadingSpinner {
+    animation: none;
+  }
+
+  .finishAllTasksl {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
-/* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .card {
     border: 2px solid var(--color-text-primary);
@@ -255,19 +453,33 @@
     color: var(--color-text-primary);
   }
 
-  .subtitle,
   .cardDescription {
     color: var(--color-text-primary);
   }
 }
-
-/* 접근성 향상 - 포커스 스타일 */
-.card:focus {
-  outline: 3px solid var(--color-success-light);
-  outline-offset: 2px;
+/* 완료버튼 */
+.finishAllTasks {
+  background: var(--color-primary); /* special */
+  color: var(--color-bg-primary);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition);
+  margin-top: var(--space-md);
+  text-align: center;
+  width: 100%;
 }
 
-.card:focus-visible {
-  outline: 3px solid var(--color-success-light);
-  outline-offset: 2px;
+.finishAllTasks:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-secondary) 0%,
+    var(--color-primary) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }

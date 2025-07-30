@@ -1,122 +1,269 @@
-// pages/api/scripts/complete.ts
-import { NextApiRequest, NextApiResponse } from "next";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { User, ScriptType, ScriptStatus } from "@/types/firebase";
+// api/scripts/complete.ts - 수정된 버전
 
-interface CompleteScriptRequest {
-  userId: string;
-  scriptId: number; // number로 변경
-  scriptType: ScriptType;
-  recordingId: string; // audioRecordings 컬렉션 참조
-  audioUrl: string;
-  sttText: string;
+import {
+  getDocByIdTypedAdmin,
+  updateDocByIdAdmin,
+} from "@/lib/firebase/firestoreAdmin";
+import { FieldValue } from "firebase-admin/firestore";
+import { NextApiRequest, NextApiResponse } from "next";
+import { CompleteScriptRequest } from "@/hooks/mutations/useUserMutations";
+
+// Firestore 내 개별 task의 타입
+interface TaskEntry {
+  taskKey: string;
+  taskType: "situational" | "formal";
+  status:
+    | "not_started"
+    | "in_progress"
+    | "completed"
+    | "submitted"
+    | "approved";
+  assignedAt: string;
+  setId?: number;
+  audioRecordId?: string;
 }
 
-interface CompleteScriptResponse {
-  success: boolean;
-  message?: string;
-  user?: User; // 업데이트된 사용자 정보 반환
+// Firestore 내 set의 타입 (부분 정의)
+interface ParticipationSet {
+  setNumber: number; // ✅ 추가
+  setId: number;
+  tasks: {
+    situational?: TaskEntry[];
+    formal?: TaskEntry[];
+  };
+  progress: {
+    totalTasks: number;
+    completedTasks: number;
+    submittedTasks: number;
+    approvedTasks: number;
+    situational: {
+      total: number;
+      completed: number;
+      submitted: number;
+      approved: number;
+    };
+    formal: {
+      total: number;
+      completed: number;
+      submitted: number;
+      approved: number;
+    };
+    currentTaskIndex?: number;
+    currentTaskType?: "situational" | "formal";
+  };
+}
+// 🎯 progress 계산 함수
+function calculateProgress(tasks: {
+  situational?: TaskEntry[];
+  formal?: TaskEntry[];
+}) {
+  const situationalTasks = tasks.situational || [];
+  const formalTasks = tasks.formal || [];
+
+  // 상황발화 통계
+  const situationalCompleted = situationalTasks.filter((t) =>
+    ["completed", "submitted", "approved"].includes(t.status)
+  ).length;
+  const situationalSubmitted = situationalTasks.filter((t) =>
+    ["submitted", "approved"].includes(t.status)
+  ).length;
+  const situationalApproved = situationalTasks.filter(
+    (t) => t.status === "approved"
+  ).length;
+
+  // 정형발화 통계
+  const formalCompleted = formalTasks.filter((t) =>
+    ["completed", "submitted", "approved"].includes(t.status)
+  ).length;
+  const formalSubmitted = formalTasks.filter((t) =>
+    ["submitted", "approved"].includes(t.status)
+  ).length;
+  const formalApproved = formalTasks.filter(
+    (t) => t.status === "approved"
+  ).length;
+
+  // 전체 통계
+  const totalTasks = situationalTasks.length + formalTasks.length;
+  const completedTasks = situationalCompleted + formalCompleted;
+  const submittedTasks = situationalSubmitted + formalSubmitted;
+  const approvedTasks = situationalApproved + formalApproved;
+
+  return {
+    totalTasks,
+    completedTasks,
+    submittedTasks,
+    approvedTasks,
+    situational: {
+      total: situationalTasks.length,
+      completed: situationalCompleted,
+      submitted: situationalSubmitted,
+      approved: situationalApproved,
+    },
+    formal: {
+      total: formalTasks.length,
+      completed: formalCompleted,
+      submitted: formalSubmitted,
+      approved: formalApproved,
+    },
+  };
+}
+
+// 🎯 currentStatus 계산 함수
+function calculateCurrentStatus(
+  sets: ParticipationSet[],
+  currentSetNumber: number
+) {
+  const currentSet = sets.find((s) => s.setNumber === currentSetNumber);
+  if (!currentSet) {
+    return {
+      completedPercentage: 0,
+      submittedPercentage: 0,
+      approvedPercentage: 0,
+    };
+  }
+
+  const { totalTasks, completedTasks, submittedTasks, approvedTasks } =
+    currentSet.progress;
+
+  if (totalTasks === 0) {
+    return {
+      completedPercentage: 0,
+      submittedPercentage: 0,
+      approvedPercentage: 0,
+    };
+  }
+
+  return {
+    completedPercentage: Math.round((completedTasks / totalTasks) * 100),
+    submittedPercentage: Math.round((submittedTasks / totalTasks) * 100),
+    approvedPercentage: Math.round((approvedTasks / totalTasks) * 100),
+  };
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CompleteScriptResponse>
+  res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res
-      .status(405)
-      .json({ success: false, message: "Method not allowed" });
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
+  const userCollectionName =
+    process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+  const { userId, taskKey, taskType, status, audioRecordId } =
+    req.body as CompleteScriptRequest;
+
+  if (!userId || !taskKey || !taskType) {
+    return res.status(400).json({ message: "Missing required fields" });
   }
 
+  console.log("완료 처리 요청:", {
+    userId,
+    taskKey,
+    taskType,
+    status,
+    audioRecordId,
+  });
+
   try {
-    const {
-      userId,
-      scriptId,
-      scriptType,
-      recordingId,
-      audioUrl,
-      // sttText,
-    }: CompleteScriptRequest = req.body;
-
-    if (!userId || scriptId === undefined || !scriptType || !recordingId || !audioUrl) {
-      return res.status(400).json({
-        success: false,
-        message: "필수 필드가 누락되었습니다.",
-      });
+    const userData = await getDocByIdTypedAdmin<any>(
+      userCollectionName,
+      userId
+    );
+    if (!userData?.participation?.sets) {
+      return res
+        .status(404)
+        .json({ message: "User participation data not found" });
     }
 
-    // 1. 사용자 정보 조회
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
-
-    if (!userDoc.exists()) {
-      return res.status(404).json({
-        success: false,
-        message: "사용자를 찾을 수 없습니다.",
-      });
+    if (!userData?.participation?.sets) {
+      return res
+        .status(404)
+        .json({ message: "User participation data not found" });
     }
 
-    const userData = userDoc.data() as User;
-    
-    // 2. scriptAssignments 업데이트
-    const updatedAssignments = userData.scriptAssignments.map(assignment => {
-      if (assignment.scriptType === scriptType) {
-        // assignedScriptIds에서 제거하고 completedScriptIds에 추가
-        const newAssignedIds = assignment.assignedScriptIds.filter(id => id !== scriptId);
-        const newCompletedIds = assignment.completedScriptIds.includes(scriptId) 
-          ? assignment.completedScriptIds 
-          : [...assignment.completedScriptIds, scriptId];
+    const sets: ParticipationSet[] = userData.participation.sets;
+    const currentSetNumber = userData.participation?.currentSetNumber || 1;
 
-        return {
-          ...assignment,
-          assignedScriptIds: newAssignedIds,
-          completedScriptIds: newCompletedIds,
+    // ✅ 1. tasks 배열 업데이트
+    const updatedSets = sets.map((set) => {
+      const originalTasks = set.tasks?.[taskType] || [];
+      const tasks: TaskEntry[] = [...originalTasks];
+
+      const taskIndex = tasks.findIndex((t) => t.taskKey === taskKey);
+
+      if (taskIndex !== -1) {
+        // 기존 task가 있는 경우: status와 audioRecordId 갱신
+        tasks[taskIndex] = {
+          ...tasks[taskIndex],
+          status,
+          ...(audioRecordId && { audioRecordId }),
         };
+      } else {
+        // 없는 경우: 새로 추가
+        tasks.push({
+          taskKey,
+          taskType,
+          status,
+          assignedAt: new Date().toISOString(),
+          setId: set.setId,
+          ...(audioRecordId && { audioRecordId }),
+        });
       }
-      return assignment;
+
+      // ✅ 2. progress 통계 다시 계산
+      const updatedTasks = {
+        ...set.tasks,
+        [taskType]: tasks,
+      };
+
+      const newProgress = calculateProgress(updatedTasks);
+
+      return {
+        ...set,
+        tasks: updatedTasks,
+        progress: {
+          ...set.progress,
+          ...newProgress,
+        },
+      };
     });
 
-    // 3. 사용자 정보 업데이트
-    const now = new Date().toISOString();
-    const updatedUserData: Partial<User> = {
-      scriptAssignments: updatedAssignments,
-      lastAccessAt: now,
+    // ✅ 3. currentStatus 업데이트
+    const newCurrentStatus = calculateCurrentStatus(
+      updatedSets,
+      currentSetNumber
+    );
+
+    // ✅ 4. Firestore 업데이트
+    const updateData: any = {
+      "participation.sets": updatedSets,
+      "currentStatus.progress": newCurrentStatus,
+      lastAccessAt: new Date().toISOString(),
     };
 
-    await updateDoc(userRef, {
-      ...updatedUserData,
-      lastAccessAt: serverTimestamp(), // Firestore 서버 시간 사용
+    // 📊 로그 출력
+    console.log("업데이트 데이터:", {
+      taskKey,
+      taskType,
+      status,
+      newProgress: updatedSets.find((s) => s.setNumber === currentSetNumber)
+        ?.progress,
+      newCurrentStatus,
     });
 
-    // 4. scripts 컬렉션의 해당 스크립트 상태 업데이트
-    const scriptKey = `${scriptType}_${scriptId}`;
-    const scriptRef = doc(db, "scripts", scriptKey);
-    
-    await updateDoc(scriptRef, {
-      status: ScriptStatus.COMPLETED,
-      completedAt: serverTimestamp(),
-      recordingId, // audioRecordings 컬렉션 참조
+    await updateDocByIdAdmin(userCollectionName, userId, {
+      ...updateData,
+      lastAccessAt: FieldValue.serverTimestamp(), // if you prefer server timestamp
     });
-
-    // 5. 업데이트된 사용자 정보 반환
-    const finalUserData: User = {
-      ...userData,
-      ...updatedUserData,
-      lastAccessAt: now,
-    };
 
     return res.status(200).json({
-      success: true,
-      message: "스크립트가 성공적으로 완료되었습니다.",
-      user: finalUserData,
+      message: "Participation status updated successfully",
+      progress: newCurrentStatus,
     });
-
-  } catch (error) {
-    console.error("스크립트 완료 처리 중 오류:", error);
-    return res.status(500).json({
-      success: false,
-      message: "서버 오류가 발생했습니다.",
-    });
+  } catch (err: any) {
+    console.error("Error updating participation:", err);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 }

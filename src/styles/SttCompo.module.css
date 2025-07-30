@@ -1,6 +1,6 @@
 .sttSection {
-  padding: var(--space-md);
-  margin: var(--space-md) 0;
+  /* padding: var(--space-sm); */
+  margin: var(--space-sm) 0;
 }
 
 .sttHeader {
@@ -20,17 +20,17 @@
 .sttButton {
   display: block;
   width: 100%;
-  padding: var(--space-base) var(--space-md);
-  background-color: var(--color-primary);
-  color: var(--color-bg-primary);
+  padding: var(--space-sm) var(--space-sm);
+  background-color: var(--color-gray-50);
+  color: var(--color-gray-500);
   border: none;
   border-radius: var(--radius);
   font-size: var(--space-base);
-  font-weight: var(--font-weight-bold);
+  /* font-weight: var(--font-weight-bold); */
   cursor: pointer;
   transition: all var(--transition);
-  margin-bottom: var(--space-base);
-  min-height: var(--button-height);
+  /* margin-bottom: var(--space-base); */
+  /* min-height: var(--button-height); */
 }
 
 .sttButton:hover {

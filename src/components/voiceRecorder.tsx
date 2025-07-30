@@ -1,264 +1,340 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import styles from "@/styles/VoiceRecorder.module.css";
-import { useScrollToTop } from "@/hooks/useScrollToTop";
-import type { WhisperTranscriptionResult } from "@/components/stt/SttWhisper";
+import { useRouter } from "next/router";
+//types
 import {
   ScriptType,
   SituationalScript,
   FormalScript,
-  QAScenarioScript,
   AudioFormat,
   TutorialScript,
 } from "@/types/firebase";
+//hooks
+import { queryClient } from "@/utils/queryClient";
 import { useMobileOptimizedRecorder } from "@/hooks/useMobileOptimizedRecorder";
-import SuccessPopup from "@/components/SuccessPopup";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
+//query and mutation
+import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useUploadAudioMutation } from "@/hooks/mutations/useAudioMutations";
-import { useCompleteScriptMutation } from "@/hooks/mutations/useScriptMutations";
-import { useAuthStatusQuery } from "@/hooks/queries/useUserQueries";
+import { useCompleteScriptMutation } from "@/hooks/mutations/useUserMutations";
+//functions
+import type { WhisperTranscriptionResult } from "@/components/stt/SttWhisper";
 import SttWhisper from "@/components/stt/SttWhisper";
-import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-import { useAllLocalScriptsQuery } from "@/hooks/queries/useScriptQueries";
-// 🎯 간단한 품질 검증 결과 인터페이스
-interface SimpleQualityResult {
-  isGoodQuality: boolean;
-  score: number; // 0-100 점수
-  issues: string[];
-  recommendations: string[];
-  fileSize: number;
-  fileSizeKB: number;
-}
+//utils
+import { getEnv } from "@/utils/envConfig";
+import { formatTime } from "@/utils/time";
+import { performSTTForUpload } from "@/utils/sttUpload";
+import {
+  validateAudioQualitySimple,
+  SimpleQualityResult,
+} from "@/utils/audioUtils";
 
-// Props 인터페이스 수정
+// =================================
+// ========== 타입, 상수=============
+// ===================================
+
+const { isPreview, isDev } = getEnv();
+const isDevMode = isPreview || isDev;
+//  최소 녹음 시간 설정 (초 단위, 개발모드에서는 1, 실사용에서는 10)
+const MINIMUM_RECORDING_SECONDS = isDevMode ? 1 : 10;
+// 최대 녹음 시간 설정(초 단위, 개발모드에서는 20, 실사용에서는 120)
+const MAXIMUM_RECORDING_SECONDS = isDevMode ? 10 : 120;
+
+// : 경고 타이밍 설정(개발모드에서는 종료 전 5초, 실사용에서는 30초 전에 경고)
+const WARNING_BEFORE_MAX_SECONDS = isDevMode ? 5 : 30; // 최대 시간 30초 전에 경고
+const WARNING_START_TIME =
+  MAXIMUM_RECORDING_SECONDS - WARNING_BEFORE_MAX_SECONDS; // 90초
+
+/** interfaces */
+type AnyScript = SituationalScript | FormalScript | TutorialScript;
+
 interface VoiceRecorderProps {
   scriptType: ScriptType;
-  scriptData:
-    | SituationalScript
-    | FormalScript
-    | QAScenarioScript
-    | TutorialScript;
+  scriptData: AnyScript;
   onRecordingComplete?: () => void;
   isCompltedScript?: boolean;
   isTutorial?: boolean;
+  onAllScriptsComplete?: () => void;
+  totalScriptsCount?: number;
+  completedScriptsCount?: number;
 }
 
+// 컴포넌트 시작
 const RecorderComponent: React.FC<VoiceRecorderProps> = ({
+  isTutorial = false,
   scriptType,
   scriptData,
   onRecordingComplete,
-  isCompltedScript,
-  isTutorial = false,
+  totalScriptsCount,
+  onAllScriptsComplete,
+  completedScriptsCount,
 }) => {
-  console.log("VoiceRecorder props:", { scriptType, scriptData });
+  console.log("[VoiceRecorder] props:", {
+    scriptType,
+    scriptData,
+    totalScriptsCount,
+    completedScriptsCount,
+  });
+  // =================================
+  // ========== 상태 관리 =============
+  // ===================================
 
-  const [isClient, setIsClient] = useState(false);
-  const [audioDuration, setAudioDuration] = useState<number | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isSTTProcessing, setIsSTTProcessing] = useState(false);
-  const [isSTTSuccess, setIsSTTSuccess] = useState(false);
-  const [shouldSTTOnUpload, setShouldSTTOnUpload] = useState(false);
+  /** UI 관련 */
   // 스크롤 훅 사용
   const scrollToTop = useScrollToTop();
+  const router = useRouter();
+  // 카운트 다운
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  //녹음 정지 강제 관리
+  const [canStopRecording, setCanStopRecording] = useState(false);
+  //  최대 시간 관련 상태
+  const [isNearMaxTime, setIsNearMaxTime] = useState(false); // 90초 지나면 true
+  const [autoStopTimer, setAutoStopTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
+
+  //녹음 파일 다시듣기 상태
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  /** Audio 관련 */
+
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  // 녹음 완료 된 결과물의 속성
+  const [audioDuration, setAudioDuration] = useState<number | null>(null);
+  //  녹음 세션 추적 상태
+  const [recordingStartTime, setRecordingStartTime] = useState<Date | null>(
+    null
+  );
+  const [recordingEndTime, setRecordingEndTime] = useState<Date | null>(null);
+
+  /** upload */
+  //업로드 상태 관련
+  const [uploadProgress, setUploadProgress] = useState<{
+    step: "idle" | "stt" | "audio_upload" | "user_update" | "complete";
+    message: string;
+  }>({
+    step: "idle",
+    message: "",
+  });
   // STT 관련 상태
+  const [showSTT, setShowSTT] = useState(false);
+  const [isSTTProcessing, setIsSTTProcessing] = useState(false);
+  const [hasSTTStarted, setHasSTTStarted] = useState(false);
   const [transcription, setTranscription] =
     useState<WhisperTranscriptionResult | null>(null);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(
     null
   );
-  const [showSTT, setShowSTT] = useState(false);
-
   // 간단한 품질 검증 관련 상태
   const [qualityResult, setQualityResult] =
     useState<SimpleQualityResult | null>(null);
   const [showQualityWarning, setShowQualityWarning] = useState(false);
 
-  // 성공 팝업 관련 상태
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  // ==========  Refs ==========
+  // 오디오 재생/일시정지를 제어하기 위한 HTML Audio Element 참조
+  // 사용자가 "재생" 버튼을 클릭했을 때 audio.play()/pause() 호출용
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  // 메모리 누수 방지를 위한 Blob URL 참조 저장소
+  // URL.createObjectURL()로 생성한 URL을 나중에 URL.revokeObjectURL()로 정리하기 위해 보관
+  const audioUrlRef = useRef<string | null>(null);
 
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [isCountingDown, setIsCountingDown] = useState(false);
-  const [hasSTTStarted, setHasSTTStarted] = useState(false);
-  // React Query 훅들
-  const { data: authToken } = useAuthStatusQuery();
+  // =================================
+  // ========= 외부 훅과 쿼리 =========
+  // ===================================
+
   const uploadAudioMutation = useUploadAudioMutation();
-  const completeScriptMutation = useCompleteScriptMutation();
-  const assignScriptsMutation = useAssignScriptsMutation();
-  const { data: localScripts } = useAllLocalScriptsQuery();
+  const completeUserScriptMutation = useCompleteScriptMutation();
 
+  const { data: fullUser } = useUserQuery();
   // MobileOptimizedRecorder hook 사용
   const {
     isRecording,
-    recordingTime,
+    recordingTime, //녹음 진행 상태
     audioBlob,
     startRecording: startMobileRecording,
     stopRecording: stopMobileRecording,
     resetRecorder,
   } = useMobileOptimizedRecorder();
 
-  // 성공 팝업 닫기 핸들러
-  const handleCloseSuccessPopup = () => {
-    setShowSuccessPopup(false);
-    onRecordingComplete?.();
-  };
+  /// funcs for useEffects //
 
-  // STT 분석 상태 변경 핸들러
-  const handleSTTStateChange = (isTranscribing: boolean) => {
-    setIsSTTProcessing(isTranscribing);
-  };
-
-  // 시간을 mm:ss 형식으로 변환
-  const formatTime = (seconds: number): string => {
-    if (!seconds || !isFinite(seconds) || isNaN(seconds)) {
-      return "00:00";
+  //오디오 관련
+  const cleanupAudioUrl = useCallback(() => {
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
     }
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  // 🎯 파일 크기 기반 간단한 품질 검증 (1-5ms 완료)
-  const validateAudioQualitySimple = (
-    blob: Blob,
-    recordingDuration: number
-  ): SimpleQualityResult => {
-    const startTime = performance.now();
-
-    const fileSize = blob.size;
-    const fileSizeKB = Math.round(fileSize / 1024);
-
-    let score = 100;
-    const issues: string[] = [];
-    const recommendations: string[] = [];
-
-    console.log(
-      `🔍 간단 품질 검증 시작: 파일크기=${fileSizeKB}KB, 시간=${recordingDuration}초`
-    );
-
-    // 1. 녹음 시간 체크
-    if (recordingDuration < 2) {
-      score -= 40;
-      issues.push("녹음 시간이 너무 짧습니다");
-      recommendations.push("최소 2초 이상 말씀해 주세요");
-    } else if (recordingDuration < 3) {
-      score -= 20;
-      issues.push("녹음 시간이 조금 짧습니다");
-      recommendations.push("더 자세히 말씀해 주세요");
-    }
-
-    if (recordingDuration > 60) {
-      score -= 10;
-      issues.push("녹음 시간이 너무 깁니다");
-      recommendations.push("1분 이내로 간결하게 말씀해 주세요");
-    }
-
-    // 2. 파일 크기 절대값 체크
-    if (fileSizeKB < 5) {
-      score -= 50;
-      issues.push("파일이 너무 작습니다 (거의 무음상태)");
-      recommendations.push("마이크를 확인하고 더 크게 말씀해 주세요");
-    } else if (fileSizeKB < 15) {
-      score -= 30;
-      issues.push("음성이 너무 작게 녹음되었습니다");
-      recommendations.push("조금 더 크게 말씀해 주세요");
-    }
-
-    if (fileSizeKB > 10000) {
-      score -= 5;
-      issues.push("파일이 예상보다 큽니다");
-    }
-
-    // 3. 파일 크기 대비 시간 비율 체크 (핵심 지표)
-    const expectedSizePerSecond = 8; // KB/초 (WebM Opus 64kbps 기준)
-    const expectedSize = recordingDuration * expectedSizePerSecond;
-    const sizeRatio = fileSizeKB / expectedSize;
-
-    console.log(
-      `📊 크기 비율 분석: 예상=${expectedSize}KB, 실제=${fileSizeKB}KB, 비율=${sizeRatio.toFixed(
-        2
-      )}`
-    );
-
-    if (sizeRatio < 0.1) {
-      score -= 40;
-      issues.push("거의 무음상태로 녹음되었습니다");
-      recommendations.push(
-        "마이크 권한을 확인하고 조용한 곳에서 다시 녹음해 주세요"
-      );
-    } else if (sizeRatio < 0.3) {
-      score -= 25;
-      issues.push("음성이 너무 작게 녹음되었습니다");
-      recommendations.push(
-        "스마트폰을 입에서 15-20cm 거리에 두고 더 크게 말씀해 주세요"
-      );
-    } else if (sizeRatio < 0.5) {
-      score -= 10;
-      issues.push("음성이 조금 작게 녹음되었습니다");
-      recommendations.push("조금 더 크게 말씀해 주세요");
-    }
-
-    // 4. 포맷 체크
-    if (!blob.type.includes("webm")) {
-      score -= 5;
-      issues.push("최적 포맷이 아닙니다");
-    }
-
-    // 5. 시간당 파일 크기가 너무 작은 경우 (발음 불분명 가능성)
-    if (recordingDuration > 0 && fileSizeKB / recordingDuration < 3) {
-      score -= 15;
-      issues.push("발음이 불분명하거나 음성이 약할 수 있습니다");
-      recommendations.push("천천히, 또렷하게 말씀해 주세요");
-    }
-
-    const result: SimpleQualityResult = {
-      isGoodQuality: score >= 70 && issues.length <= 1,
-      score: Math.max(0, score),
-      issues,
-      recommendations,
-      fileSize,
-      fileSizeKB,
-    };
-
-    const endTime = performance.now();
-    console.log(
-      `✅ 간단 품질 검증 완료: ${(endTime - startTime).toFixed(2)}ms, 점수=${
-        result.score
-      }/100`
-    );
-
-    return result;
-  };
-
-  // 클라이언트 사이드에서만 실행되도록 보장
-  useEffect(() => {
-    console.log("🚀 VoiceRecorder 컴포넌트 마운트됨");
-    setIsClient(true);
   }, []);
 
-  // 🔥 녹음 시작
+  // 일반적인 정리 (리렌더링 시)
+  const cleanup = useCallback(() => {
+    // 1. 타이머 정리
+    if (autoStopTimer) {
+      clearTimeout(autoStopTimer);
+    }
+
+    // 2. Blob URL 정리
+    cleanupAudioUrl();
+  }, [autoStopTimer, cleanupAudioUrl]);
+
+  // 페이지 떠날 때만 완전 정리
+  const cleanupForPageUnload = useCallback(() => {
+    // 1. 기본 정리
+    cleanup();
+
+    // 2. resetRecorder() 대신 직접 스트림만 정리
+    if (typeof stopMobileRecording === "function") {
+      stopMobileRecording().catch(console.error);
+    }
+  }, [cleanup, stopMobileRecording]);
+
+  // =====================================
+  // ========== useEffect 훅 =============
+  // =====================================
+
+  //  audioBlob이 생성되면 즉시 간단한 품질 검증 후 STT 준비
+  useEffect(() => {
+    if (audioBlob && !hasSTTStarted) {
+      console.log("📄 새로운 오디오 blob 생성됨:", {
+        size: audioBlob.size,
+        type: audioBlob.type,
+      });
+
+      // 이전 URL 정리
+      cleanupAudioUrl();
+
+      // 타이머 정리
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+      }
+
+      let url = "";
+
+      // iOS 호환성을 위한 오디오 URL 생성
+      if (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+        audioBlob.type.includes("webm")
+      ) {
+        // iOS에서 WebM 문제 시 Data URL 사용
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          setAudioUrl(dataUrl);
+        };
+        reader.readAsDataURL(audioBlob);
+      } else {
+        // 일반적인 경우
+        url = URL.createObjectURL(audioBlob);
+        audioUrlRef.current = url; // ref에 저장
+        setAudioUrl(url);
+      }
+
+      setAudioDuration(recordingTime);
+
+      // 즉시 간단한 품질 검증 (1-5ms 완료)
+      const quality = validateAudioQualitySimple(audioBlob, recordingTime);
+      setQualityResult(quality);
+
+      if (quality.isGoodQuality) {
+        console.log("✅ 품질 검증 통과 - STT 진행");
+        setShowSTT(true);
+        setHasSTTStarted(true);
+      } else {
+        console.log("⚠️ 품질 검증 실패 - 사용자에게 경고 표시");
+        setShowQualityWarning(true);
+      }
+
+      // 오디오 메타데이터 로드 (더 정확한 duration, 선택사항)
+      if (url) {
+        setTimeout(() => {
+          if (audioUrlRef.current === url) {
+            const audio = new Audio(url);
+            audio.addEventListener("loadedmetadata", () => {
+              if (audio.duration && isFinite(audio.duration)) {
+                setAudioDuration(Math.floor(audio.duration));
+              }
+            });
+            audio.addEventListener("error", (e) => {
+              console.error("Audio loading error:", e);
+            });
+            audio.load();
+          }
+        }, 100);
+      }
+    }
+  }, [audioBlob, recordingTime, hasSTTStarted, cleanupAudioUrl, autoStopTimer]);
+
+  useEffect(() => {
+    return cleanupAudioUrl;
+  }, [cleanupAudioUrl]);
+
+  //녹음 중 뒤로가기, 새로고침 대응
+  useEffect(() => {
+    const handleRouteChangeStart = (url: string) => {
+      if (isRecording && url !== router.asPath) {
+        const shouldLeave = window.confirm(
+          "녹음이 진행 중입니다.\n\n페이지를 떠나면 녹음이 중단됩니다.\n정말로 떠나시겠습니까?"
+        );
+
+        if (!shouldLeave) {
+          router.events.emit("routeChangeError");
+          throw "Route change cancelled";
+        } else {
+          // 녹음 정리
+          cleanupForPageUnload();
+        }
+      }
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // 녹음 중이면 경고 메시지
+      if (isRecording) {
+        const message =
+          "녹음이 진행 중입니다.\n\n페이지를 떠나면 녹음이 중단됩니다.\n정말로 떠나시겠습니까?";
+        event.preventDefault();
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore: Deprecated, but required for cross-browser support
+        event.returnValue = message;
+        return message;
+      }
+
+      // 강제 정리 작업
+      cleanupForPageUnload();
+    };
+
+    // 이벤트 리스너 등록
+    if (isRecording) {
+      //  Next.js 라우터 이벤트
+      router.events.on("routeChangeStart", handleRouteChangeStart);
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", cleanup); // iOS Safari용
+
+    return () => {
+      // : Next.js 라우터 이벤트 정리
+      router.events.off("routeChangeStart", handleRouteChangeStart);
+
+      //  브라우저 이벤트 정리
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("unload", cleanup);
+      // 컴포넌트 언마운트 시에만 완전 정리
+      cleanup();
+    };
+  }, [isRecording, router, cleanupForPageUnload, cleanup]);
+
+  // =====================================
+  // ========== 이벤트 핸들러 =============
+  // =====================================
+
+  //////////// 메인 녹음 핸들러
+  // 녹음 시작
   const startRecording = async () => {
     try {
       console.log("[vr]녹음 시작 요청");
-
-      // 튜토리얼 스크립트이고 로컬에 스크립트가 없는 경우에만 할당 실행
-      if (isTutorial && authToken?.userId && !localScripts) {
-        try {
-          console.log("튜토리얼 스크립트 - 로컬 스크립트 없음, 할당 실행");
-          await assignScriptsMutation.mutateAsync({
-            userId: authToken.userId,
-          });
-          console.log("튜토리얼 스크립트 할당 완료");
-        } catch (error) {
-          console.error("튜토리얼 스크립트 할당 실패:", error);
-          // 스크립트 할당 실패해도 녹음은 계속 진행
-        }
-      } else if (isTutorial && localScripts) {
-        console.log(
-          "튜토리얼 스크립트 - 이미 로컬에 스크립트 존재, 할당 건너뜀"
-        );
-      }
 
       // 이전 녹음 결과 초기화
       setAudioUrl(null);
@@ -268,8 +344,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       setShowSTT(false);
       setQualityResult(null);
       setShowQualityWarning(false);
-      setIsSTTSuccess(false);
-      setShowSuccessPopup(false);
+
+      // 최대 시간 관련 상태 초기화
+      setIsNearMaxTime(false);
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+        setAutoStopTimer(null);
+      }
 
       // 카운트다운 시작
       setIsCountingDown(true);
@@ -284,10 +365,34 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       setCountdown(null);
       setIsCountingDown(false);
 
+      // 실제 녹음 시작할 때 시간 기록
+      const actualStartTime = new Date();
+      setRecordingStartTime(actualStartTime);
+      setRecordingEndTime(null); // 이전 종료 시간 초기화
+
       // 실제 녹음 시작
 
       // MobileOptimizedRecorder의 startRecording 호출
       await startMobileRecording();
+
+      // 최소 녹음 시간 타이머 (기존)
+      setCanStopRecording(false);
+      setTimeout(() => {
+        setCanStopRecording(true);
+      }, MINIMUM_RECORDING_SECONDS * 1000);
+
+      // : 90초 경고 타이머
+      setTimeout(() => {
+        setIsNearMaxTime(true);
+      }, WARNING_START_TIME * 1000); // 90초
+
+      //  최대 시간 자동 종료 타이머
+      const maxTimer = setTimeout(() => {
+        console.log("⏰ 최대 녹음 시간 도달 - 자동 종료");
+        stopRecording();
+      }, MAXIMUM_RECORDING_SECONDS * 1000);
+
+      setAutoStopTimer(maxTimer);
 
       console.log("✅ 녹음 시작 완료");
     } catch (err) {
@@ -298,85 +403,36 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     }
   };
 
-  // 🔥 녹음 중지
+  // 녹음 중지
   const stopRecording = async () => {
     try {
       console.log("🛑 녹음 종료 요청");
+      const actualEndTime = new Date();
+      setRecordingEndTime(actualEndTime);
+
+      //  타이머 정리
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+        setAutoStopTimer(null);
+      }
+      setIsNearMaxTime(false);
+
       await stopMobileRecording();
       console.log("✅ 녹음 종료 완료");
+      // 세션 정보 계산
+      if (recordingStartTime) {
+        const sessionDuration =
+          (actualEndTime.getTime() - recordingStartTime.getTime()) / 1000;
+        console.log(
+          `📊 녹음 세션: ${sessionDuration}초, 실제 녹음: ${recordingTime}초`
+        );
+      }
     } catch (err) {
       console.error("❌ 녹음 종료 실패:", err);
     }
   };
 
-  //  audioBlob이 생성되면 즉시 간단한 품질 검증 후 STT 준비
-  useEffect(() => {
-    if (audioBlob && !hasSTTStarted) {
-      console.log("📄 새로운 오디오 blob 생성됨:", {
-        size: audioBlob.size,
-        type: audioBlob.type,
-      });
-
-      // Blob URL 생성
-      const url = URL.createObjectURL(audioBlob);
-      setAudioUrl(url);
-      setAudioDuration(recordingTime);
-
-      // 🎯 즉시 간단한 품질 검증 (1-5ms 완료)
-      const quality = validateAudioQualitySimple(audioBlob, recordingTime);
-      setQualityResult(quality);
-
-      if (quality.isGoodQuality) {
-        console.log("✅ 품질 검증 통과 - STT 진행");
-        setShowSTT(true);
-        setHasSTTStarted(true);
-      } else {
-        console.log("⚠️ 품질 검증 실패 - 사용자에게 경고 표시");
-        setShowQualityWarning(true);
-      }
-
-      // 오디오 메타데이터 로드 (더 정확한 duration, 선택사항)
-      const audio = new Audio(url);
-      audio.addEventListener("loadedmetadata", () => {
-        if (audio.duration && isFinite(audio.duration)) {
-          setAudioDuration(Math.floor(audio.duration));
-        }
-      });
-      audio.load();
-
-      // Cleanup 함수 (메모리 누수 방지)
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    }
-  }, [audioBlob, recordingTime, hasSTTStarted]);
-
-  const performSTTForUpload = async (
-    audioBlob: Blob
-  ): Promise<string | null> => {
-    try {
-      const formData = new FormData();
-      formData.append("file", audioBlob, "recording.webm");
-      formData.append("model", "whisper-1");
-      formData.append("language", "ko");
-      formData.append("response_format", "json");
-
-      const response = await fetch("/api/stt/whisper-transcribe", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result.success ? result.transcription?.transcript : null;
-    } catch (error) {
-      console.error("Upload STT failed:", error);
-      return null;
-    }
-  };
+  //////////// UI 인터랙션 핸들러
   // 품질 경고 무시하고 계속 진행
   const proceedDespiteQuality = () => {
     setShowQualityWarning(false);
@@ -384,75 +440,209 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     console.log("⚠️ 사용자가 품질 경고를 무시하고 STT 진행");
   };
 
-  // React Query 기반 업로드 처리
+  //녹음한 음성 다시듣기
+  // 오디오 재생/정지 함수
+  const togglePlayback = () => {
+    if (!audioRef) return;
+
+    console.log("audioRef?", audioRef);
+
+    if (isPlaying) {
+      audioRef.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.play().catch(console.error);
+      setIsPlaying(true);
+    }
+  };
+
+  //버튼 스타일
+  const getButtonStyle = () => {
+    if (isRecording) {
+      return styles.recordingButton; // 빨간색
+    }
+    return styles.readyButton; // 초록색
+  };
+
+  ///////////// STT 관련 핸들러
+  // STT 분석 상태 변경 핸들러
+  const handleSTTStateChange = (isTranscribing: boolean) => {
+    setIsSTTProcessing(isTranscribing);
+  };
+
+  // STT 결과 처리
+  const handleTranscriptionComplete = (
+    result: WhisperTranscriptionResult | null
+  ) => {
+    setTranscription(result);
+    if (result) {
+      setTranscriptionError(null);
+      setIsSTTProcessing(false);
+      console.log("✅ STT 변환 완료:", result);
+    }
+  };
+
+  const handleTranscriptionError = (error: string) => {
+    setTranscriptionError(error);
+    setIsSTTProcessing(false);
+    setTranscription(null);
+    console.error("❌ STT 변환 실패:", error);
+  };
+
+  ///////////// 업로드 및 처리 핸들러
   const handleUpload = async () => {
     // 튜토리얼인 경우 서버 업로드 없이 바로 완료 처리
     if (isTutorial) {
       console.log("튜토리얼 녹음 완료:", transcription?.transcript);
-      setShowSuccessPopup(true);
+      onRecordingComplete?.();
+      if (onAllScriptsComplete && totalScriptsCount && completedScriptsCount) {
+        if (completedScriptsCount + 1 >= totalScriptsCount) {
+          onAllScriptsComplete();
+        }
+      }
       return;
     }
 
-    //stt가 있어야 업로드 하는 버전
-    // if (!audioBlob || !audioDuration || !authToken?.userId || !transcription) {
-    //   console.error("업로드에 필요한 데이터가 없습니다.");
-    //   return;
-    // }
-    if (!audioBlob || !audioDuration || !authToken?.userId) {
+    if (!recordingStartTime || !recordingEndTime) {
+      console.error("녹음 시간 정보가 없습니다.");
+      return;
+    }
+    // 세션 정보 계산
+    const sessionDuration =
+      (recordingEndTime.getTime() - recordingStartTime.getTime()) / 1000;
+    const actualDuration = audioDuration || recordingTime;
+
+    if (!audioBlob || !audioDuration || !fullUser?.id) {
       console.error("업로드에 필요한 데이터가 없습니다.");
       return;
     }
 
     try {
       let sttText = transcription?.transcript || "";
-
+      // STT 단계
       if (!transcription) {
+        setUploadProgress({
+          step: "stt",
+          message: "음성을 텍스트로 변환하고 있습니다...",
+        });
         console.log("업로드 중 STT 수행...");
         setIsSTTProcessing(true);
         sttText = (await performSTTForUpload(audioBlob)) || "";
         setIsSTTProcessing(false);
       }
+      // 오디오 업로드 단계
+      setUploadProgress({
+        step: "audio_upload",
+        message: "음성 파일을 업로드하고 있습니다...",
+      });
       console.log("업로드 시작:", {
-        userId: authToken.userId,
+        userId: fullUser.id,
         scriptType,
         scriptId: scriptData.id,
         duration: audioDuration,
         sttText: sttText,
       });
 
-      // STT가 아직 안된 경우 업로드 시 STT 수행
+      const originalScript =
+        scriptType === ScriptType.SITUATIONAL && "main_content" in scriptData
+          ? scriptData.main_content
+          : "formal_script" in scriptData
+          ? scriptData.formal_script
+          : "";
 
-      // 1. 오디오 업로드
+      const gender = fullUser ? fullUser.gender : "불명";
+      const ageGroup = fullUser ? fullUser.ageGroup : "불명";
+      const userName = fullUser ? fullUser.userName : "불명";
+
+      const typedScript = scriptData as {
+        service_name: string;
+        task_name: string;
+        service_target: string;
+        task_key: string;
+      };
+
       const uploadResult = await uploadAudioMutation.mutateAsync({
-        userId: authToken.userId,
-        scriptId: scriptData.id,
-        scriptType,
+        // === 기본 정보 ===
+        userId: fullUser.id,
+        taskKey: typedScript.task_key, // "건강-건강정보-1"
+        taskType:
+          scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         audioBlob,
-        duration: audioDuration,
-        audioFormat: AudioFormat.WAV,
-        deviceInfo: navigator.userAgent,
-        browserInfo: navigator.userAgent,
-      });
 
+        // === 녹음 세션 정보 (새로 추가) ===
+        recordingStartedAt: recordingStartTime.toISOString(),
+        recordingEndedAt: recordingEndTime.toISOString(),
+        actualDuration: actualDuration,
+        sessionDuration: sessionDuration,
+
+        // === 텍스트 데이터 ===
+        originalScript, // 제시된 원본 스크립트
+        sttTranscription: sttText, // STT로 변환된 텍스트
+
+        // 스크립트 메타데이터
+        domain: typedScript.service_name, // service_name → domain ("건강", "교통" 등)
+        intent: typedScript.task_name, // task_name → intent ("건강정보입력(식사기록)" 등)
+        category: typedScript.service_target, // service_target → category ("건강정보", "고속버스" 등)
+
+        // === 화자 정보 ===
+        gender, // "male" | "female"
+        ageGroup, // "60-64세" 등
+        userName,
+
+        // === 품질 평가 ===
+
+        audioFormat: AudioFormat.WAV, // 오디오 포맷
+        deviceInfo: navigator.userAgent, // 녹음 기기 정보
+      });
       console.log("오디오 업로드 완료:", uploadResult);
 
-      // 2. 스크립트 완료 처리
-      const completeResult = await completeScriptMutation.mutateAsync({
-        userId: authToken.userId,
-        scriptId: scriptData.id,
-        scriptType,
-        recordingId: uploadResult.recordingId,
-        audioUrl: uploadResult.audioUrl,
-        sttText: sttText,
+      // 사용자 정보 업데이트 단계
+      setUploadProgress({
+        step: "user_update",
+        message: "사용자 정보를 업데이트하고 있습니다...",
       });
 
-      console.log("스크립트 완료 처리 완료:", completeResult);
+      const completeResult = await completeUserScriptMutation.mutateAsync({
+        userId: fullUser.id,
+        taskKey: typedScript.task_key,
+        taskType:
+          scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
+        status: "completed", // 또는 "in_progress", "not_started"
+        audioRecordId: uploadResult.recordingId,
+      });
+      console.log("✅ completeResult:", completeResult);
 
-      // 3. 성공 처리
-      setShowSuccessPopup(true);
+      //  - 캐시 상태 확인
+      console.log(
+        "📊 제출 직전 fullUser:",
+        fullUser?.participation?.sets?.[0]?.tasks
+      );
+
+      // 잠시 후 캐시 상태 다시 확인
+      setTimeout(() => {
+        console.log("📊 제출 3초 후 캐시 상태 확인");
+        // 현재 캐시된 user 데이터 확인
+        const cachedUser = queryClient.getQueryData(["user", fullUser.id]);
+        console.log("캐시된 사용자 데이터:", cachedUser);
+      }, 3000);
+      // 완료 단계
+      setUploadProgress({
+        step: "complete",
+        message: "제출이 완료되었습니다!",
+      });
+
+      // 잠시 후 팝업 표시
+      setTimeout(() => {
+        onRecordingComplete?.();
+        setUploadProgress({ step: "idle", message: "" });
+      }, 1000);
+
       console.log("전체 처리 성공");
     } catch (error) {
       console.error("처리 실패:", error);
+
+      // 에러 시 상태 초기화
+      setUploadProgress({ step: "idle", message: "" });
 
       const errorMessage =
         error instanceof Error
@@ -463,34 +653,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     }
   };
 
-  // STT 결과 처리
-  const handleTranscriptionComplete = (
-    result: WhisperTranscriptionResult | null
-  ) => {
-    setTranscription(result);
-    if (result) {
-      setTranscriptionError(null);
-      setIsSTTSuccess(true);
-      setIsSTTProcessing(false);
-      console.log("✅ STT 변환 완료:", result);
-    }
-  };
-
-  const handleTranscriptionError = (error: string) => {
-    setTranscriptionError(error);
-    setIsSTTProcessing(false);
-    setTranscription(null);
-    setIsSTTSuccess(false);
-    console.error("❌ STT 변환 실패:", error);
-  };
-
   // 새로 녹음하기
   const handleNewRecording = () => {
     console.log("🔄 새 녹음 준비 중...");
 
-    // 기존 오디오 URL 정리 (메모리 누수 방지)
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
+    // 기존 오디오 URL 정리 (개선된 방식)
+    cleanupAudioUrl();
+
+    //  타이머 정리
+    if (autoStopTimer) {
+      clearTimeout(autoStopTimer);
+      setAutoStopTimer(null);
     }
 
     // 훅의 audioBlob과 모든 리소스 초기화
@@ -503,75 +676,44 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     setShowSTT(false);
     setQualityResult(null);
     setShowQualityWarning(false);
-    setIsSTTSuccess(false);
     setIsSTTProcessing(false);
     setHasSTTStarted(false);
-    setShowSuccessPopup(false);
+
     setCountdown(null);
     setIsCountingDown(false);
     scrollToTop();
+
+    // 녹음 강제 변수들 초기화
+    setCanStopRecording(false);
+    setRecordingStartTime(null);
+
+    // 오디오 플레이어 상태 초기화
+    setIsPlaying(false);
+    if (audioRef) {
+      audioRef.pause();
+      audioRef.currentTime = 0;
+    }
+    setAudioRef(null);
+
+    //  최대 시간 관련 상태 초기화
+    setIsNearMaxTime(false);
+
     console.log("✅ 새 녹음 준비 완료");
   };
 
+  // =================================
+  // ========= 조건부 렌더링 로직 ======
+  // ==================================
   // 로딩 상태 체크
-  const isUploading =
-    uploadAudioMutation.isPending || completeScriptMutation.isPending;
-  const uploadError = uploadAudioMutation.error || completeScriptMutation.error;
+  const isUploading = uploadAudioMutation.isPending;
+  const uploadError = uploadAudioMutation.error;
 
-  if (!isClient) {
-    return (
-      <div className={styles.loading}>
-        <p>로딩 중...</p>
-      </div>
-    );
-  }
+  // ===========================
+  // ========= JSX 반환 =========
+  // ============================
 
   return (
     <div>
-      {/* 성공 팝업 */}
-      {showSuccessPopup && (
-        <SuccessPopup
-          message={
-            isTutorial
-              ? "연습 녹음이 완료되었습니다!"
-              : "음성 녹음 파일이 성공적으로 제출되었습니다!"
-          }
-          details={
-            transcription
-              ? `변환된 텍스트: "${transcription.transcript}"`
-              : undefined
-          }
-          onClose={handleCloseSuccessPopup}
-        />
-      )}
-
-      {/*  녹음 안내 (품질 향상을 위한 팁) */}
-      {/* {!audioUrl && !isRecording && !isCompltedScript && (
-        <div className={styles.recordingGuide}>
-          <h4>음성 녹음 안내</h4>
-          <ul>
-            <li>
-              <b>조용한 곳에서</b> 녹음해 주세요
-            </li>
-            <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
-            <li>최소 3초 이상 말씀해 주세요</li>
-          </ul>
-        </div>
-      )} */}
-
-      {/* {!audioUrl && !isCompltedScript && (
-        <div className={styles.recordingGuide}>
-          <h4>음성 녹음 안내</h4>
-          <ul>
-            <li>
-              <b>조용한 곳에서</b> 녹음해 주세요
-            </li>
-            <li>스마트폰을 입에서 15-20cm 거리에 두세요</li>
-            <li>최소 3초 이상 말씀해 주세요</li>
-          </ul>
-        </div>
-      )} */}
-
       {/* 카운트다운 표시 */}
       {isCountingDown && countdown && (
         <div className={styles.countdownContainer}>
@@ -583,35 +725,90 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       {/* 녹음 시간 표시 */}
       {isRecording && (
         <div className={styles.recordingStatus}>
-          <div className={styles.recordingIndicator}></div>
-          <span className={styles.recordingTime}>
-            녹음 중: {formatTime(recordingTime)}
-          </span>
+          <div className={styles.recordingTopRow}>
+            <div className={styles.recordingIndicator}></div>
+            <span className={styles.recordingTime}>
+              녹음 중: {formatTime(recordingTime)}
+            </span>
+          </div>
+          {/* 최대 시간 경고 */}
+          {isNearMaxTime && (
+            <div className={styles.maxTimeWarning}>
+              ⚠️ {MAXIMUM_RECORDING_SECONDS - recordingTime}초 후 자동
+              종료됩니다.
+            </div>
+          )}
+          {!canStopRecording && (
+            <div className={styles.minimumTimeNotice}>
+              최소 {MINIMUM_RECORDING_SECONDS}초 이상 녹음해주세요 (남은 시간:{" "}
+              {Math.max(0, MINIMUM_RECORDING_SECONDS - recordingTime)}초)
+            </div>
+          )}
         </div>
       )}
 
       {/* 녹음 결과가 없을 때만 메인 녹음 버튼 표시 */}
       {!audioUrl && (
         <button
-          className={`${styles.recordButton} ${
-            isRecording ? styles.recordingButton : ""
+          className={`${styles.recordButton} ${getButtonStyle()} ${
+            isRecording && !canStopRecording ? styles.recordingDisabled : ""
           }`}
           onClick={isRecording ? stopRecording : startRecording}
-          //  튜토리얼 스크립트 할당 중일 때도 비활성화
           disabled={
-            isUploading || isCountingDown || assignScriptsMutation.isPending
+            isUploading || isCountingDown || (isRecording && !canStopRecording)
           }
         >
-          {isCountingDown
-            ? "준비 중..."
-            : assignScriptsMutation.isPending
-            ? "준비 중..."
-            : isRecording
-            ? "녹음 종료"
-            : isCompltedScript
-            ? "다시 녹음하기"
-            : "녹음 시작하기"}
+          <div className={styles.recordButtonTextWrapper}>
+            {isCountingDown ? (
+              // 카운트다운 중 표시
+              <>
+                <span className={styles.recordIcon}>⏳</span>
+                <span className={styles.recordMainText}>
+                  녹음을 준비하는 중입니다
+                </span>
+                <span className={styles.recordSubText}>
+                  {countdown}초 후 녹음이 시작됩니다
+                </span>
+              </>
+            ) : !isRecording ? (
+              // 녹음 시작 전
+              <>
+                <span className={styles.recordIcon}>🎤</span>
+                <span className={styles.recordMainText}>녹음을 시작하려면</span>
+                <span className={styles.recordMainText}>
+                  여기를 눌러주세요!
+                </span>
+              </>
+            ) : canStopRecording ? (
+              // 녹음 중 (종료 가능)
+              <>
+                <span className={styles.recordMainText}>녹음을 끝내시려면</span>
+                <span className={styles.recordMainText}>
+                  여기를 눌러주세요!
+                </span>
+              </>
+            ) : (
+              // 녹음 중 (최소 시간 대기)
+              <>
+                <span className={styles.recordMainText}>녹음 중...</span>
+                <span className={styles.recordSubText}>
+                  ({Math.max(0, MINIMUM_RECORDING_SECONDS - recordingTime)}초 후
+                  종료 가능)
+                </span>
+              </>
+            )}
+          </div>
         </button>
+      )}
+
+      {isRecording && (
+        <div className={styles.recordingNotice}>
+          🎤{" "}
+          {canStopRecording
+            ? "녹음을 끝내려면 "
+            : `최소 ${MINIMUM_RECORDING_SECONDS}초 이상 녹음 후 `}
+          <span className={styles.redText}>빨간 버튼</span>을 눌러주세요
+        </div>
       )}
 
       {/* 🎯 품질 경고 표시 */}
@@ -678,102 +875,59 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       {audioUrl && !showQualityWarning && (
         <div className={styles.audioSection}>
           <div className={styles.audioHeader}>
-            <p className={styles.audioLabel}>🔉 녹음된 파일</p>
+            <p className={styles.audioLabel}>🔉 녹음</p>
             {audioDuration && (
               <span className={styles.audioDuration}>
                 길이: {formatTime(audioDuration)}
               </span>
             )}
-            {qualityResult && (
-              <span className={styles.qualityBadge}>
-                품질: {qualityResult.score}/100 ✅
-              </span>
-            )}
           </div>
-          <audio className={styles.audioPlayer} src={audioUrl} controls />
-
-          {/* STT 컴포넌트 */}
-          {/* {showSTT && (
-            <SttGoogle
-              audioBlob={audioBlob}
-              onTranscriptionComplete={handleTranscriptionComplete}
-              onError={handleTranscriptionError}
-              onTranscribingStateChange={handleSTTStateChange}
-              autoTranscribe={true}
+          <div className={styles.customAudioPlayer}>
+            <audio
+              ref={setAudioRef}
+              src={audioUrl}
+              preload="none"
+              playsInline
+              onError={() => setIsPlaying(false)}
+              onCanPlayThrough={() => console.log("Audio ready")}
+              style={{ display: "none" }}
+              onEnded={() => {
+                setTimeout(() => {
+                  setIsPlaying(false);
+                }, 1500);
+              }}
             />
-          )} */}
-          {showSTT && (
-            <SttWhisper
-              audioBlob={audioBlob}
-              onTranscriptionComplete={handleTranscriptionComplete}
-              onError={handleTranscriptionError}
-              onTranscribingStateChange={handleSTTStateChange}
-              autoTranscribe={false}
-            />
+            <button
+              className={styles.playButton}
+              onClick={togglePlayback}
+              disabled={!audioUrl}
+            >
+              {isPlaying ? "⏸️ 재생 멈추기" : "▶️ 녹음한 음성 확인하기"}
+            </button>
+          </div>
+          {isTutorial ? (
+            <p className={styles.tutorialDetailedInstruction}>
+              녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요
+            </p>
+          ) : (
+            <></>
           )}
-
-          {/* STT 에러 표시 */}
-          {transcriptionError && (
-            <div className={styles.errorMessage}>
-              ❌ 변환 실패: {transcriptionError}
-              <p className={styles.errorGuidance}>
-                음성 변환에 실패했습니다. 새로 녹음해주세요.
-              </p>
-            </div>
-          )}
-
-          {/* STT 변환 결과 */}
-          {transcription && (
-            <div className={styles.GoogleTranscriptionResult}>
-              <div className={styles.transcriptionText}>
-                <p className={styles.transcriptContent}>
-                  {transcription.transcript}
-                </p>
-              </div>
-            </div>
-          )}
-
           <div className={styles.actionButtons}>
-            {/* STT가 성공했을 때만 제출하기 버튼 표시, stt true로 쓸때만 사용용 */}
-            {/* {isSTTSuccess && (
-              <button
-                className={styles.uploadButton}
-                onClick={handleUpload}
-                disabled={isUploading || isSTTProcessing}
-              >
-                {isSTTProcessing
-                  ? "음성 분석 중..."
-                  : isUploading
-                  ? "제출 중..."
-                  : "제출하기"}
-              </button>
-            )} */}
-
-            {/* {audioBlob && (
-              <button
-                className={styles.uploadButton}
-                onClick={handleUpload}
-                disabled={isUploading || isSTTProcessing}
-              >
-                {isSTTProcessing
-                  ? "음성 분석 중..."
-                  : isUploading
-                  ? isTutorial
-                    ? "완료 중..."
-                    : "제출 중..."
-                  : isTutorial
-                  ? "연습 완료"
-                  : "제출하기"}
-              </button>
-            )} */}
-
             {audioBlob && (
               <button
                 className={styles.uploadButton}
                 onClick={handleUpload}
-                disabled={isUploading || isSTTProcessing}
+                disabled={
+                  isUploading ||
+                  isSTTProcessing ||
+                  uploadProgress.step !== "idle"
+                }
               >
-                {isSTTProcessing
+                {uploadProgress.step !== "idle"
+                  ? isDevMode
+                    ? uploadProgress.message // 개발: 상세 메시지
+                    : "업로드 중..." // 프로덕션: 간단 메시지
+                  : isSTTProcessing
                   ? "음성 변환 중..."
                   : isUploading
                   ? isTutorial
@@ -784,6 +938,152 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                   : "제출하기"}
               </button>
             )}
+            {uploadProgress.step !== "idle" && (
+              <div className={styles.uploadProgressContainer}>
+                {/* 공통: 진행 바는 항상 표시 */}
+                <div className={styles.progressBar}>
+                  <div
+                    className={styles.progressFill}
+                    style={{
+                      width:
+                        uploadProgress.step === "stt"
+                          ? "25%"
+                          : uploadProgress.step === "audio_upload"
+                          ? "50%"
+                          : uploadProgress.step === "user_update"
+                          ? "75%"
+                          : uploadProgress.step === "complete"
+                          ? "100%"
+                          : "0%",
+                    }}
+                  />
+                </div>
+
+                {/* 개발 모드: 상세 메시지 표시 */}
+                {isDevMode && (
+                  <p className={styles.progressMessage}>
+                    {uploadProgress.message}
+                  </p>
+                )}
+
+                {/* 프로덕션 모드: 간단한 메시지 */}
+                {!isDevMode && (
+                  <p className={styles.progressMessageSimple}>
+                    업로드 중입니다... (
+                    {uploadProgress.step === "stt"
+                      ? "1"
+                      : uploadProgress.step === "audio_upload"
+                      ? "2"
+                      : uploadProgress.step === "user_update"
+                      ? "3"
+                      : uploadProgress.step === "complete"
+                      ? "4"
+                      : "0"}
+                    /4)
+                  </p>
+                )}
+
+                {/* 개발 모드: 상세 단계 표시 */}
+                {isDevMode && (
+                  <div className={styles.progressSteps}>
+                    <span
+                      className={
+                        uploadProgress.step === "stt"
+                          ? styles.activeStep
+                          : styles.completedStep
+                      }
+                    >
+                      1. 음성 변환
+                    </span>
+                    <span
+                      className={
+                        uploadProgress.step === "audio_upload"
+                          ? styles.activeStep
+                          : ["user_update", "complete"].includes(
+                              uploadProgress.step
+                            )
+                          ? styles.completedStep
+                          : styles.pendingStep
+                      }
+                    >
+                      2. 파일 업로드
+                    </span>
+                    <span
+                      className={
+                        uploadProgress.step === "user_update"
+                          ? styles.activeStep
+                          : uploadProgress.step === "complete"
+                          ? styles.completedStep
+                          : styles.pendingStep
+                      }
+                    >
+                      3. 정보 갱신
+                    </span>
+                    <span
+                      className={
+                        uploadProgress.step === "complete"
+                          ? styles.activeStep
+                          : styles.pendingStep
+                      }
+                    >
+                      4. 완료
+                    </span>
+                  </div>
+                )}
+
+                {/* 프로덕션 모드: 간단한 점 표시 */}
+                {!isDevMode && (
+                  <div className={styles.progressDotsContainer}>
+                    <div className={styles.progressDots}>
+                      <span
+                        className={
+                          [
+                            "stt",
+                            "audio_upload",
+                            "user_update",
+                            "complete",
+                          ].includes(uploadProgress.step)
+                            ? styles.activeDot
+                            : styles.pendingDot
+                        }
+                      />
+                      <span
+                        className={
+                          ["audio_upload", "user_update", "complete"].includes(
+                            uploadProgress.step
+                          )
+                            ? styles.activeDot
+                            : styles.pendingDot
+                        }
+                      />
+                      <span
+                        className={
+                          ["user_update", "complete"].includes(
+                            uploadProgress.step
+                          )
+                            ? styles.activeDot
+                            : styles.pendingDot
+                        }
+                      />
+                      <span
+                        className={
+                          uploadProgress.step === "complete"
+                            ? styles.activeDot
+                            : styles.pendingDot
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {isTutorial ? (
+              <p className={styles.tutorialDetailedInstruction}>
+                녹음한 음성은 제출하기 버튼을 눌러서 제출해주세요
+              </p>
+            ) : (
+              <></>
+            )}
 
             <button
               className={styles.newRecordingButton}
@@ -792,6 +1092,53 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             >
               {isSTTProcessing ? "분석 중..." : "새로 녹음하기"}
             </button>
+            {isTutorial ? (
+              <p className={styles.tutorialDetailedInstruction}>
+                다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
+              </p>
+            ) : (
+              <></>
+            )}
+
+            {/* STT 컴포넌트 */}
+            {showSTT && (
+              <SttWhisper
+                audioBlob={audioBlob}
+                onTranscriptionComplete={handleTranscriptionComplete}
+                onError={handleTranscriptionError}
+                onTranscribingStateChange={handleSTTStateChange}
+                autoTranscribe={false}
+              />
+            )}
+
+            {/* STT 에러 표시 */}
+            {transcriptionError && (
+              <div className={styles.errorMessage}>
+                ❌ 변환 실패: {transcriptionError}
+                <p className={styles.errorGuidance}>
+                  음성 변환에 실패했습니다. 새로 녹음해주세요.
+                </p>
+              </div>
+            )}
+
+            {/* STT 변환 결과 */}
+            {transcription && (
+              <div className={styles.GoogleTranscriptionResult}>
+                <div className={styles.transcriptionText}>
+                  <p className={styles.transcriptContent}>
+                    {transcription.transcript}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isTutorial ? (
+              <p className={styles.tutorialDetailedInstruction}>
+                녹음한 음성을 글자로 바꿔보고 싶으시다면, 여기를 눌러보세요
+              </p>
+            ) : (
+              <></>
+            )}
           </div>
 
           {/* 업로드 에러 */}
@@ -808,7 +1155,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
 const VoiceRecorder = dynamic(() => Promise.resolve(RecorderComponent), {
   ssr: false,
-  loading: () => <p className={styles.loading}>음성 녹음기 로딩 중...</p>,
+  loading: () => (
+    <p className={styles.loading}>음성 녹음 기능을 불러오고 있습니다...</p>
+  ),
 });
 
 export default VoiceRecorder;

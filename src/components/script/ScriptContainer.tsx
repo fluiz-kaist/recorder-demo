@@ -1,230 +1,280 @@
-// components/script/ScriptContainer.tsx - 메인 컨테이너 컴포넌트
-import React, { useState, useEffect } from "react";
+// components/script/ScriptContainer.tsx - 리팩터링 버전 (상황→정형 순차 진행)
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/ScriptRecording.module.css";
 import VoiceRecorder from "@/components/voiceRecorder";
+import { ScriptType, SituationalScript, FormalScript } from "@/types/firebase";
 import {
-  ScriptType,
-  SituationalScript,
-  FormalScript,
-  QAScenarioScript,
-} from "@/types/firebase";
-import {
-  useLocalScriptsByTypeQuery,
-  useScriptProgressByType,
-} from "@/hooks/queries/useScriptQueries";
-import {
+  useMinimalUserQuery,
+  useUserQuery,
   useAuthStatusQuery,
-  useUserScriptAssignmentsQuery,
 } from "@/hooks/queries/useUserQueries";
-import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-
-// 유니온 타입 정의
-type AnyScript = SituationalScript | FormalScript | QAScenarioScript;
-
-interface ScriptContainerProps {
-  scriptType: ScriptType;
+import { getNextServiceSlug, ServiceName } from "@/lib/serviceMapping";
+export interface MergedScript {
+  scriptType: "situational" | "formal";
+  situation?: SituationalScript;
+  formal?: FormalScript[];
 }
 
+type AnyScript = SituationalScript | FormalScript;
+
+interface FlatScript {
+  script: AnyScript;
+  type: ScriptType;
+}
+
+interface ScriptContainerProps {
+  scripts: MergedScript[];
+}
 export const ScriptContainer: React.FC<ScriptContainerProps> = ({
-  scriptType,
+  scripts,
 }) => {
   const router = useRouter();
-  const [scripts, setScripts] = useState<AnyScript[]>([]);
   const [scriptIndex, setScriptIndex] = useState(0);
   const [showRecorder, setShowRecorder] = useState(false);
+  const [reRecordingScripts, setReRecordingScripts] = useState<Set<string>>(
+    new Set()
+  );
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: minimalUser } = useMinimalUserQuery();
+  // ✅ 수정: 명시적으로 userId 전달
+  // ScriptContainer.tsx에서
+  const { data: fullUser, isLoading: isUserLoading } = useUserQuery(
+    authStatus?.userId
+  );
 
-  // 스크롤 훅 사용
+  // 🔥 fullUser 상태 확인
+  useEffect(() => {
+    console.log("🔍 fullUser 전체 구조:", {
+      fullUser: fullUser,
+      participation: fullUser?.participation,
+      sets: fullUser?.participation?.sets,
+      "sets 타입": typeof fullUser?.participation?.sets,
+      "sets 길이": fullUser?.participation?.sets?.length,
+    });
+  }, [fullUser]);
   const scrollToTop = useScrollToTop();
 
-  // React Query로 스크립트 데이터 가져오기
-  const {
-    data: scriptData,
-    isLoading,
-    error: queryError,
-    refetch,
-  } = useLocalScriptsByTypeQuery(scriptType);
+  const flatScriptList: FlatScript[] = useMemo(() => {
+    const list: FlatScript[] = [];
+    scripts.forEach((merged) => {
+      if (merged.situation) {
+        list.push({ script: merged.situation, type: ScriptType.SITUATIONAL });
+      }
+      merged.formal?.forEach((f) => {
+        list.push({ script: f, type: ScriptType.FORMAL });
+      });
+    });
+    return list;
+  }, [scripts]);
 
-  // 인증 정보 가져오기
-  const { data: authToken } = useAuthStatusQuery();
+  const current = flatScriptList[scriptIndex];
 
-  const userId = authToken?.userId;
-  if (!authToken) {
-    console.log("- authToken이 null입니다");
-  } else if (!userId) {
-    console.log("- authToken.userId가 null입니다");
-  } else {
-    // console.log('✅ 사용자 ID:', userId);
-  }
+  // 🎯 핵심 함수: 실제 tasks 배열에서 직접 상태 확인
+  const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
+    // ✅ 재녹음 모드 체크를 맨 앞으로 이동
+    const taskKey = String(
+      "task_key" in script && script.task_key
+        ? script.task_key
+        : "id" in script && script.id
+        ? script.id
+        : ""
+    );
 
-  // 진행률 정보 가져오기
-  const scriptProgress = useScriptProgressByType(
-    scriptType,
-    userId || undefined
-  );
+    const scriptKey = `${type}-${taskKey}`;
 
-  // 사용자 스크립트 할당 정보 가져오기
-  const { data: userAssignments } = useUserScriptAssignmentsQuery(
-    userId || undefined
-  );
-
-  // 스크립트 데이터 설정
-  useEffect(() => {
-    if (scriptData && Array.isArray(scriptData)) {
-      setScripts(scriptData as AnyScript[]);
+    // 재녹음 모드면 항상 false 반환
+    if (reRecordingScripts.has(scriptKey)) {
+      return false;
     }
-  }, [scriptData]);
 
-  const assignScriptsMutation = useAssignScriptsMutation();
-
-  // 스크립트 할당 처리
-  const handleAssignScripts = async () => {
-    if (!authToken?.userId) return;
-
-    try {
-      await assignScriptsMutation.mutateAsync({ userId: authToken.userId });
-      setTimeout(() => {
-        refetch();
-      }, 1000);
-    } catch (error) {
-      console.error("스크립트 할당 실패:", error);
+    if (!fullUser?.participation?.sets?.[0]) {
+      return false;
     }
-  };
 
-  // 햅틱 피드백 (모바일)
-  const triggerHapticFeedback = () => {
-    if ("vibrate" in navigator) {
-      navigator.vibrate(50);
+    const set = fullUser.participation.sets[0];
+
+    if (!taskKey) {
+      console.warn("⚠️ taskKey를 찾을 수 없음:", script);
+      return false;
     }
-  };
 
-  const handleRecordingComplete = () => {
-    setShowRecorder(false);
-  };
+    // 해당 타입의 tasks 배열에서 직접 찾기
+    const tasks =
+      type === ScriptType.SITUATIONAL
+        ? set.tasks?.situational || []
+        : set.tasks?.formal || [];
 
-  const handleNextScript = () => {
-    if (scriptIndex < scripts.length - 1) {
-      triggerHapticFeedback();
-      setScriptIndex((prev) => prev + 1);
-      setShowRecorder(false);
-      scrollToTop(); // 훅 사용
+    // 매칭되는 task 찾기
+    const matchedTask = tasks.find((task) => String(task.taskKey) === taskKey);
+
+    if (!matchedTask) {
+      console.log(`❌ [${type}] Task not found: ${taskKey}`);
+      console.log(
+        "Available tasks:",
+        tasks.map((t) => t.taskKey)
+      );
+      return false;
     }
+
+    // 완료 상태 체크
+    const completedStatuses = ["completed", "submitted", "approved"];
+    const isCompleted = completedStatuses.includes(matchedTask.status || "");
+
+    console.log(`🎯 [${type}] ${taskKey}:`, {
+      status: matchedTask.status,
+      isCompleted,
+      hasAudioRecord: !!matchedTask.audioRecordId,
+    });
+
+    return isCompleted;
   };
 
-  const handlePrevScript = () => {
-    if (scriptIndex > 0) {
-      triggerHapticFeedback();
-      setScriptIndex((prev) => prev - 1);
-      setShowRecorder(false);
-      scrollToTop(); // 훅 사용
-    }
-  };
-
-  const goBack = () => {
-    triggerHapticFeedback();
-    router.push("/");
-  };
-
-  const getCurrentScript = (): AnyScript | undefined => {
-    return scripts[scriptIndex];
-  };
-
+  // 전체 진행률 계산 (실제 tasks 배열 기반)
   const getProgressPercentage = (): number => {
-    if (scriptProgress) {
-      return scriptProgress.progress;
+    if (!fullUser?.participation?.sets?.[0] || flatScriptList.length === 0) {
+      return 0;
     }
-    if (scripts.length === 0) return 0;
-    return Math.round(((scriptIndex + 1) / scripts.length) * 100);
+
+    const completedCount = flatScriptList.filter(({ script, type }) =>
+      isScriptCompleted(script, type)
+    ).length;
+
+    const percentage = Math.round(
+      (completedCount / flatScriptList.length) * 100
+    );
+
+    console.log(
+      `📊 Progress: ${completedCount}/${flatScriptList.length} = ${percentage}%`
+    );
+
+    return percentage;
   };
 
-  // 페이지 제목 가져오기
-  const getPageTitle = (): string => {
-    switch (scriptType) {
-      case ScriptType.SITUATIONAL:
-        return "상황별 녹음";
-      case ScriptType.FORMAL:
-        return "정형 녹음";
-      case ScriptType.QA_SCENARIO:
-        return "질의응답 녹음";
-
-      case ScriptType.TUTORIAL:
-        return "녹음 연습";
-      default:
-        return "스크립트 녹음";
-    }
-  };
-
-  // 로딩 중일 때
-  if (isLoading) {
+  // 로딩 상태 처리
+  if (isUserLoading) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner}></div>
-        <div className={styles.loadingText}>스크립트를 불러오고 있어요...</div>
+        <div className={styles.loadingText}>사용자 데이터 로딩 중...</div>
       </div>
     );
   }
 
-  // 에러가 발생했을 때
-  if (queryError) {
-    return (
-      <div className={styles.errorContainer}>
-        <div className={styles.errorCard}>
-          <div className={styles.errorIcon}>😕</div>
-          <h2 className={styles.errorTitle}>문제가 생겼어요</h2>
-          <p className={styles.errorMessage}>{queryError.message}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className={styles.retryButton}
-          >
-            다시 시도하기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 스크립트가 없을 때
-  if (scripts.length === 0) {
+  if (flatScriptList.length === 0) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingText}>
           아직 녹음할 스크립트가 없습니다.
         </div>
-        <button
-          onClick={handleAssignScripts}
-          disabled={assignScriptsMutation.isPending}
-          className={styles.assignButton}
-        >
-          {assignScriptsMutation.isPending ? "할당 중..." : "스크립트 할당받기"}
-        </button>
       </div>
     );
   }
 
-  const currentScript = getCurrentScript();
+  const completed = isScriptCompleted(current.script, current.type);
+  // 🔥 이 부분 추가 - 상태 변화 모니터링
 
-  // 현재 스크립트 타입의 할당 정보만 필터링
-  const currentAssignment = userAssignments?.find(
-    (assignment) => assignment.scriptType === scriptType
-  );
+  console.log("🔍 상세 디버깅:", {
+    authStatus: authStatus,
+    "authStatus?.isAuthenticated": authStatus?.isAuthenticated,
+    "authStatus?.userId": authStatus?.userId,
+    "!!authStatus?.userId": !!authStatus?.userId,
+    "useUserQuery enabled 조건":
+      !!authStatus?.isAuthenticated && !!authStatus?.userId,
+  });
+  // 2. ✅ 함수 추가 (isScriptCompleted 함수 아래에)
+  const handleStartReRecording = () => {
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
 
-  // 현재 스크립트가 완료되었는지 확인하는 함수
-  const isCurrentScriptCompleted = (scriptId: number): boolean => {
-    if (!currentAssignment) return false;
-    return currentAssignment.completedScriptIds.includes(scriptId);
+    const scriptKey = `${current.type}-${taskKey}`;
+    setReRecordingScripts((prev) => new Set(prev.add(scriptKey)));
   };
 
-  // 현재 스크립트의 완료 상태
-  const currentScriptCompleted = currentScript
-    ? isCurrentScriptCompleted(currentScript.id)
-    : false;
+  const handleRecordingComplete = () => {
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
+
+    const scriptKey = `${current.type}-${taskKey}`;
+    setReRecordingScripts((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(scriptKey);
+      return newSet;
+    });
+    setShowRecorder(false);
+  };
+
+  // 3. ✅ 재녹음 모드 확인 함수 추가
+  const isInReRecordingMode = (): boolean => {
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
+
+    const scriptKey = `${current.type}-${taskKey}`;
+    return reRecordingScripts.has(scriptKey);
+  };
+
+  // 🎯 다음 버튼 활성화 조건 함수
+  const canGoToNext = (): boolean => {
+    // 마지막 스크립트면 항상 비활성화
+    if (scriptIndex === flatScriptList.length - 1) {
+      return false;
+    }
+
+    // 현재 스크립트가 완료되지 않았으면 다음으로 못감
+    const currentCompleted = isScriptCompleted(current.script, current.type);
+
+    if (!currentCompleted) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // 디버깅용 로그
+  console.log("🔍 현재 스크립트 정보:", {
+    index: scriptIndex,
+    taskKey: current.script.task_key || current.script.id,
+    type: current.type,
+    completed,
+  });
+
+  const handleNextScript = () => {
+    if (scriptIndex < flatScriptList.length - 1) {
+      setScriptIndex((prev) => prev + 1);
+      setShowRecorder(false);
+      scrollToTop();
+    }
+  };
+
+  const handlePrevScript = () => {
+    if (scriptIndex > 0) {
+      setScriptIndex((prev) => prev - 1);
+      setShowRecorder(false);
+      scrollToTop();
+    }
+  };
+
+  const goBack = () => router.push("/");
 
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        {/* 헤더 */}
         <div className={styles.header}>
           <button onClick={goBack} className={styles.backButton}>
             <svg
@@ -242,14 +292,14 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             </svg>
             뒤로가기
           </button>
-
-          <div className={styles.headerTitle}>{getPageTitle()}</div>
-
+          <div className={styles.headerTitle}>
+            {current.script.service_name}
+          </div>
           <div className={styles.progressIndicator}>
-            {scriptIndex + 1} / {scripts.length}
+            {scriptIndex + 1} / {flatScriptList.length}
           </div>
         </div>
-        {/* 전체 진행률 */}
+
         <div className={styles.progressCard}>
           <div className={styles.progressHeader}>
             <span className={styles.progressLabel}>전체 진행률</span>
@@ -260,125 +310,127 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
           <div className={styles.progressBarTrack}>
             <div
               className={styles.progressBarFill}
-              style={{
-                width: `${getProgressPercentage()}%`,
-              }}
+              style={{ width: `${getProgressPercentage()}%` }}
             ></div>
           </div>
         </div>
 
-        {/* 메인 콘텐츠 */}
         <div className={styles.mainCard}>
-          {currentScript && (
-            <>
-              {/* 스크립트 렌더러 - 타입별로 다른 UI 렌더링 */}
-              <ScriptRenderer
-                script={currentScript}
-                scriptType={scriptType}
-                isCompleted={currentScriptCompleted}
-              />
-
-              {/* 녹음 섹션 */}
-              {!showRecorder ? (
-                <div className={styles.recordingSection}>
-                  {currentScriptCompleted ? (
-                    // 완료된 스크립트 표시
-                    <div className={styles.completedSection}>
-                      <div className={styles.completedIcon}>🎉</div>
-                      <div className={styles.completedMessage}>
-                        이미 녹음을 완료했습니다!
-                      </div>
-                      <div className={styles.reRecordPrompt}>
-                        다시 녹음하시겠어요?
-                      </div>
-                      <VoiceRecorder
-                        key={`voice-recorder-${scriptIndex}`}
-                        scriptType={scriptType}
-                        scriptData={currentScript}
-                        isCompltedScript={currentScriptCompleted}
-                        onRecordingComplete={handleRecordingComplete}
-                      />
-                    </div>
-                  ) : (
-                    // 미완료 스크립트 표시
-                    <>
-                      <VoiceRecorder
-                        key={`voice-recorder-${scriptIndex}`}
-                        scriptType={scriptType}
-                        scriptData={currentScript}
-                        onRecordingComplete={handleRecordingComplete}
-                      />
-                    </>
-                  )}
+          <ScriptRenderer
+            script={current.script}
+            scriptType={current.type}
+            isCompleted={completed}
+          />
+          <div className={styles.recordingSection}>
+            {completed && !isInReRecordingMode() ? (
+              <div className={styles.completedSection}>
+                <div className={styles.completedIcon}>🎉</div>
+                <div className={styles.completedMessage}>
+                  제출을 완료했습니다!
+                  <br />
+                  다음으로 넘어가주세요
                 </div>
-              ) : (
-                /* VoiceRecorder 컴포넌트 활성화 상태 */
-                <div className={styles.voiceRecorderSection}>
-                  <div className={styles.recorderHeader}>
-                    <h3 className={styles.recorderTitle}>🎙️ 음성 녹음</h3>
-                    <button
-                      onClick={() => setShowRecorder(false)}
-                      className={styles.closeRecorderButton}
-                    >
-                      ✕ 닫기
-                    </button>
-                  </div>
-                  <div className={styles.recorderWrapper}></div>
-                  <div className={styles.recorderActions}>
-                    <button
-                      onClick={handleRecordingComplete}
-                      className={styles.completeButton}
-                    >
-                      ✅ 녹음 완료
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 네비게이션 */}
-              <div className={styles.navigation}>
                 <button
-                  onClick={handlePrevScript}
-                  disabled={scriptIndex === 0}
-                  className={`${styles.navButton} ${
-                    scriptIndex === 0
-                      ? styles.navButtonDisabled
-                      : styles.navButtonEnabled
-                  }`}
+                  className={styles.reRecordButton}
+                  onClick={handleStartReRecording}
                 >
-                  {/* 이전 스크립트 완료 상태 표시 */}
-                  {scriptIndex > 0 &&
-                    isCurrentScriptCompleted(scripts[scriptIndex - 1].id) && (
-                      <span className={styles.navCompletedIcon}>✅</span>
-                    )}
-                  이전
-                </button>
-                <div className={styles.statsSection}>
-                  <div className={styles.statsLabel}>완료한 녹음</div>
-                  <div className={styles.statsValue}>
-                    {currentAssignment?.completedScriptIds.length || 0} /{" "}
-                    {scripts.length}
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleNextScript}
-                  disabled={scriptIndex === scripts.length - 1}
-                  className={`${styles.navButton} ${
-                    scriptIndex === scripts.length - 1
-                      ? styles.navButtonDisabled
-                      : styles.navButtonEnabled
-                  }`}
-                >
-                  다음
-                  {/* 다음 스크립트 완료 상태 표시 */}
-                  {scriptIndex < scripts.length - 1 &&
-                    isCurrentScriptCompleted(scripts[scriptIndex + 1].id) && (
-                      <span className={styles.navCompletedIcon}>✅</span>
-                    )}
+                  다시 녹음하기
                 </button>
               </div>
-            </>
+            ) : (
+              <VoiceRecorder
+                key={`voice-recorder-${scriptIndex}-${
+                  isInReRecordingMode() ? "rerecord" : "normal"
+                }`}
+                scriptType={current.type}
+                scriptData={current.script}
+                isCompltedScript={completed}
+                onRecordingComplete={handleRecordingComplete}
+              />
+            )}
+          </div>
+
+          <div className={styles.navigation}>
+            <button
+              onClick={handlePrevScript}
+              disabled={scriptIndex === 0}
+              className={`${styles.navButton} ${
+                scriptIndex === 0
+                  ? styles.navButtonDisabled
+                  : styles.navButtonEnabled
+              }`}
+            >
+              이전
+            </button>
+
+            <div className={styles.statsSection}>
+              <div className={styles.statsLabel}>완료한 녹음</div>
+              <div className={styles.statsValue}>
+                {
+                  flatScriptList.filter(({ script, type }) =>
+                    isScriptCompleted(script, type)
+                  ).length
+                }{" "}
+                / {flatScriptList.length}
+              </div>
+            </div>
+
+            <button
+              onClick={handleNextScript}
+              disabled={!canGoToNext()}
+              className={`${styles.navButton} ${
+                !canGoToNext()
+                  ? styles.navButtonDisabled
+                  : styles.navButtonEnabled
+              }`}
+              title={
+                !completed && scriptIndex < flatScriptList.length - 1
+                  ? "현재 스크립트를 완료하고 제출해주세요"
+                  : ""
+              }
+            >
+              {scriptIndex === flatScriptList.length - 1 ? "완료" : "다음"}
+            </button>
+          </div>
+
+          {/* ✅ 마지막 스크립트이고 완료 상태일 때, 다음 주제로 바로가기 버튼 표시 */}
+          {scriptIndex === flatScriptList.length - 1 &&
+            completed &&
+            (() => {
+              const currentService = current?.script
+                ?.service_name as ServiceName;
+              const nextSlug = getNextServiceSlug(currentService);
+              return nextSlug ? (
+                <div className={styles.nextTopicWrapper}>
+                  <button
+                    className={styles.nextTopicButton}
+                    onClick={() => router.push(`/recording/${nextSlug}`)}
+                  >
+                    다음 주제 녹음하러 가기
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.congratulationsMessage}>
+                    <h3>모든 녹음을 완료했습니다!</h3>
+                    <p>수고하셨습니다.</p>
+
+                    <button className={styles.returnHomeButton}>
+                      <span>모든 작업 완료</span>
+                    </button>
+                  </div>
+                </>
+              ); // 마지막 서비스일 경우 버튼 없음
+            })()}
+
+          {/*  진행 안내 메시지 추가 */}
+          {!completed && (
+            <div className={styles.progressHint}>
+              {/* <div className={styles.hintIcon}>📝</div> */}
+              <div className={styles.hintText}>
+                녹음을 완료하고 제출해야 다음으로 넘어갈 수 있습니다.
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -1,5 +1,3 @@
-/* styles/ScriptRecording.module.css - 고령자 친화적 통합 스타일 */
-
 /* 기본 컨테이너 */
 .container {
   min-height: 100vh;
@@ -80,19 +78,7 @@
   margin-bottom: var(--space-md);
 }
 
-/* 스크립트 타입별 공통 스타일 */
-.categoryBadge {
-  display: inline-block;
-  background: var(--color-primary);
-  color: var(--color-bg-primary);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-full);
-  font-size: var(--space-base);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-md);
-  text-align: center;
-}
-
+/* 타이틀 섹션 */
 .titleSection {
   text-align: center;
   margin-bottom: var(--space-xl);
@@ -119,15 +105,60 @@
   margin-bottom: 10px;
 }
 
-.description {
-  font-size: var(--font-xl);
+/* 태스크 이름 */
+.taskName {
+  font-size: var(--font-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--space-base);
+  word-break: keep-all;
+  text-align: center;
+}
+
+/* 서비스 정보 영역 */
+.serviceInfo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-base);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
+}
+
+.serviceName {
+  background: var(--color-primary); /* special */
+  color: var(--color-bg-primary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-sm);
+}
+
+.serviceTarget {
+  font-weight: var(--font-weight-medium);
+}
+
+/* 메인 콘텐츠 */
+.mainContent {
+  font-size: var(--font-xl);
+  color: var(--color-text-primary);
   line-height: var(--line-height-normal);
   word-break: keep-all;
-  padding: 0 var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-sm);
+  box-shadow: var(--shadow-sm);
+  text-align: justify;
 }
 
 /* Formal Script 전용 스타일 */
+.formal {
+  /* 포멀 스크립트용 클래스 */
+}
+
 .formalSentenceSection {
   background: var(--color-bg-secondary);
   border: 3px solid var(--color-primary);
@@ -138,7 +169,7 @@
 }
 
 .formalSentenceLabel {
-  font-size: var(--space-base);
+  font-size: var(--font-sm);
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-base);
@@ -155,7 +186,6 @@
   padding: var(--space-md);
   background: var(--color-bg-primary);
   border-radius: var(--radius-lg);
-  /* border-left: 6px solid var(--color-primary); */
   font-style: italic;
   word-break: keep-all;
   box-shadow: var(--shadow-md);
@@ -169,81 +199,11 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* QA Scenario Script 전용 스타일 */
-.qaSection {
-  background: var(--color-bg-secondary);
-  border: 3px solid var(--color-primary);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  margin: var(--space-lg) 0;
-}
-
-.situationLabel,
-.descriptionLabel {
-  font-size: var(--space-base);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.situation {
-  font-size: var(--font-2xl);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-normal);
-  margin-bottom: var(--space-lg);
-  padding: var(--space-md);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  border-left: 6px solid var(--color-warning-light);
-  word-break: keep-all;
-  box-shadow: var(--shadow-md);
-}
-
-.qaDescription {
-  font-size: var(--space-base);
-  color: var(--color-text-muted);
-  line-height: var(--line-height-relaxed);
-  margin-bottom: var(--space-md);
-  padding: var(--space-md);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  word-break: keep-all;
-  box-shadow: var(--shadow-md);
-}
-
-.qaInstruction {
-  font-size: var(--space-base);
-  color: var(--color-secondary);
-  text-align: center;
-  font-weight: var(--font-weight-semibold);
-  margin-top: var(--space-base);
-}
-
 /* 녹음 영역 */
 .recordingSection {
   border-radius: var(--radius-xl);
-  /* padding: var(--space-2xl) var(--space-lg); */
   margin-bottom: var(--space-2xl);
   text-align: center;
-}
-
-.recordingPrompt {
-  font-size: var(--font-xl);
-  color: var(--color-secondary);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-base);
-}
-
-.recordingInstruction {
-  font-size: var(--font-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2xl);
-  line-height: var(--line-height-normal);
-  word-break: keep-all;
 }
 
 /* 완료된 스크립트 섹션 */
@@ -269,91 +229,26 @@
   line-height: var(--line-height-normal);
 }
 
-.reRecordPrompt {
-  font-size: var(--space-base);
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-lg);
-}
-
-/* VoiceRecorder 통합 섹션 */
-.voiceRecorderSection {
-  background: var(--color-bg-secondary);
-  border: 3px solid var(--color-primary);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  margin-bottom: var(--space-2xl);
-}
-
-.recorderHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-  padding-bottom: var(--space-base);
-  border-bottom: 2px solid var(--color-border-strong);
-}
-
-.recorderTitle {
-  font-size: var(--font-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-  margin: 0;
-}
-
-.closeRecorderButton {
-  background: var(--color-error);
-  color: var(--color-bg-primary);
-  border: none;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  font-size: var(--space-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.closeRecorderButton:hover {
-  background: var(--color-error-hover);
-  transform: scale(1.05);
-}
-
-.recorderWrapper {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
-  box-shadow: var(--shadow-md);
-}
-
-.recorderActions {
+/* 완료 축하 메시지 */
+.congratulationsMessage {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 16px;
   text-align: center;
 }
 
-.completeButton {
-  background: linear-gradient(
-    135deg,
-    var(--color-success) 0%,
-    var(--color-secondary) 100%
-  );
-  color: var(--color-bg-primary);
-  border: none;
-  padding: var(--space-base) var(--space-2xl);
-  border-radius: var(--radius-lg);
-  font-size: var(--space-base);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-  transition: all var(--transition);
-  box-shadow: var(--shadow-md);
+.congratulationsMessage h3 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-size: 1.5rem;
 }
 
-.completeButton:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-secondary) 0%,
-    var(--color-success-hover) 100%
-  );
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+.congratulationsMessage p {
+  margin: 0;
+  color: #047857;
+  font-size: 1.1rem;
 }
 
 /* 네비게이션 영역 */
@@ -402,19 +297,15 @@
 }
 
 .navButtonDisabled {
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-400);
-  cursor: not-allowed;
+  background: #e0e0e0 !important;
+  color: #9e9e9e !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
 }
 
-.navCompletedIcon {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  font-size: var(--space-base);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-full);
-  padding: 2px;
+.navButtonDisabled:hover {
+  background: #e0e0e0 !important;
+  transform: none !important;
 }
 
 /* 통계 영역 */
@@ -484,7 +375,30 @@
   transition: width var(--transition-slow);
 }
 
-/* 로딩 및 에러 상태 */
+/* 진행률 힌트 */
+.progressHint {
+  display: flex;
+  align-items: flex-start;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  gap: 12px;
+}
+
+.hintIcon {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.hintText {
+  color: #1565c0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 로딩 상태 */
 .loadingContainer {
   min-height: 100vh;
   display: flex;
@@ -500,38 +414,42 @@
   text-align: center;
 }
 
-.loadingSpinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--color-secondary-bg);
-  border-top: 4px solid var(--color-primary);
-  border-radius: var(--radius-full);
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--space-md);
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .loadingText {
   font-size: var(--font-xl);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
 }
 
-/* 할당 버튼 */
-.assignButton {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-hover) 100%
-  );
+/* 재녹음 버튼 */
+.reRecordButton {
+  background: var(--color-gray-200);
+  color: var(--color-gray-600);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background-color 0.2s;
+}
+
+.reRecordButton:hover {
+  background: #ff5252;
+}
+
+.reRecordButton:active {
+  transform: translateY(1px);
+}
+
+/* 다음 주제 버튼 */
+.nextTopicWrapper {
+  margin-top: var(--space-lg);
+  text-align: center;
+}
+
+.nextTopicButton {
+  background: var(--color-primary); /* special */
   color: var(--color-bg-primary);
   border: none;
   padding: var(--space-base) var(--space-2xl);
@@ -540,91 +458,119 @@
   font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: all var(--transition);
-  margin-top: var(--space-md);
   box-shadow: var(--shadow-md);
 }
 
-.assignButton:hover {
+.nextTopicButton:hover {
   background: linear-gradient(
     135deg,
-    var(--color-primary-hover) 0%,
+    var(--color-secondary) 0%,
     var(--color-primary) 100%
   );
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
-.assignButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* 에러 상태 */
-.errorContainer {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(
-    135deg,
-    var(--color-error-bg) 0%,
-    var(--color-warning-bg) 100%
-  );
-  padding: var(--space-md);
-}
-
-.errorCard {
-  background: var(--color-bg-primary);
+/* 상세 지침 영역 */
+.tutorialDetailedInstruction {
+  background: var(--color-warning-bg);
+  border: 2px solid var(--color-warning-light);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: var(--space-3xl) var(--space-2xl);
-  max-width: 400px;
+  padding: var(--space-md);
+  margin: var(--space-sm);
   text-align: center;
 }
 
-.errorIcon {
-  font-size: 64px;
-  margin-bottom: var(--space-md);
+.detailedInstruction {
+  background: var(--color-gray-100);
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin: var(--space-sm);
+  text-align: center;
 }
 
-.errorTitle {
-  font-size: var(--font-2xl);
+.instructionLabel {
+  font-size: var(--font-sm);
+  color: var(--color-primary-hover);
   font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
   margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
+.instructionText {
+  font-size: var(--font-base);
+  color: var(--color-gray-600);
+  line-height: var(--line-height-normal);
+  word-break: keep-all;
+}
+
+/* 튜토리얼 지침 스타일 */
+.tutorialInstruction {
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  margin-top: var(--space-base);
+  padding: var(--space-md);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  word-break: keep-all;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 세트 정보 */
+.setInfo {
+  margin-top: var(--space-base);
+  text-align: center;
+}
+
+.setId {
+  display: inline-block;
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 완료 오버레이 */
+.completedOverlay {
+  position: relative;
+  opacity: 0.6;
+}
+
+.completedOverlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+  border-radius: var(--radius-lg);
+}
+
+.completedText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: black;
+  font-weight: bold;
+  z-index: 2;
+  font-size: 18px;
+}
+
+/* 에러 메시지 */
 .errorMessage {
   font-size: var(--space-base);
   color: var(--color-text-light);
   margin-bottom: var(--space-lg);
   line-height: var(--line-height-normal);
-}
-
-.retryButton {
-  background: linear-gradient(
-    135deg,
-    var(--color-error) 0%,
-    var(--color-error-hover) 100%
-  );
-  color: var(--color-bg-primary);
-  border: none;
-  padding: var(--space-base) var(--space-2xl);
-  border-radius: var(--radius-md);
-  font-size: var(--space-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.retryButton:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-error-hover) 0%,
-    var(--color-error) 100%
-  );
-  transform: translateY(-2px);
 }
 
 /* 알 수 없는 스크립트 타입 */
@@ -642,6 +588,7 @@
   color: var(--color-error-hover);
   font-weight: var(--font-weight-semibold);
 }
+
 /* 모바일 최적화 */
 @media (max-width: 480px) {
   .container {
@@ -675,23 +622,31 @@
     font-size: var(--font-3xl);
   }
 
-  .description {
+  .taskName {
+    font-size: var(--font-xl);
+    margin-bottom: var(--space-sm);
+  }
+
+  .serviceInfo {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .serviceName {
+    font-size: var(--font-xs);
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .serviceTarget {
+    font-size: var(--font-sm);
+  }
+
+  .mainContent {
     font-size: var(--font-lg);
+    padding: var(--space-sm);
   }
 
   .formalSentence {
-    font-size: var(--font-2xl);
-  }
-
-  .situation {
-    font-size: var(--font-2xl);
-  }
-
-  .qaDescription {
-    font-size: var(--font-lg);
-  }
-
-  .recordingInstruction {
     font-size: var(--font-2xl);
   }
 
@@ -715,37 +670,47 @@
     font-size: var(--font-3xl);
   }
 
-  /* VoiceRecorder 모바일 최적화 */
-  .voiceRecorderSection {
-    padding: var(--space-md) var(--space-base);
-  }
-
-  .recorderHeader {
-    flex-direction: column;
-    gap: var(--space-sm);
-    text-align: center;
-  }
-
-  .recorderTitle {
-    font-size: var(--font-lg);
-  }
-
-  .recorderWrapper {
-    padding: var(--space-base);
-  }
-
-  .completeButton {
-    width: 100%;
-    font-size: var(--font-base);
-    padding: var(--font-sm) var(--space-lg);
-  }
-
   .completedIcon {
     font-size: 48px;
   }
 
   .completedMessage {
     font-size: var(--font-lg);
+  }
+
+  .congratulationsMessage {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .congratulationsMessage h3 {
+    font-size: 1.25rem;
+  }
+
+  .congratulationsMessage p {
+    font-size: 1rem;
+  }
+
+  .tutorialDetailedInstruction,
+  .detailedInstruction {
+    padding: var(--space-sm);
+  }
+
+  .instructionLabel {
+    font-size: var(--font-xs);
+  }
+
+  .instructionText {
+    font-size: var(--font-sm);
+  }
+
+  .setId {
+    font-size: var(--font-xs);
+  }
+
+  .tutorialInstruction {
+    font-size: var(--font-sm);
+    padding: var(--space-sm);
   }
 }
 
@@ -754,11 +719,9 @@
   .container,
   .mainCard,
   .navButton,
-  .completeButton,
-  .assignButton,
-  .retryButton,
-  .progressBarFill,
-  .loadingSpinner {
+  .nextTopicButton,
+  .returnHomeButton,
+  .progressBarFill {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -771,12 +734,7 @@
     border: 3px solid var(--color-text-primary);
   }
 
-  .categoryBadge {
-    border: 2px solid var(--color-text-primary);
-  }
-
   .formalSentenceSection,
-  .qaSection,
   .recordingSection,
   .completedSection {
     border: 3px solid var(--color-text-primary);
@@ -784,6 +742,18 @@
 
   .navButtonEnabled {
     border: 2px solid var(--color-text-primary);
+  }
+
+  .mainContent,
+  .tutorialDetailedInstruction,
+  .detailedInstruction {
+    border: 2px solid var(--color-text-primary);
+  }
+
+  .serviceInfo {
+    border: 1px solid var(--color-text-primary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-xs);
   }
 }
 
@@ -793,15 +763,38 @@
     font-size: var(--font-3xl);
   }
 
-  .description {
+  .mainContent {
     font-size: var(--font-xl);
   }
 
   .formalSentence {
     font-size: var(--font-2xl);
   }
+}
 
-  .situation {
-    font-size: var(--font-2xl);
-  }
+/* 완료버튼 */
+.returnHomeButton {
+  background: var(--color-primary); /* special */
+  color: var(--color-bg-primary);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition);
+  margin-top: var(--space-md);
+  text-align: center;
+  width: 100%;
+}
+
+.returnHomeButton:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-secondary) 0%,
+    var(--color-primary) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }

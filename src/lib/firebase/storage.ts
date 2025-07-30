@@ -1,15 +1,17 @@
 // src/lib/firebase/storage.ts - Firebase Storage 관련 유틸
-import { storage, ref, uploadBytes, getDownloadURL } from "./config";
+import { storage } from "./config";
 
 import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
   deleteObject,
   getMetadata,
-  // updateMetadata,
   listAll,
-  // StorageReference,
   UploadResult,
   FullMetadata,
-} from "firebase/storage";
+  // 기타 필요한 함수들
+} from "firebase/storage"; // ✅ 여기서 가져와야 함
 
 // 파일 업로드 옵션 타입
 interface UploadOptions {

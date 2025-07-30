@@ -1,374 +1,328 @@
-// hooks/queries/useUserQueries.ts - 쿠키 기반 사용자 데이터 조회 훅
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  UseQueryResult,
-} from "@tanstack/react-query";
+// hooks/queries/useUserQueries.ts - Firebase Auth 기반으로 완전 변경
+
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { User } from "@/types/firebase";
-
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { db } from "@/lib/firebase/config";
+import { doc, getDoc } from "firebase/firestore";
+import { Timestamp, FieldValue } from "firebase/firestore";
 /**
- * 쿠키에서 값 읽기 (클라이언트 사이드)
- */
-const getCookie = (name: string): string | null => {
-  if (typeof window === "undefined") return null;
-
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(";").shift() || null;
-  }
-  return null;
-};
-
-/**
- * 인증 상태 확인 쿼리 (쿠키 기반)
- * 미들웨어에서 이미 검증했으므로 클라이언트에서는 쿠키 존재만 확인
+ * 🔥 Firebase Auth 기반 인증 상태 확인
+ * HTTP 쿠키 대신 Firebase Auth 상태 사용
  */
 export const useAuthStatusQuery = (): UseQueryResult<
-  { isAuthenticated: boolean; userId: string | null },
+  { isAuthenticated: boolean; userId: string | null; user: any },
   Error
 > => {
-  return useQuery({
-    queryKey: ["authStatus"],
-    queryFn: async (): Promise<{
-      isAuthenticated: boolean;
-      userId: string | null;
-    }> => {
-      // 서버 요청 없이 쿠키만 확인
-      const authToken = getCookie("auth-token");
+  const { user: firebaseUser, isLoading, isAuthenticated } = useFirebaseAuth();
 
-      return {
-        isAuthenticated: !!authToken,
-        userId: authToken || null, // 쿠키 값이 userId
-      };
+  return {
+    data: {
+      isAuthenticated,
+      userId: firebaseUser?.uid || null,
+      user: firebaseUser,
     },
-    staleTime: Infinity, // 무한 캐시 (쿠키가 변경되지 않는 한)
-    gcTime: Infinity,
-    retry: false,
-    refetchOnWindowFocus: false, // 포커스 시 재검증 안함
-    refetchOnMount: true, // 새 탭에서만 한 번 확인
-  });
+    isLoading,
+    isError: false,
+    error: null,
+  } as UseQueryResult<
+    { isAuthenticated: boolean; userId: string | null; user: any },
+    Error
+  >;
 };
 
 /**
- * 사용자 정보 조회 쿼리 (쿠키 기반)
+ * 🔥 Firebase Auth + Firestore Client SDK 기반 사용자 정보 조회
+ * 보안 규칙이 자동으로 적용됩니다
  */
-export const useUserQuery = (userId?: string): UseQueryResult<User, Error> => {
-  const { data: authStatus } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
+export const useUserQuery = (
+  userId?: string | null
+): UseQueryResult<User, Error> => {
+  const { user: firebaseUser, isAuthenticated } = useFirebaseAuth();
+  const targetUserId = userId || firebaseUser?.uid;
 
   return useQuery({
-    queryKey: ["user", userId || authStatus?.userId],
+    queryKey: targetUserId ? ["user", targetUserId] : ["user", "no-user"],
     queryFn: async (): Promise<User> => {
-      const targetUserId = userId || authStatus?.userId;
+      console.log(
+        "🔥 useUserQuery (Firestore 직접 조회) 실행, targetUserId:",
+        targetUserId
+      );
 
       if (!targetUserId) {
         throw new Error("사용자 ID가 없습니다.");
       }
 
-      if (!authStatus?.isAuthenticated) {
-        throw new Error("인증이 필요합니다.");
+      if (!isAuthenticated || !firebaseUser) {
+        throw new Error("Firebase 인증이 필요합니다.");
       }
 
-      const response = await fetch(`/api/users/${targetUserId}`, {
-        method: "GET",
-        credentials: "include", // 쿠키 포함
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "사용자 정보를 불러올 수 없습니다.");
-      }
-
-      return data.user as User;
-    },
-    enabled:
-      !!authStatus?.isAuthenticated &&
-      !!(userId || authStatus?.userId) &&
-      !!localUser?.completedAt,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
-};
-
-/**
- * 로컬 스토리지에서 사용자 정보 조회 (민감하지 않은 정보만)
- * 완료 상태, 스크립트 할당 정보 등만 저장
- */
-export const useLocalUserQuery = (): UseQueryResult<
-  (Pick<User, "completedAt" | "scriptAssignments"> & { name?: string }) | null,
-  Error
-> => {
-  return useQuery({
-    queryKey: ["localUser"],
-    queryFn: async (): Promise<
-      | (Pick<User, "completedAt" | "scriptAssignments"> & { name?: string })
-      | null
-    > => {
-      if (typeof window === "undefined") return null;
-
-      const existingUserInfo = localStorage.getItem("userInfo");
-
-      if (!existingUserInfo) return null;
+      // 🔥 Firestore Client SDK 직접 사용 - 보안 규칙 자동 적용
+      const userCollectionName =
+        process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+      const userDocRef = doc(db, userCollectionName, targetUserId);
 
       try {
-        const parsedInfo = JSON.parse(existingUserInfo);
-        // 민감하지 않은 정보만 반환
-        return {
-          name: parsedInfo.name, // User 타입에 없지만 별도로 저장
-          completedAt: parsedInfo.completedAt,
-          scriptAssignments: parsedInfo.scriptAssignments || [],
-        };
-      } catch (error) {
-        console.error("로컬 사용자 정보 파싱 오류:", error);
-        localStorage.removeItem("userInfo");
-        return null;
-      }
-    },
-    staleTime: Infinity,
-    gcTime: Infinity,
-    retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-};
+        const userDoc = await getDoc(userDocRef);
 
-/**
- * 현재 인증된 사용자 ID 조회 (쿠키 기반)
- */
-export const useCurrentUserIdQuery = (): UseQueryResult<
-  string | null,
-  Error
-> => {
-  const { data: authStatus } = useAuthStatusQuery();
+        if (!userDoc.exists()) {
+          console.log("❌ 사용자 문서가 존재하지 않음:", targetUserId);
+          throw new Error("USER_NOT_REGISTERED");
+        }
 
-  return useQuery({
-    queryKey: ["currentUserId"],
-    queryFn: async (): Promise<string | null> => {
-      return authStatus?.userId || null;
-    },
-    enabled: !!authStatus?.isAuthenticated,
-    staleTime: Infinity,
-    retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-};
-
-/**
- * 사용자의 할당된 스크립트 정보 조회 (로컬 우선)
- */
-export const useUserScriptAssignmentsQuery = (
-  userId?: string
-): UseQueryResult<User["scriptAssignments"], Error> => {
-  const { data: authStatus } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
-
-  return useQuery({
-    queryKey: ["userScriptAssignments", userId || authStatus?.userId],
-    queryFn: async (): Promise<User["scriptAssignments"]> => {
-      const targetUserId = userId || authStatus?.userId;
-
-      if (!targetUserId) {
-        throw new Error("사용자 ID가 없습니다.");
-      }
-
-      // 로컬 우선 확인
-      if (localUser && localUser.scriptAssignments) {
-        return localUser.scriptAssignments;
-      }
-
-      if (!authStatus?.isAuthenticated) {
-        throw new Error("인증이 필요합니다.");
-      }
-
-      const response = await fetch(`/api/users/${targetUserId}`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "스크립트 할당 정보를 불러올 수 없습니다."
-        );
-      }
-
-      const user = data.user as User;
-      return user.scriptAssignments || [];
-    },
-    enabled: !!authStatus?.isAuthenticated && !!(userId || authStatus?.userId),
-    staleTime: 2 * 60 * 1000,
-    retry: 1,
-  });
-};
-
-/**
- * 인증 상태 확인 유틸리티
- */
-export const useIsAuthenticated = (): boolean => {
-  const { data: authStatus } = useAuthStatusQuery();
-  return !!authStatus?.isAuthenticated;
-};
-
-/**
- * 사용자 등록 완료 상태 확인
- */
-export const useUserCompletionStatusQuery = (
-  userId?: string
-): UseQueryResult<boolean, Error> => {
-  const { data: authStatus } = useAuthStatusQuery();
-  const { data: localUser } = useLocalUserQuery();
-
-  return useQuery({
-    queryKey: ["userCompletionStatus", userId || authStatus?.userId],
-    queryFn: async (): Promise<boolean> => {
-      const targetUserId = userId || authStatus?.userId;
-
-      if (!targetUserId) {
-        return false;
-      }
-
-      // 먼저 로컬에서 확인
-      if (localUser && localUser.completedAt) {
-        return true;
-      }
-
-      // 인증되지 않은 경우 서버 호출 안함
-      if (!authStatus?.isAuthenticated) {
-        return false;
-      }
-
-      try {
-        const response = await fetch(`/api/users/${targetUserId}`, {
-          method: "GET",
-          credentials: "include",
+        const userData = userDoc.data();
+        console.log("✅ Firestore에서 사용자 데이터 조회 성공:", {
+          id: targetUserId,
+          userName: userData?.userName,
         });
 
-        const data = await response.json();
+        return {
+          id: targetUserId,
+          ...userData,
+        } as User;
+      } catch (error: any) {
+        console.error("❌ Firestore 사용자 조회 오류:", error);
 
-        if (!response.ok) {
+        // Firebase Auth 권한 오류 처리
+        if (error.code === "permission-denied") {
+          throw new Error("접근 권한이 없습니다.");
+        }
+
+        // 네트워크 오류 처리
+        if (error.code === "unavailable") {
+          throw new Error("네트워크 연결을 확인해주세요.");
+        }
+
+        throw error;
+      }
+    },
+    enabled: isAuthenticated && !!targetUserId && !!firebaseUser,
+    staleTime: 5 * 60 * 1000, // 5분
+    retry: (failureCount, error) => {
+      // 등록되지 않은 사용자나 권한 오류는 재시도하지 않음
+      if (
+        error?.message === "USER_NOT_REGISTERED" ||
+        error?.message === "접근 권한이 없습니다."
+      ) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+  });
+};
+
+/**
+ * 🔥 Firebase Auth 기반 최소 사용자 정보
+ * useUserQuery 결과에서 필요한 정보만 추출
+ */
+export const useMinimalUserQuery = (): UseQueryResult<
+  {
+    id: string;
+    userName?: string;
+    completedAt?: string | FieldValue | Timestamp;
+  } | null,
+  Error
+> => {
+  const { user: firebaseUser } = useFirebaseAuth();
+  const {
+    data: fullUser,
+    isLoading,
+    isError,
+    error,
+  } = useUserQuery(firebaseUser?.uid);
+
+  return useQuery({
+    queryKey: ["minimalUserInfo", firebaseUser?.uid],
+    queryFn: async () => {
+      if (fullUser && firebaseUser) {
+        console.log("🔥 useMinimalUserQuery: Firebase 사용자 데이터에서 추출", {
+          id: firebaseUser.uid,
+          userName: fullUser.userName,
+        });
+        return {
+          id: firebaseUser.uid,
+          userName: fullUser.userName,
+          completedAt: fullUser.completedAt,
+        };
+      }
+      return null;
+    },
+    enabled: !!fullUser && !!firebaseUser,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+};
+
+/**
+ * 🔥 Firebase Auth 기반 사용자 등록 완료 상태 확인
+ */
+export const useUserCompletionStatusQuery = (
+  userId?: string | null
+): UseQueryResult<boolean, Error> => {
+  const { user: firebaseUser, isAuthenticated } = useFirebaseAuth();
+  const targetUserId = userId || firebaseUser?.uid;
+
+  return useQuery({
+    queryKey: ["userCompletionStatus", targetUserId],
+    queryFn: async (): Promise<boolean> => {
+      console.log(
+        "🔥 useUserCompletionStatusQuery 실행, targetUserId:",
+        targetUserId
+      );
+
+      if (!targetUserId || !isAuthenticated || !firebaseUser) {
+        return false;
+      }
+
+      // 🔧 pendingAuth 확인 - 아직 등록 과정 중인 사용자
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        try {
+          const authData = JSON.parse(pendingAuth);
+          // 기존 사용자라면 완료된 것으로 간주
+          if (authData.isExistingUser) {
+            return true;
+          }
+          // 신규 사용자라면 아직 미완료
+          return false;
+        } catch (error) {
+          console.error("pendingAuth 파싱 오류:", error);
+        }
+      }
+
+      try {
+        // 🔥 Firestore Client SDK 직접 사용
+        const userCollectionName =
+          process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+        const userDocRef = doc(db, userCollectionName, targetUserId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          console.log("❌ 사용자 문서 없음 - 미등록 상태");
           return false;
         }
 
-        const user = data.user as User;
-        return !!user.completedAt;
-      } catch (error) {
-        console.error("사용자 완료 상태 확인 오류:", error);
+        const userData = userDoc.data();
+        const isCompleted = !!userData?.completedAt;
+
+        console.log("✅ 사용자 완료 상태 확인:", {
+          userId: targetUserId,
+          completedAt: userData?.completedAt,
+          isCompleted,
+        });
+
+        return isCompleted;
+      } catch (error: any) {
+        console.error("❌ 사용자 완료 상태 확인 오류:", error);
+
+        if (error.code === "permission-denied") {
+          console.error("권한 거부 - Firebase 보안 규칙 확인 필요");
+        }
+
         return false;
       }
     },
-    enabled: !!(userId || authStatus?.userId),
-    staleTime: 5 * 60 * 1000,
+    enabled: !!targetUserId && isAuthenticated && !!firebaseUser,
+    staleTime: 5 * 60 * 1000, // 5분
     retry: 1,
   });
 };
 
 /**
- * 사용자 인증 확인 뮤테이션 (쿠키 기반)
+ * 🔥 Firebase Auth 기반 튜토리얼 완료 여부 확인
  */
-export const useVerifyAuthorizedUserMutation = () => {
-  const queryClient = useQueryClient();
+export const useIsTutorialCompleted = (): boolean => {
+  const { user: firebaseUser } = useFirebaseAuth();
+  const { data: fullUser } = useUserQuery(firebaseUser?.uid);
 
-  return useMutation({
-    mutationFn: async ({
-      name,
-      socialNumber,
-    }: {
-      name: string;
-      socialNumber: string;
-    }) => {
-      const response = await fetch("/api/auth/verifyAuthorizedUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // 쿠키 포함
-        body: JSON.stringify({ name, socialNumber }),
+  return (
+    fullUser?.currentStatus?.isTutorialCompleted ||
+    fullUser?.recordingStatus?.isTutorialCompleted ||
+    false
+  );
+};
+
+/**
+ * 🔥 Firebase Auth 기반 현재 세트 번호 조회
+ */
+export const useCurrentSetNumber = (): number => {
+  const { user: firebaseUser } = useFirebaseAuth();
+  const { data: fullUser } = useUserQuery(firebaseUser?.uid);
+
+  return fullUser?.participation?.currentSetNumber || 1;
+};
+
+/**
+ * 🔥 Firebase Auth 기반 현재 세트 ID 조회
+ */
+export const useCurrentSetId = (): number => {
+  const { user: firebaseUser } = useFirebaseAuth();
+  const { data: fullUser } = useUserQuery(firebaseUser?.uid);
+  const currentSetNumber = fullUser?.participation?.currentSetNumber || 1;
+  const currentSet = fullUser?.participation?.sets?.find(
+    (set) => set.setNumber === currentSetNumber
+  );
+  return currentSet?.setId || 1;
+};
+
+/**
+ * 🔥 Firebase Auth 기반 전체 녹음 작업 완료 상태 확인
+ */
+export const useAllRecordingCompletionQuery = (
+  userId?: string | null
+): UseQueryResult<boolean, Error> => {
+  const { user: firebaseUser } = useFirebaseAuth();
+  const { data: fullUser } = useUserQuery(userId || firebaseUser?.uid);
+
+  return useQuery({
+    queryKey: ["allRecordingCompletion", userId || firebaseUser?.uid],
+    queryFn: async (): Promise<boolean> => {
+      console.log("🔥 전체 녹음 완료 상태 확인:", {
+        completedPercentage:
+          fullUser?.currentStatus?.progress?.completedPercentage,
+        isAllRecordingCompleted:
+          fullUser?.recordingStatus?.isAllRecordingCompleted,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "인증에 실패했습니다.");
+      // 서버 데이터에서 모든 녹음 완료 여부 확인
+      if (fullUser?.currentStatus?.progress?.completedPercentage === 100) {
+        return true;
       }
 
-      return data;
-    },
-    onSuccess: (data) => {
-      // 기존 사용자인지 확인
-      if (data.user.isExistingUser) {
-        // 기존 사용자 데이터로 localStorage 업데이트
-        const userInfo = {
-          name: data.user.name,
-          completedAt: data.user.existingData?.completedAt || null,
-          scriptAssignments: data.user.existingData?.scriptAssignments || [],
-        };
-
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-        // 캐시 업데이트
-        queryClient.setQueryData(["authStatus"], {
-          isAuthenticated: true,
-          userId: data.user.userId,
-        });
-
-        queryClient.setQueryData(["localUser"], userInfo);
-
-        console.log("기존 사용자 로그인 성공:", data.user.name);
-
-        // 기존 사용자는 바로 메인으로 이동
-        window.location.href = "/main";
-        return;
+      // 레거시 구조도 확인
+      if (fullUser?.recordingStatus?.isAllRecordingCompleted) {
+        return true;
       }
 
-      // 신규 사용자 처리
-      const userInfo = {
-        name: data.user.name,
-        completedAt: null, // 초기에는 미완료
-        scriptAssignments: [],
-      };
-
-      localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-      // 인증 상태 캐시 업데이트
-      queryClient.setQueryData(["authStatus"], {
-        isAuthenticated: true,
-        userId: data.user.userId,
-      });
-
-      // 로컬 사용자 정보도 직접 업데이트
-      queryClient.setQueryData(["localUser"], userInfo);
-
-      console.log("신규 사용자 인증 성공:", data.user.name);
+      return false;
     },
-    onError: (error) => {
-      console.error("인증 실패:", error);
-    },
+    enabled: !!fullUser && !!firebaseUser,
+    staleTime: 2 * 60 * 1000, // 2분
+    retry: 1,
   });
 };
 
 /**
- * 로그아웃 유틸리티 (쿠키 기반)
+ * 🔥 Firebase Auth 기반 인증 상태 확인 유틸리티
  */
-export const logout = async (): Promise<void> => {
-  try {
-    // 서버에서 쿠키 삭제
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-  } catch (error) {
-    console.error("로그아웃 API 오류:", error);
-  }
+export const useIsAuthenticated = (): boolean => {
+  const { isAuthenticated } = useFirebaseAuth();
+  return isAuthenticated;
+};
 
-  // 로컬 스토리지 정리 (민감하지 않은 정보만 저장했지만 정리)
-  localStorage.removeItem("userInfo");
-  sessionStorage.clear();
+/**
+ * 🔥 Firebase Auth 상태를 직접 노출하는 훅 (필요시 사용)
+ */
+export const useFirebaseAuthStatus = () => {
+  const { user, isLoading, isAuthenticated, signOut } = useFirebaseAuth();
 
-  // 페이지 새로고침으로 상태 초기화
-  if (typeof window !== "undefined") {
-    window.location.href = "/";
-  }
+  return {
+    firebaseUser: user,
+    isFirebaseLoading: isLoading,
+    isFirebaseAuthenticated: isAuthenticated,
+    firebaseSignOut: signOut,
+  };
 };

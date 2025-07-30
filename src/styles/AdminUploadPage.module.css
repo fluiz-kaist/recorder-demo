@@ -1,0 +1,200 @@
+/* AdminUploadPage.module.css */
+.container {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.excelGuideBox {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.excelGuideTitle {
+  color: #1e40af;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.excelGuideText {
+  color: #1e3a8a;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.tablePreview {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.gridRow {
+  margin: 0;
+}
+
+.uploadNote {
+  grid-column: span 2;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.caution {
+  font-size: 0.75rem;
+  color: #2563eb;
+  margin-top: 0.5rem;
+}
+
+.uploadSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.fileInput {
+  display: block;
+  width: 100%;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.selectedFile {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.uploadButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.enabled {
+  background-color: #2563eb;
+  color: white;
+}
+
+.enabled:hover {
+  background-color: #1d4ed8;
+}
+
+.disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.resultBox {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-width: 1px;
+}
+
+.success {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.failure {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.resultTitle {
+  font-weight: 600;
+}
+
+.resultMessage {
+  margin-top: 0.5rem;
+}
+
+.success .resultMessage {
+  color: #047857;
+}
+
+.failure .resultMessage {
+  color: #b91c1c;
+}
+
+.summaryBox {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.errorListBox {
+  margin-top: 0.75rem;
+}
+
+.errorListTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #991b1b;
+}
+
+.errorList {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #b91c1c;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sampleBox {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.sampleTitle {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.sampleText {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.sampleDownloadLink {
+  color: #2563eb;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+
+.sampleDownloadLink:hover {
+  color: #1e40af;
+}

@@ -1,0 +1,365 @@
+/* SimpleVoiceRecorder.module.css */
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.loading {
+  padding: var(--space-xl);
+  text-align: center;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+}
+
+/* ===============================
+   카운트다운 섹션
+   =============================== */
+
+.countdownContainer {
+  background-color: var(--color-primary-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.countdownNumber {
+  font-size: 80px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: var(--space-base);
+}
+
+.countdownText {
+  font-size: var(--font-lg);
+  color: var(--color-text-primary);
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===============================
+   녹음 상태 표시
+   =============================== */
+
+.recordingStatus {
+  background-color: var(--color-error-bg);
+  border: 2px solid var(--color-error);
+  border-radius: var(--radius-md);
+  padding: var(--space-base);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-base);
+}
+
+.recordingIndicator {
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-error);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.recordingTime {
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-error);
+}
+
+.timeWarning {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  padding: var(--space-sm);
+  border-radius: var(--radius);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-sm);
+}
+
+/* ===============================
+   메인 녹음 버튼
+   =============================== */
+
+.recordButton {
+  width: 100%;
+  max-width: 400px;
+  height: var(--button-height-xl);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-primary);
+  font-size: var(--font-button-lg);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-lg) auto;
+}
+
+.readyButton {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.readyButton:hover:not(:disabled) {
+  background-color: var(--color-success-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.recordingButton {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.recordingButton:hover:not(:disabled) {
+  background-color: var(--color-error-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.recordButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.recordButton:focus-visible {
+  outline: 3px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.recordButtonText {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+}
+
+.recordIcon {
+  font-size: var(--font-xl);
+}
+
+/* ===============================
+   오디오 섹션
+   =============================== */
+
+.audioSection {
+  background-color: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-top: var(--space-lg);
+}
+
+.audioHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-base);
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.audioLabel {
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.audioDuration {
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius);
+}
+
+.audioPlayer {
+  width: 100%;
+  height: 60px;
+  margin-bottom: var(--space-lg);
+  border-radius: var(--radius);
+}
+
+/* ===============================
+   액션 버튼들
+   =============================== */
+
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+  align-items: center;
+}
+
+.uploadButton {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-base) var(--space-xl);
+  font-size: var(--font-button);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-primary);
+  height: var(--button-height);
+  min-width: 200px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.uploadButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.uploadButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.newRecordingButton {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-base) var(--space-xl);
+  font-size: var(--font-button);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-primary);
+  height: var(--button-height);
+  min-width: 200px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.newRecordingButton:hover:not(:disabled) {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.newRecordingButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.uploadButton:focus-visible,
+.newRecordingButton:focus-visible {
+  outline: 3px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* ===============================
+   태블릿 반응형 (768px 이하)
+   =============================== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-base);
+  }
+
+  .countdownNumber {
+    font-size: 60px;
+  }
+
+  .recordButton {
+    font-size: var(--font-button);
+    height: var(--button-height-lg);
+  }
+
+  .audioSection {
+    padding: var(--space-base);
+  }
+
+  .audioHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .uploadButton,
+  .newRecordingButton {
+    min-width: 180px;
+    font-size: var(--font-button-sm);
+  }
+}
+
+/* ===============================
+   모바일 반응형 (480px 이하)
+   =============================== */
+
+@media (max-width: 480px) {
+  .recordButton {
+    max-width: 100%;
+    height: var(--button-height);
+  }
+
+  .countdownNumber {
+    font-size: 50px;
+  }
+
+  .actionButtons {
+    width: 100%;
+  }
+
+  .uploadButton,
+  .newRecordingButton {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* ===============================
+   접근성 및 모션 감소
+   =============================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .recordButton:hover,
+  .uploadButton:hover,
+  .newRecordingButton:hover {
+    transform: none;
+  }
+
+  .recordingIndicator {
+    animation: none;
+  }
+}
+
+/* ===============================
+   고대비 모드 지원
+   =============================== */
+
+@media (prefers-contrast: high) {
+  .recordButton,
+  .uploadButton {
+    border: 2px solid var(--color-text-primary);
+  }
+
+  .newRecordingButton {
+    border-width: 3px;
+  }
+
+  .audioSection {
+    border-width: 3px;
+  }
+}

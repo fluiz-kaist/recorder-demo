@@ -1,5 +1,3 @@
-/* Layout.module.css - 헤더와 푸터 통합 스타일 */
-
 /* 헤더 스타일 */
 .header {
   position: sticky;
@@ -8,21 +6,27 @@
   width: 100%;
   background: linear-gradient(
     135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-light) 100%
+    var(--color-gray-800) 0%,
+    var(--color-gray-900) 80%
   );
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px);
 }
 
 .headerContainer {
-  max-width: 480px;
   margin: 0 auto;
   padding: 0 var(--space-base);
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 64px;
+}
+
+.buttonSection {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 5px;
 }
 
 /* 로고 영역 */
@@ -144,15 +148,43 @@
   font-family: var(--font-primary);
 }
 
-/* 도움말 섹션 */
-.helpSection {
+.footerButtons {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: center;
-  gap: var(--space-2xl);
-  margin-bottom: var(--space-md);
+  padding: 16px 0;
 }
 
-.helpItem {
+.footerButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  width: 100px;
+  height: 80px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.footerButton:hover {
+  background: #f9fafb;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  color: #2563eb;
+  border-color: #c7d2fe;
+}
+
+/* 관리자 스타일 */
+.adminItem {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -164,40 +196,40 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.helpItem:hover {
-  background: var(--color-primary-bg);
+.adminItem:hover {
+  background: #f3e8ff;
   transform: translateY(-1px);
 }
 
-.helpItem:active {
+.adminItem:active {
   transform: translateY(0);
 }
 
-.helpItem:focus {
-  outline: 3px solid var(--color-success-light);
+.adminItem:focus {
+  outline: 3px solid #e9d5ff;
   outline-offset: 2px;
 }
 
-.helpIcon {
+.adminIcon {
   width: var(--space-2xl);
   height: var(--space-2xl);
-  color: var(--color-primary);
+  color: #9333ea;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary-bg);
+  background: #f3e8ff;
   border-radius: var(--radius-sm);
 }
 
-.helpIcon svg {
+.adminIcon svg {
   width: var(--space-md);
   height: var(--space-md);
 }
 
-.helpText {
+.adminText {
   font-size: var(--font-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
+  color: #7e22ce;
   text-align: center;
 }
 
@@ -227,7 +259,70 @@
   line-height: var(--line-height-normal);
 }
 
-/* 모바일 최적화 (작은 화면) */
+/* 모달 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-base);
+}
+
+.modal {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  border-bottom: 2px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.modalHeader h2 {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.modalCloseButton {
+  background: none;
+  border: none;
+  font-size: var(--font-xl);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.modalCloseButton:hover {
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+}
+
+.modalContent {
+  /* 모달 내용은 각 컴포넌트 스타일 사용 */
+}
+
+/* 모바일 최적화 */
 @media (max-width: 360px) {
   .headerContainer {
     padding: 0 var(--space-sm);
@@ -246,29 +341,51 @@
     padding: var(--space-md) var(--space-sm);
   }
 
-  .helpSection {
-    gap: var(--space-lg);
-  }
-
-  .helpIcon {
+  .adminIcon {
     width: var(--icon-lg);
     height: var(--icon-lg);
   }
 
-  .helpIcon svg {
+  .adminIcon svg {
     width: var(--font-lg);
     height: var(--font-lg);
   }
 
-  .helpText {
+  .adminText {
     font-size: var(--font-sm);
   }
 }
+
+@media (max-width: 480px) {
+  .footerButtons {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .footerButton {
+    width: 100%;
+    padding: var(--space-base);
+    font-size: var(--font-base);
+  }
+
+  .modalOverlay {
+    padding: var(--space-sm);
+  }
+
+  .modalHeader {
+    padding: var(--space-base);
+  }
+
+  .modalHeader h2 {
+    font-size: var(--font-lg);
+  }
+}
+
 /* 접근성 향상 */
 @media (prefers-reduced-motion: reduce) {
   .logo,
   .logoutButton,
-  .helpItem {
+  .adminItem {
     transition: none;
   }
 }
@@ -279,23 +396,15 @@
     border-top: 2px solid var(--color-text-primary);
   }
 
-  .copyrightText {
-    color: var(--color-text-primary);
-  }
-
+  .copyrightText,
   .versionText {
-    color: var(--color-text-primary);
-  }
-
-  .helpText {
     color: var(--color-text-primary);
   }
 }
 
 /* 포커스 스타일 일관성 */
 .logo:focus-visible,
-.logoutButton:focus-visible,
-.helpItem:focus-visible {
+.logoutButton:focus-visible {
   outline: 3px solid var(--color-success-light);
   outline-offset: 2px;
 }

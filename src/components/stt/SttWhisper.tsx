@@ -280,7 +280,7 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
               ? "변환 중..."
               : hasTranscribed
               ? "변환 완료"
-              : "음성을 문장으로 변환하기"}
+              : "여기를 누르면 말한 내용이 글자로 써져요"}
           </button>
         )}
 
@@ -290,7 +290,7 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
             <div className={styles.progressText}>
               {autoTranscribe
                 ? "자동으로 음성을 분석하는 중..."
-                : "Whisper로 음성을 분석하는 중..."}
+                : "녹음된 음성을 글자로 바꾸는 중..."}
             </div>
             <div className={styles.loadingSpinner}></div>
           </div>

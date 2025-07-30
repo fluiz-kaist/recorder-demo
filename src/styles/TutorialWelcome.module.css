@@ -1,0 +1,229 @@
+/* TutorialWelcome.module.css - 최적화된 버전 */
+
+/* 메인 컨테이너 */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2xl) var(--space-lg);
+  margin-bottom: var(--space-base);
+  text-align: center;
+  gap: var(--space-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 아이콘 섹션 */
+.iconSection {
+  margin-bottom: var(--space-md);
+}
+
+.mainIcon {
+  font-size: var(--icon-xl);
+  line-height: 1;
+  color: var(--color-primary);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 제목 섹션 */
+.titleSection {
+  margin-bottom: var(--space-base);
+}
+
+.mainTitle {
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  margin: 0;
+  word-break: keep-all;
+}
+
+.highlight {
+  background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-bold);
+  color: #92400e;
+}
+
+/* 설명 섹션 */
+.descriptionSection {
+  margin-bottom: var(--space-xl);
+}
+
+.descriptionText {
+  font-size: var(--font-xl);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+  white-space: pre-line;
+  padding: 0 var(--space-sm);
+}
+
+/* 기능 목록 섹션 */
+.featureListSection {
+  width: 100%;
+  max-width: 500px;
+  text-align: left;
+  margin-bottom: var(--space-xl);
+  padding: var(--space-base) 0;
+}
+
+.listTitle {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-top: 0;
+  margin-bottom: var(--space-md);
+  text-align: center;
+  word-break: keep-all;
+}
+
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.listItemIcon {
+  font-size: var(--font-xl);
+  color: var(--color-secondary);
+  margin-right: var(--space-sm);
+  flex-shrink: 0;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+.listItemText {
+  flex-grow: 1;
+  word-break: keep-all;
+}
+
+.listItemText strong {
+  color: var(--color-primary);
+}
+
+/* Call to Action 섹션 */
+.callToActionSection {
+  margin-top: var(--space-lg);
+}
+
+.next {
+  font-size: var(--font-normal);
+  font-weight: var(--font-weight-medium);
+  color: gray;
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+  white-space: pre-line;
+  padding: 0 var(--space-sm);
+  text-align: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .mainTitle {
+    font-size: var(--font-2xl);
+  }
+
+  .descriptionText {
+    font-size: var(--font-lg);
+  }
+
+  .listTitle {
+    font-size: var(--font-lg);
+  }
+
+  .listItemIcon {
+    font-size: var(--icon-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--space-lg) var(--space-base);
+    gap: var(--space-sm);
+  }
+
+  .mainIcon {
+    font-size: var(--icon-lg);
+  }
+
+  .mainTitle {
+    font-size: var(--font-xl);
+  }
+
+  .descriptionText {
+    font-size: var(--font-base);
+    padding: 0;
+  }
+
+  .listTitle {
+    font-size: var(--font-base);
+  }
+
+  .listItemIcon {
+    font-size: var(--icon-base);
+  }
+
+  .next {
+    font-size: var(--font-base);
+    padding: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .mainTitle {
+    font-size: var(--font-lg);
+  }
+
+  .descriptionText {
+    font-size: var(--font-sm);
+  }
+
+  .listTitle {
+    font-size: var(--font-sm);
+  }
+
+  .next {
+    font-size: var(--font-sm);
+  }
+}
+
+/* 접근성 향상 */
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .container {
+    border: 3px solid var(--color-text-primary);
+  }
+
+  .highlight,
+  .listItemText strong {
+    color: var(--color-primary);
+    text-shadow: 1px 1px 0px var(--color-text-primary);
+  }
+
+  .mainIcon {
+    text-shadow: 2px 2px 0px var(--color-text-primary);
+  }
+}

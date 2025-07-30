@@ -1,6 +1,8 @@
 // src/lib/firebase/firestore.ts - Firestore 관련 CRUD 유틸
+import { db } from "./config";
 import {
-  db,
+  DocumentData,
+  DocumentReference,
   collection,
   doc,
   getDoc,
@@ -9,9 +11,7 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
-} from "./config";
-
-import { DocumentData, DocumentReference } from "firebase/firestore";
+} from "firebase/firestore";
 
 // 🔹 Create or Update (with specific id)
 export async function saveDoc(
@@ -58,6 +58,7 @@ export async function getDocById(
   id: string
 ): Promise<DocumentData | null> {
   try {
+    console.log("colname?", colName);
     const docSnap = await getDoc(doc(db, colName, id));
     if (docSnap.exists()) {
       return docSnap.data();
@@ -95,7 +96,7 @@ export async function updateDocById(
 ): Promise<void> {
   try {
     await updateDoc(doc(db, colName, id), data);
-    console.log(`✅ 업데이트 완료: ${colName}/${id}`);
+    // console.log(`✅ 업데이트 완료: ${colName}/${id}`);
   } catch (err) {
     console.error("❌ 업데이트 실패:", err);
     throw err;

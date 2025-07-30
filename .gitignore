@@ -44,3 +44,11 @@ next-env.d.ts
 cred.json
 
 /backups
+/etc
+
+# merger except
+merger.py
+merged_output.txt
+
+# merged 작업 결과 파일 무시
+merged_*

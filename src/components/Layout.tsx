@@ -1,39 +1,62 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/Layout.module.css";
 import { useIsAuthenticated } from "@/hooks/queries/useUserQueries";
 import { useLogoutUserMutation } from "@/hooks/mutations/useUserMutations";
-// import {
-//   useIsAdmin,
-//   // useAdminPermission,
-// } from "@/hooks/queries/useAdminQueries";
-// import { useAdminLogoutMutation } from "@/hooks/mutations/useAdminMutations";
+import { AdminLogoutButton } from "@/pages/admin/dashboard";
+import AssistantIntro from "@/components/guide/AssistantIntro";
+import VoiceGuide from "@/components/guide/VoiceGuide";
+import MicPermission from "@/components/guide/MicPermission";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  //guide
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [guideModalType, setGuideModalType] = useState<
+    "assistant" | "voice" | "method"
+  >("assistant");
+  const [micPermissionGranted, setMicPermissionGranted] = useState(false);
+
   const router = useRouter();
   const logoutMutation = useLogoutUserMutation();
-  // const adminLogoutMutation = useAdminLogoutMutation();
-  // const [showAdminLogin, setShowAdminLogin] = useState(false);
+
+  // 특정 경로에서만 "처음 화면으로" 버튼을 보여줄 경로들
+  const showHomeButtonPaths = ["/tutorial", "/scripts", "/recording"];
+  const shouldShowHomeButton = showHomeButtonPaths.some((path) =>
+    router.asPath.startsWith(path)
+  );
+  // console.log("router.pathname?", router.pathname);
 
   // 인증 상태 확인
   const isAuthenticated = useIsAuthenticated();
-  // const { isAdmin, adminData } = useIsAdmin();
-  // const canManageUsers = useAdminPermission("manageUsers");
 
-  // 홈으로 이동 (인증 상태에 따라 분기)
-  // const handleHomeClick = () => {
-  //   if (isAdmin) {
-  //     router.push("/admin/dashboard");
-  //   } else if (isAuthenticated) {
-  //     router.push("/main");
-  //   } else {
-  //     router.push("/");
-  //   }
-  // };
+  useEffect(() => {
+    const checkAdminCookie = () => {
+      if (typeof document !== "undefined") {
+        const cookies = document.cookie.split(";");
+        const adminCookie = cookies.find((cookie) =>
+          cookie.trim().startsWith("admin-token=")
+        );
+        console.log("쿠키?", adminCookie);
+
+        if (adminCookie) {
+          const adminToken = adminCookie.split("=")[1]?.trim();
+          console.log("?adminToken", adminToken);
+          // admin-token이 존재하고 값이 있으면 관리자로 인식
+          setIsAdmin(!!adminToken && adminToken.startsWith("admin-"));
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    checkAdminCookie();
+  }, []);
 
   const handleHomeClick = () => {
     if (isAuthenticated) {
@@ -45,43 +68,30 @@ const Layout = ({ children }: LayoutProps) => {
 
   // 사용자 로그아웃 처리
   const handleLogout = async () => {
-    if (confirm("로그아웃 하시겠습니까?")) {
-      try {
-        await logoutMutation.mutateAsync();
-        // 성공 시 뮤테이션에서 자동으로 페이지 이동 처리됨
-      } catch (error) {
-        console.error("로그아웃 실패:", error);
-      }
+    if (confirm("작업을 끝내시겠습니까?")) {
+      localStorage.removeItem("pendingAuth");
+      await logoutMutation.mutateAsync();
+      router.push("/");
     }
   };
-
-  // 관리자 로그아웃 처리
-  // const handleAdminLogout = async () => {
-  //   if (confirm("관리자 로그아웃 하시겠습니까?")) {
-  //     try {
-  //       // await adminLogoutMutation.mutateAsync();
-  //     } catch (error) {
-  //       console.error("관리자 로그아웃 실패:", error);
-  //     }
-  //   }
-  // };
-
-  // 관리자 로그인 페이지로 이동
-  // const handleAdminLoginClick = () => {
-  //   // router.push("/admin/login");
-  //   alert("관리자 로그인 페이지로 이동합니다.(구현예정)");
-  // };
 
   // 도움말 클릭
   const handleHelp = () => {
     alert("도움말 페이지로 이동합니다.(구현예정)");
-    // router.push("/help");
   };
 
   // 문의하기 클릭
   const handleContact = () => {
     alert("문의하기 페이지로 이동합니다.(구현예정)");
-    // router.push("/contact");
+  };
+
+  const handleAdminLogout = () => {
+    if (confirm("관리자 로그아웃 하시겠습니까?")) {
+      document.cookie =
+        "admin=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setIsAdmin(false);
+      router.push("/admin/login");
+    }
   };
 
   // 햅틱 피드백 (모바일)
@@ -100,71 +110,169 @@ const Layout = ({ children }: LayoutProps) => {
     }
   };
 
+  const goBack = () => {
+    triggerHapticFeedback();
+    router.push("/");
+  };
+
+  //guide
+
+  const requestMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      setMicPermissionGranted(true);
+      triggerHapticFeedback();
+    } catch (error) {
+      alert("마이크 권한이 필요합니다. 브라우저 설정을 확인해 주세요.");
+    }
+  };
+
+  const openGuideModal = (type: "assistant" | "voice" | "method") => {
+    setGuideModalType(type);
+    setShowGuideModal(true);
+  };
+
+  const renderGuideModal = () => {
+    if (!showGuideModal) return null;
+
+    let modalContent;
+    switch (guideModalType) {
+      case "assistant":
+        modalContent = <AssistantIntro />;
+        break;
+      case "voice":
+        modalContent = <VoiceGuide />;
+        break;
+      case "method":
+        modalContent = (
+          <MicPermission
+            isGranted={micPermissionGranted}
+            onRequestPermission={requestMicPermission}
+          />
+        );
+        break;
+    }
+
+    return (
+      <div
+        className={styles.modalOverlay}
+        onClick={() => setShowGuideModal(false)}
+      >
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modalHeader}>
+            <h2>
+              {guideModalType === "assistant"
+                ? "비서 소개"
+                : guideModalType === "voice"
+                ? "음성 안내"
+                : "마이크 사용법"}
+            </h2>
+            <button
+              className={styles.modalCloseButton}
+              onClick={() => setShowGuideModal(false)}
+            >
+              창 닫기
+            </button>
+          </div>
+          <div className={styles.modalContent}>{modalContent}</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center", // 가로 중앙
+              alignItems: "center", // 세로 중앙
+              flexDirection: "column", // 수직 정렬 시
+            }}
+          >
+            <button
+              className={styles.modalCloseButton}
+              onClick={() => setShowGuideModal(false)}
+            >
+              녹음하러 가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       {/* 헤더 */}
       <header className={styles.header}>
         <div className={styles.headerContainer}>
-          {/* 로고 영역 */}
-          <div
-            className={styles.logo}
-            onClick={() => {
-              triggerHapticFeedback();
-              handleHomeClick();
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => handleKeyDown(e, handleHomeClick)}
-          >
-            <div className={styles.logoIcon}>
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
-              </svg>
-            </div>
-            <span className={styles.logoText}>
-              {/* {isAdmin ? "관리자 - 음성수집" : "음성수집"} */}
-              {"음성수집"}
-            </span>
-          </div>
-
-          {/* 관리자 정보 및 로그아웃 영역 */}
-          <div className={styles.authSection}>
-            {/* {isAdmin && adminData && (
-              <div className={styles.adminInfo}>
-                <span className={styles.adminBadge}>관리자</span>
-                <span className={styles.adminName}>{adminData.name}</span>
-              </div>
-            )} */}
-
-            {/* 로그아웃 버튼 */}
-            {/* {(isAuthenticated || isAdmin) && (
-              <button
-                className={styles.logoutButton}
-                onClick={() => {
-                  triggerHapticFeedback();
-                  if (isAdmin) {
-                    handleAdminLogout();
-                  } else {
-                    handleLogout();
-                  }
-                }}
-                onKeyDown={(e) =>
-                  handleKeyDown(e, isAdmin ? handleAdminLogout : handleLogout)
-                }
-              >
-                <span className={styles.logoutIcon}>
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-                  </svg>
-                </span>
-                <span className={styles.logoutText}>로그아웃</span>
-              </button>
-            )} */}
+          {/* 로고 영역 또는 처음 화면으로 버튼 */}
+          {shouldShowHomeButton ? (
             <button
               className={styles.logoutButton}
               onClick={() => {
                 triggerHapticFeedback();
+                handleHomeClick();
+              }}
+              onKeyDown={(e) => handleKeyDown(e, handleLogout)}
+            >
+              <span className={styles.logoutIcon}>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                </svg>
+              </span>
+              <span className={styles.logoutText}>처음 화면으로</span>
+            </button>
+          ) : (
+            <div
+              className={styles.logo}
+              onClick={() => {
+                triggerHapticFeedback();
+                handleHomeClick();
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, handleHomeClick)}
+            >
+              <div
+                className={styles.logo}
+                onClick={() => {
+                  triggerHapticFeedback();
+                  handleHomeClick();
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, handleHomeClick)}
+              >
+                <div className={styles.logoIcon}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
+                  </svg>
+                </div>
+                <span className={styles.logoText}>음성 녹음</span>
+              </div>
+            </div>
+          )}
 
+          {/* 로그아웃 영역 */}
+          <div className={styles.buttonSection}>
+            {isAdmin && (
+              <button
+                className={styles.logoutButton}
+                onClick={() => {
+                  triggerHapticFeedback();
+                  handleAdminLogout();
+                }}
+                onKeyDown={(e) => handleKeyDown(e, handleAdminLogout)}
+                style={{ marginRight: "8px" }}
+              >
+                <span className={styles.logoutIcon}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z" />
+                  </svg>
+                </span>
+                <span className={styles.logoutText}>관리자 로그아웃</span>
+              </button>
+            )}
+            <button
+              className={styles.logoutButton}
+              onClick={() => {
+                triggerHapticFeedback();
                 handleLogout();
               }}
               onKeyDown={(e) => handleKeyDown(e, handleLogout)}
@@ -174,11 +282,14 @@ const Layout = ({ children }: LayoutProps) => {
                   <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
                 </svg>
               </span>
-              <span className={styles.logoutText}>로그아웃</span>
+              <span className={styles.logoutText}>작업 종료하기</span>
             </button>
           </div>
         </div>
       </header>
+
+      {/* 가이드 모달 */}
+      {renderGuideModal()}
 
       {/* 메인 콘텐츠 */}
       <main>{children}</main>
@@ -186,76 +297,51 @@ const Layout = ({ children }: LayoutProps) => {
       {/* 푸터 */}
       <footer className={styles.footer}>
         <div className={styles.footerContainer}>
-          {/* 도움말 링크 */}
-          <div className={styles.helpSection}>
-            <div
-              className={styles.helpItem}
-              onClick={() => {
-                triggerHapticFeedback();
-                handleHelp();
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => handleKeyDown(e, handleHelp)}
+          {/* 푸터 - 도움말 버튼 */}
+          <div className={styles.footerButtons}>
+            <button
+              className={styles.footerButton}
+              onClick={() => openGuideModal("assistant")}
             >
-              <div className={styles.helpIcon}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
-                </svg>
-              </div>
-              <span className={styles.helpText}>도움말</span>
-            </div>
-
-            <div
-              className={styles.helpItem}
-              onClick={() => {
-                triggerHapticFeedback();
-                handleContact();
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => handleKeyDown(e, handleContact)}
+              비서 소개
+            </button>
+            <button
+              className={styles.footerButton}
+              onClick={() => openGuideModal("voice")}
             >
-              <div className={styles.helpIcon}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                </svg>
-              </div>
-              <span className={styles.helpText}>문의하기</span>
-            </div>
+              녹음 안내
+            </button>
+            <button
+              className={styles.footerButton}
+              onClick={() => openGuideModal("method")}
+            >
+              마이크
+              <br />
+              사용
+            </button>
           </div>
 
           {/* 구분선 */}
           <div className={styles.divider}></div>
-
-          {/* 관리자 로그인 영역 */}
-          {/* {!isAdmin && !isAuthenticated && (
-            <div className={styles.adminLoginSection}>
-              <div
-                className={styles.adminLoginButton}
-                onClick={() => {
-                  triggerHapticFeedback();
-                  handleAdminLoginClick();
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => handleKeyDown(e, handleAdminLoginClick)}
-              >
-                <div className={styles.adminLoginIcon}>
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11V12z" />
-                  </svg>
-                </div>
-                <span className={styles.adminLoginText}>관리자 로그인</span>
-              </div>
+          <div
+            className={styles.adminItem}
+            onClick={() => router.push("/admin/login")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) =>
+              handleKeyDown(e, () => router.push("/admin/login"))
+            }
+          >
+            <div className={styles.adminIcon}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 17v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+              </svg>
             </div>
-          )} */}
-
+            <span className={styles.adminText}>관리자 로그인</span>
+          </div>
           {/* 저작권 정보 */}
           <div className={styles.copyright}>
-            <p className={styles.copyrightText}>
-              © 2024 음성수집 서비스. 모든 권리 보유.
-            </p>
+            <p className={styles.copyrightText}>© 2025 Fluiz, 서울AI재단</p>
             <p className={styles.versionText}>버전 1.0.0</p>
           </div>
         </div>

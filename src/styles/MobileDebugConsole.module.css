@@ -7,7 +7,7 @@
   width: var(--button-height);
   height: var(--button-height);
   border-radius: var(--radius-full);
-  background: var(--color-primary);
+  background: var(--color-primary); /* special */
   color: var(--color-bg-primary);
   border: none;
   font-size: var(--font-2xl);
@@ -229,7 +229,7 @@
 
 .authButton {
   padding: var(--space-sm) var(--space-base);
-  background: var(--color-primary);
+  background: var(--color-primary); /* special */
   color: var(--color-bg-primary);
   border: none;
   border-radius: var(--radius-xs);

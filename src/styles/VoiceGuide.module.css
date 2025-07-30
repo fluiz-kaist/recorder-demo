@@ -1,0 +1,236 @@
+/* styles/VoiceGuide.module.css - 음성 녹음 안내 전용 스타일 */
+
+.container {
+  padding: var(--space-lg);
+}
+
+/* 헤더 섹션 */
+.headerSection {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.headerIcon {
+  font-size: 64px;
+  margin-bottom: var(--space-base);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.mainTitle {
+  font-size: var(--font-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* 단계 섹션 */
+.stepsSection {
+  margin-bottom: var(--space-xl);
+}
+
+.stepCard {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-sm);
+  transition: all var(--transition);
+}
+
+.stepCard:hover {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stepIcon {
+  flex-shrink: 0;
+  margin-right: var(--space-base);
+}
+
+.stepIcon .stepNumber {
+  background: linear-gradient(135deg, var(--color-primary), black);
+  color: var(--color-bg-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.stepContent {
+  flex: 1;
+  margin-right: var(--space-base);
+  text-align: left;
+}
+
+.stepTitle {
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-sm) 0;
+  line-height: var(--line-height-tight);
+  text-align: center;
+}
+
+.stepDescription {
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: var(--line-height-normal);
+  word-break: keep-all;
+  text-align: center;
+}
+
+.stepVisual {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+/* 팁 섹션 */
+.tipsSection {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #f59e0b;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.tipsTitle {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: #92400e;
+  margin: 0 0 var(--space-base) 0;
+  text-align: center;
+}
+
+.tipsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tipItem {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-md);
+  padding: var(--space-base);
+}
+
+.tipIcon {
+  font-size: 20px;
+  margin-right: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.tipText {
+  font-size: var(--font-base);
+  color: #92400e;
+  line-height: var(--line-height-normal);
+  word-break: keep-all;
+}
+
+.tipText strong {
+  font-weight: var(--font-weight-bold);
+  color: #78350f;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .container {
+    padding: var(--space-base);
+  }
+
+  .headerIcon {
+    font-size: 48px;
+  }
+
+  .mainTitle {
+    font-size: var(--font-2xl);
+  }
+
+  .stepCard {
+    padding: var(--space-base);
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .stepIcon {
+    margin-right: 0;
+    margin-bottom: var(--space-sm);
+  }
+
+  .stepContent {
+    margin-right: 0;
+    margin-bottom: var(--space-sm);
+  }
+
+  .stepTitle {
+    font-size: var(--font-base);
+  }
+
+  .stepDescription {
+    font-size: var(--font-sm);
+  }
+
+  .tipItem {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-sm);
+  }
+
+  .tipIcon {
+    margin-right: 0;
+    margin-bottom: var(--space-xs);
+  }
+
+  .tipText {
+    font-size: var(--font-sm);
+  }
+}
+
+/* 접근성 향상 */
+@media (prefers-reduced-motion: reduce) {
+  .headerIcon {
+    animation: none;
+  }
+
+  .stepCard {
+    transition: none;
+  }
+
+  .stepCard:hover {
+    transform: none;
+  }
+}
+
+.next {
+  font-size: var(--font-normal);
+  font-weight: var(--font-weight-medium);
+  color: gray;
+  line-height: var(--line-height-normal);
+  margin: 0;
+  word-break: keep-all;
+  white-space: pre-line;
+  padding: 0 var(--space-sm);
+  text-align: center;
+}
