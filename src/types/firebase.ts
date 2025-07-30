@@ -314,7 +314,7 @@ export interface User {
   };
 
   // 설정
-  settings: {
+  settings?: {
     autoSubmitAfterRecording: boolean; // 녹음 완료 후 자동 제출
     requireManualReview: boolean; // 수동 검토 필요 여부
     allowAutoApproval: boolean; // 자동 승인 허용 여부

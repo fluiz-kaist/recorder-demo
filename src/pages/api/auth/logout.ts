@@ -1,3 +1,4 @@
+// pages/api/auth/logout.ts -Firebase 로그아웃 포함
 import { NextApiRequest, NextApiResponse } from "next";
 import { serialize } from "cookie";
 
@@ -9,16 +10,16 @@ export default async function handler(
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  // 쿠키 삭제
-  const cookie = serialize("auth-token", "", {
+  // 🆕 Firebase Token 쿠키 삭제
+  const tokenCookie = serialize("firebase-token", "", {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 0, // 즉시 만료
+    maxAge: 0,
     path: "/",
   });
 
-  res.setHeader("Set-Cookie", cookie);
+  res.setHeader("Set-Cookie", [tokenCookie]);
 
   return res.status(200).json({
     success: true,

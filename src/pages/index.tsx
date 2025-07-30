@@ -1,6 +1,6 @@
 // pages/index.tsx - 수정된 버전
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { GetStaticProps } from "next";
@@ -9,7 +9,6 @@ import fs from "fs";
 import path from "path";
 import styles from "@/styles/ConsentPage.module.css";
 import {
-  useAuthStatusQuery,
   useMinimalUserQuery,
   useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
@@ -17,12 +16,11 @@ import {
   useRegisterUserMutation,
   useUpdateScriptAssignmentsMutation,
 } from "@/hooks/mutations/useUserMutations";
-
-import { useAuthMutation } from "@/hooks/mutations/useAuth";
+import { useVerifyAuthorizedUserMutation } from "@/hooks/mutations/useUserMutations";
 
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 import { generateUserHash, generateSecureUserId } from "@/utils/hash";
-
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 const ageGroups = [
   "55-59세",
   "60-64세",
@@ -44,13 +42,20 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const queryClient = useQueryClient();
 
   // 🟢 쿠키 기반 인증 상태 확인
-  const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
+
+  // 🔥 수정 후 (Firebase Auth만 사용)
+  const {
+    user: firebaseUser,
+    isLoading: firebaseLoading,
+    signInWithToken,
+    isAuthenticated,
+  } = useFirebaseAuth();
   const { data: minimalUserInfo } = useMinimalUserQuery();
   const { data: userCompletionStatus, isLoading: completionLoading } =
     useUserCompletionStatusQuery();
 
   // 뮤테이션 훅들
-  const verifyUserMutation = useAuthMutation();
+  const verifyUserMutation = useVerifyAuthorizedUserMutation();
   const registerUserMutation = useRegisterUserMutation();
   const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
@@ -77,104 +82,117 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const userName = minimalUserInfo?.userName || "";
 
   // 🔧 인증된 사용자가 이미 등록 완료된 경우 메인으로 리다이렉트
+  // 🔥 수정 후
   useEffect(() => {
-    if (authStatus?.isAuthenticated && userCompletionStatus === true) {
+    if (isAuthenticated && userCompletionStatus === true) {
       console.log("이미 등록 완료된 사용자, 메인으로 리다이렉트");
       setIsRedirecting(true);
       router.push("/main");
     }
-  }, [authStatus, userCompletionStatus, router]);
+  }, [isAuthenticated, userCompletionStatus, router]);
 
   // 🟢 기존 사용자 처리 함수 수정
-  const handleCompleteExistingUser = async (authData: any) => {
-    try {
-      console.log("🔄 기존 사용자 처리 시작:", authData); // 추가된 로그
-      setIsRedirecting(true);
+  const handleCompleteExistingUser = useCallback(
+    async (authData: any) => {
+      try {
+        console.log("🔄 기존 사용자 처리 시작:", authData);
+        setIsRedirecting(true);
 
-      if (!authStatus?.isAuthenticated) {
-        console.log("🍪 쿠키 생성 시작..."); // 추가된 로그
+        // Firebase Auth 상태 체크
+        if (!isAuthenticated || !firebaseUser) {
+          console.log("🍪 쿠키 및 Firebase Token 생성 시작...");
 
-        const response = await fetch("/api/auth/completeAuth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            userId: authData.userId,
-            userHash: authData.userHash,
-          }),
-        });
-        // 🔧 응답 상태 확인 추가
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "쿠키 생성 실패");
+          const response = await fetch("/api/auth/completeAuth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              userId: authData.userId,
+              userHash: authData.userHash,
+              userName: authData.name,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "쿠키 생성 실패");
+          }
+
+          const data = await response.json();
+          console.log("🍪 HTTP 쿠키 생성 완료");
+
+          if (data.customToken && !firebaseUser) {
+            try {
+              await signInWithToken(data.customToken);
+              console.log("🔥 Firebase Auth 로그인 완료");
+            } catch (error) {
+              console.error("Firebase Auth 로그인 실패:", error);
+            }
+          }
         }
-        console.log("🍪 API 응답 상태:", response.status);
-        console.log("🍪 API 응답 헤더:", response.headers.get("set-cookie"));
-        console.log("🍪 기존 사용자 쿠키 생성 완료");
-        const data = await response.json();
-        console.log("🍪 API 응답 데이터:", data);
-      } else {
-        console.log("🍪 쿠키가 이미 존재함"); // 추가된 로그
+
+        console.log("📋 캐시 무효화 시작...");
+        await queryClient.invalidateQueries({ queryKey: ["user"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["userCompletionStatus"],
+        });
+
+        console.log("🗑️ localStorage 정리...");
+        localStorage.removeItem("pendingAuth");
+
+        console.log("🚀 메인 페이지로 이동...");
+        await router.push("/main");
+
+        console.log("✅ 기존 사용자 처리 완료");
+      } catch (error) {
+        console.error("기존 사용자 로그인 실패:", error);
+        localStorage.removeItem("pendingAuth");
+        setError("로그인에 실패했습니다. 다시 시도해주세요.");
+        setIsRedirecting(false);
       }
-
-      console.log("📋 캐시 무효화 시작..."); // 추가된 로그
-
-      // 🔧 await 추가로 완료 대기
-      await queryClient.invalidateQueries({ queryKey: ["authStatus"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["userCompletionStatus"],
-      });
-
-      console.log("📋 캐시 무효화 완료"); // 추가된 로그
-      console.log("🗑️ localStorage 정리..."); // 추가된 로그
-      localStorage.removeItem("pendingAuth");
-
-      console.log("🚀 메인 페이지로 이동..."); // 추가된 로그
-      await router.push("/main"); // 🔧 await 추가
-
-      console.log("✅ 기존 사용자 처리 완료"); // 추가된 로그
-    } catch (error) {
-      console.error("기존 사용자 로그인 실패:", error);
-      localStorage.removeItem("pendingAuth");
-      setError("로그인에 실패했습니다. 다시 시도해주세요.");
-      setIsRedirecting(false);
-    }
-  };
+    },
+    [isAuthenticated, firebaseUser, signInWithToken, queryClient, router]
+  ); // 🔧 의존성 명시
 
   // 🟢 pendingAuth 처리 로직 수정
   useEffect(() => {
     const pendingAuth = localStorage.getItem("pendingAuth");
 
-    // 🔧 추가된 상세 로그
     console.log("🔍 pendingAuth 확인:", {
       pendingAuth: !!pendingAuth,
-      authLoading,
+      firebaseLoading,
       completionLoading,
-      authStatus: authStatus?.isAuthenticated,
+      isAuthenticated,
       userCompletionStatus,
     });
 
-    if (pendingAuth && !authLoading && !completionLoading) {
+    if (pendingAuth && !firebaseLoading && !completionLoading) {
       try {
         const authData = JSON.parse(pendingAuth);
-        console.log("📋 pendingAuth 데이터:", authData); // 추가된 로그
+        console.log("📋 pendingAuth 데이터:", authData);
 
         if (authData.isExistingUser) {
-          console.log("👤 기존 사용자 감지, 처리 시작"); // 개선된 로그
+          console.log("👤 기존 사용자 감지, 처리 시작");
           handleCompleteExistingUser(authData);
         } else {
-          console.log("🆕 신규 사용자 - 동의 폼 표시 예정"); // 추가된 로그
+          console.log("🆕 신규 사용자 - 동의 폼 표시 예정");
         }
       } catch (error) {
         console.error("pendingAuth 데이터 파싱 오류:", error);
         localStorage.removeItem("pendingAuth");
       }
     }
-  }, [authLoading, completionLoading]);
+  }, [
+    firebaseLoading,
+    completionLoading,
+    handleCompleteExistingUser, // 🔧 추가
+    isAuthenticated, // 🔧 추가
+    userCompletionStatus, // 🔧 추가
+  ]);
 
   // 🟢 로딩 상태 통합 및 조건 개선
   if (
-    authLoading ||
+    firebaseLoading ||
     completionLoading ||
     isRedirecting ||
     verifyUserMutation.isPending
@@ -255,8 +273,9 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     }
   };
 
-  // 🔧 사용자 등록 및 스크립트 할당 통합 함수 수정
+  // 신규 사용자: 동의 완료 시점에 처음 Firebase Auth 로그인
   const handleCompleteRegistration = async () => {
+    // 동의 완료 → Firebase Token 생성 → Firebase Auth 로그인
     if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
       setError("모든 항목을 선택하고 동의해주세요.");
       return;
@@ -265,7 +284,6 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     try {
       console.group("사용자 등록 프로세스 시작");
 
-      // 🆕 pendingAuth에서 인증 데이터 가져오기
       const pendingAuth = localStorage.getItem("pendingAuth");
       if (!pendingAuth) {
         setError("인증 정보가 없습니다. 다시 인증해주세요.");
@@ -281,20 +299,37 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
 
       console.log("1. 생성된 정보:", { userId, userHash });
 
-      // 🔧 먼저 쿠키 생성 (DB 등록 전에)
-      await fetch("/api/auth/completeAuth", {
+      // 🔧 쿠키 및 Firebase Token 생성
+      const authResponse = await fetch("/api/auth/completeAuth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           userId: userId,
           userHash: userHash,
+          userName: authData.name, // 🆕 userName 추가
         }),
       });
 
-      console.log("2. 쿠키 생성 완료");
+      if (!authResponse.ok) {
+        throw new Error("인증 실패");
+      }
 
-      // 🔧 사용자 등록 (쿠키 생성 후)
+      const authResult = await authResponse.json();
+      console.log("2. 쿠키 및 Firebase Token 생성 완료");
+
+      // 🆕 Firebase Auth 로그인 (선택사항)
+      if (authResult.customToken && !firebaseUser) {
+        try {
+          await signInWithToken(authResult.customToken);
+          console.log("🔥 Firebase Auth 로그인 완료");
+        } catch (error) {
+          console.error("Firebase Auth 로그인 실패:", error);
+          // 실패해도 계속 진행
+        }
+      }
+
+      // 기존 사용자 등록 로직
       const registeredUser = await registerUserMutation.mutateAsync({
         userId,
         gender: userInput.gender,
@@ -306,13 +341,10 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
 
       console.log("3. 사용자 등록 완료:", registeredUser);
 
-      // 🔧 React Query 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["authStatus"] });
       queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] });
 
-      // 세션 정리
       localStorage.removeItem("pendingAuth");
-
       console.groupEnd();
       console.log("✅ 모든 등록 완료");
 
@@ -325,7 +357,6 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
       );
     }
   };
-
   // 제출 가능 여부 확인 함수 (기존과 동일)
   const isSubmitEnabled = (): boolean => {
     return (
@@ -385,7 +416,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const isNewUser = pendingAuth && !JSON.parse(pendingAuth).isExistingUser;
 
   // 🟢 인증되지 않은 사용자를 위한 인증 폼
-  if (!isInAuthProcess && !authStatus?.isAuthenticated) {
+  if (!isInAuthProcess && !isAuthenticated) {
     return (
       <>
         <Head>
@@ -466,9 +497,8 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
               <h4>🐛 개발 정보</h4>
               <p>하이브리드 인증이 적용되었습니다.</p>
               <p>승인된 이름과 주민번호를 입력하세요.</p>
-              <p>
-                인증상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
-              </p>
+              <p>인증상태: {isAuthenticated ? "인증됨" : "미인증"}</p>
+              <p>Firebase 사용자: {firebaseUser?.uid || "없음"}</p>
               <p>완료상태: {userCompletionStatus ? "완료" : "미완료"}</p>
             </div>
           )}
@@ -574,10 +604,8 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           {process.env.NODE_ENV === "development" && (
             <div className={styles.debugInfo}>
               <h4>🐛 디버그 정보</h4>
-              <p>
-                인증 상태: {authStatus?.isAuthenticated ? "인증됨" : "미인증"}
-              </p>
-              <p>사용자 ID: {authStatus?.userId}</p>
+              <p>인증 상태: {isAuthenticated ? "인증됨" : "미인증"}</p>
+              <p>사용자 ID: {authData?.userId}</p>
               <p>완료 상태: {userCompletionStatus ? "완료" : "미완료"}</p>
               <p>신규 사용자: {isNewUser ? "예" : "아니오"}</p>
               <p>입력 정보: {JSON.stringify(userInput)}</p>
