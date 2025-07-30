@@ -12,7 +12,6 @@ import {
   TutorialScript,
 } from "@/types/firebase";
 //hooks
-import { queryClient } from "@/utils/queryClient";
 import { useMobileOptimizedRecorder } from "@/hooks/useMobileOptimizedRecorder";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 //query and mutation
