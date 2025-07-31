@@ -18,7 +18,13 @@ interface ParticipantsOverviewData {
     hasPrevPage: boolean;
   };
   statistics: {
-    totalParticipants: number;
+    // 신규
+    totalApplicants: number; // 참가 신청자 (화이트리스트)
+    totalRegisteredUsers: number; // 가입 완료자 (users)
+    activeParticipants: number; // 작업 참여자 (실제 작업 시작한 사람)
+
+    // 기존 통계
+    totalParticipants: number; // = totalRegisteredUsers와 동일
     startedParticipants: number;
     completedParticipants: number;
     activeInLast7Days: number;
@@ -441,6 +447,58 @@ export const getQualityColor = (quality: string): string => {
     default:
       return "#6b7280";
   }
+};
+
+/**
+ * 3단계 통계를 위한 유틸리티 함수들 추가
+ */
+
+/**
+ * 참여 단계별 색상 반환 함수
+ */
+export const getParticipationStageColor = (
+  stage: "applicant" | "registered" | "active"
+): string => {
+  switch (stage) {
+    case "applicant":
+      return "#8b5cf6"; // purple - 신청
+    case "registered":
+      return "#3b82f6"; // blue - 가입
+    case "active":
+      return "#10b981"; // green - 활동
+    default:
+      return "#6b7280";
+  }
+};
+
+/**
+ * 참여 전환율 계산 함수
+ */
+export const calculateConversionRates = (
+  statistics: ParticipantsOverviewData["statistics"]
+) => {
+  const { totalApplicants, totalRegisteredUsers, activeParticipants } =
+    statistics;
+
+  return {
+    // 신청자 → 가입자 전환율
+    applicantToRegistered:
+      totalApplicants > 0
+        ? Math.round((totalRegisteredUsers / totalApplicants) * 100)
+        : 0,
+
+    // 가입자 → 활동자 전환율
+    registeredToActive:
+      totalRegisteredUsers > 0
+        ? Math.round((activeParticipants / totalRegisteredUsers) * 100)
+        : 0,
+
+    // 신청자 → 활동자 전환율 (전체)
+    applicantToActive:
+      totalApplicants > 0
+        ? Math.round((activeParticipants / totalApplicants) * 100)
+        : 0,
+  };
 };
 
 /**

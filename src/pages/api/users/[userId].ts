@@ -116,7 +116,7 @@ export default async function handler(
 
       // authorized collection에 생성한 user id를 갱신
       const registeredUserCollectionName =
-        process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION ||
+        process.env.NEXT_PUBLIC_DB_WHITELIST_USERS_COLLECTION ||
         "registered-temp";
 
       await updateDocByIdAdmin(registeredUserCollectionName, authorizedUserId, {

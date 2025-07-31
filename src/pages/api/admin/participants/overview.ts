@@ -1,6 +1,6 @@
-// pages/api/admin/participants/overview.ts - Admin SDK로 변경
+// pages/api/admin/participants/overview.ts - 용어 및 컬렉션 정리
 import { NextApiRequest, NextApiResponse } from "next";
-import { adminDb } from "@/lib/firebase/admin"; // Admin SDK 추가
+import { adminDb } from "@/lib/firebase/admin";
 import { User } from "@/types/firebase";
 
 export interface ParticipantOverview {
@@ -39,7 +39,12 @@ interface ParticipantsOverviewResponse {
       hasPrevPage: boolean;
     };
     statistics: {
-      totalParticipants: number;
+      // 3단계 통계
+      totalApplicants: number; // 참가 신청자 (authorizedUsers)
+      totalRegisteredUsers: number; // 가입 완료자 (users)
+      activeParticipants: number; // 작업 진행자 (실제 작업 시작한 사람)
+
+      // 가입 완료자들을 기준으로
       startedParticipants: number;
       completedParticipants: number;
       activeInLast7Days: number;
@@ -103,8 +108,11 @@ export default async function handler(
     });
   }
 
-  const userCollectionName =
+  // 컬렉션 이름 정리
+  const registeredUsersCollection =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+  const applicantsCollection =
+    process.env.NEXT_PUBLIC_DB_WHITELIST_USERS_COLLECTION || "whitelist-temp";
 
   try {
     // 관리자 권한 확인
@@ -131,38 +139,48 @@ export default async function handler(
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(queryLimit as string, 10);
 
-    // Admin SDK 쿼리 생성
-    let query = adminDb // Admin SDK로 변경
-      .collection(userCollectionName)
+    // 1. 참가 신청자 수 조회 (화이트리스트)
+    const applicantsSnapshot = await adminDb
+      .collection(applicantsCollection)
+      .get();
+    const totalApplicants = applicantsSnapshot.size;
+
+    // 2. 가입 완료자 쿼리 생성 (users)
+    let registeredUsersQuery = adminDb
+      .collection(registeredUsersCollection)
       .orderBy(sortBy as string, sortOrder as "asc" | "desc");
 
     // 필터 적용
     if (gender) {
-      query = query.where("gender", "==", gender);
+      registeredUsersQuery = registeredUsersQuery.where("gender", "==", gender);
     }
     if (ageGroup) {
-      query = query.where("ageGroup", "==", ageGroup);
+      registeredUsersQuery = registeredUsersQuery.where(
+        "ageGroup",
+        "==",
+        ageGroup
+      );
     }
 
-    // 쿼리 실행
-    const allUsersSnapshot = await query.get(); // Admin SDK로 변경
-    const totalCount = allUsersSnapshot.size;
+    // 가입 완료자 쿼리 실행
+    const registeredUsersSnapshot = await registeredUsersQuery.get();
+    const totalRegisteredUsers = registeredUsersSnapshot.size;
 
     // 페이지네이션 계산
-    const totalPages = Math.ceil(totalCount / limitNum);
+    const totalPages = Math.ceil(totalRegisteredUsers / limitNum);
     const startIndex = (pageNum - 1) * limitNum;
     const endIndex = startIndex + limitNum;
 
     // 현재 페이지 데이터 추출
-    const allUsers = allUsersSnapshot.docs
+    const allRegisteredUsers = registeredUsersSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() } as User))
       .slice(startIndex, endIndex);
 
     // 검색 필터 적용 (클라이언트 사이드)
-    let filteredUsers = allUsers;
+    let filteredUsers = allRegisteredUsers;
     if (search) {
       const searchTerm = (search as string).toLowerCase();
-      filteredUsers = allUsers.filter(
+      filteredUsers = allRegisteredUsers.filter(
         (user) =>
           user.userName?.toLowerCase().includes(searchTerm) ||
           user.id.toLowerCase().includes(searchTerm)
@@ -204,9 +222,19 @@ export default async function handler(
       finalParticipants = participants.filter((p) => p.status === status);
     }
 
+    // 작업 참여자 수 계산 (실제 작업을 시작한 사람들)
+    const activeParticipants = participants.filter(
+      (p) => p.hasStarted && p.totalRecordings > 0
+    ).length;
+
     // 전체 통계 계산
     const statistics = {
-      totalParticipants: totalCount,
+      // 3단계 통계
+      totalApplicants, // 참가 신청자 (whitelist)
+      totalRegisteredUsers, // 가입 완료자 (users)
+      activeParticipants, // 작업 참여자 (실제 작업 시작)
+
+      // 기존 통계 (users 기준)
       startedParticipants: participants.filter((p) => p.hasStarted).length,
       completedParticipants: participants.filter(
         (p) => p.status === "completed"

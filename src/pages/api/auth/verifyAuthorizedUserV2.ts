@@ -6,22 +6,7 @@ import {
 } from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
 import { FieldValue } from "firebase-admin/firestore"; // Admin SDK 추가
 import { serialize } from "cookie";
-import {
-  generateUserHash,
-  generateSecureUserId,
-  maskPersonalInfo,
-} from "@/utils/hash";
-
-interface AuthorizedUserData {
-  userHash: string;
-  createdAt: string;
-  isActive: boolean;
-  name: string;
-  userId?: string;
-  lastLogin?: string;
-  loginAttempts?: number;
-  source?: string;
-}
+import { generateUserHash, maskPersonalInfo } from "@/utils/hash";
 
 interface UserData {
   gender?: string;
@@ -46,7 +31,7 @@ export default async function handler(
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
   const registeredUserCollectionName =
-    process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION || "registered-temp";
+    process.env.NEXT_PUBLIC_DB_WHITELIST_USERS_COLLECTION || "registered-temp";
 
   // PATCH 요청일 때: userId만 업데이트
   if (req.method === "PATCH") {
