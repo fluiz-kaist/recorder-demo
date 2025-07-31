@@ -17,7 +17,7 @@ export interface MergedScript {
   situation?: SituationalScript;
   formal?: FormalScript[];
 }
-
+import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
 type AnyScript = SituationalScript | FormalScript;
 
 interface FlatScript {
@@ -415,9 +415,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                     <h3>모든 녹음을 완료했습니다!</h3>
                     <p>수고하셨습니다.</p>
 
-                    <button className={styles.returnHomeButton}>
-                      <span>모든 작업 완료</span>
-                    </button>
+                    <CompletionAllTasksBtn />
                   </div>
                 </>
               ); // 마지막 서비스일 경우 버튼 없음

@@ -1,0 +1,45 @@
+/* 완료 축하 메시지 */
+.congratulationsMessage {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 16px;
+  text-align: center;
+}
+
+/* 완료버튼 */
+.finishAllTasks {
+  background: var(--color-primary); /* special */
+  color: var(--color-bg-primary);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition);
+  margin-top: var(--space-md);
+  text-align: center;
+  width: 100%;
+}
+
+.finishAllTasks:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-secondary) 0%,
+    var(--color-primary) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 접근성 향상 */
+@media (prefers-reduced-motion: reduce) {
+  .finishAllTasksl {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

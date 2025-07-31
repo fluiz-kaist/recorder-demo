@@ -95,7 +95,7 @@ const ApplicantsTab = () => {
 진행 가능 여부: ${applicant.isActive ? "참가 가능" : "대기 중"}
 동의 및 진행 여부: ${applicant.isRegistered ? "동의 후 진행중" : "미동의"}
 사용자 ID: ${applicant.userId || "없음"}
-마지막 로그인: ${
+마지막 인증 시점: ${
       applicant.lastLogin
         ? formatFirestoreTimestampKST(applicant.lastLogin)
         : "로그인 기록 없음"
@@ -112,6 +112,7 @@ const ApplicantsTab = () => {
 
   return (
     <div className={styles.tableContainer}>
+      <p>업로드 된 참가자들의 활성도 정보를 확인하는 탭</p>
       {/* 통계 카드 */}
       {statistics && (
         <div className={styles.statsGrid} style={{ marginBottom: "20px" }}>
@@ -122,7 +123,7 @@ const ApplicantsTab = () => {
             </div>
           </div>
           <div className={styles.statCard}>
-            <h4>동의 후 진행중</h4>
+            <h4>동의 후 진행중인 신청자</h4>
             <div className={styles.statNumber}>
               {statistics.registeredCount.toLocaleString()}
             </div>
@@ -131,7 +132,7 @@ const ApplicantsTab = () => {
             </div>
           </div>
           <div className={styles.statCard}>
-            <h4>미등록</h4>
+            <h4>아직 진행하지 않은 신청자들 수</h4>
             <div className={styles.statNumber}>
               {statistics.unregisteredCount.toLocaleString()}
             </div>
@@ -164,7 +165,7 @@ const ApplicantsTab = () => {
             <div className={styles.tableCell}>등록일</div>
             <div className={styles.tableCell}>진행 가능 여부</div>
             <div className={styles.tableCell}>동의 및 진행 여부</div>
-            <div className={styles.tableCell}>마지막 로그인</div>
+            <div className={styles.tableCell}>마지막 인증 시점</div>
             <div className={styles.tableCell}>사용자 ID</div>
             <div className={styles.tableCell}>상세</div>
           </div>

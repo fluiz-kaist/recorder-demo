@@ -407,6 +407,7 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
 
   return (
     <div className={styles.tableContainer}>
+      <p>녹음 작업을 수행하고 있는 수행자 정보 확인 탭</p>
       <div className={styles.tableHeader}>
         <h3>
           작업 수행자 목록 (총{" "}

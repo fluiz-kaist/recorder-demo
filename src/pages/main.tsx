@@ -10,7 +10,7 @@ import {
   useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
-
+import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
 const LOCK_ICON =
   "M12,17A1.5,1.5 0 0,0 13.5,15.5A1.5,1.5 0 0,0 12,14A1.5,1.5 0 0,0 10.5,15.5A1.5,1.5 0 0,0 12,17M17,8H16V6.5C16,4.57 14.43,3 12.5,3A3.5,3.5 0 0,0 9,6.5V8H8A2,2 0 0,0 6,10V20A2,2 0 0,0 8,22H17A2,2 0 0,0 19,20V10A2,2 0 0,0 17,8M11,6.5C11,5.67 11.67,5 12.5,5A1.5,1.5 0 0,1 14,6.5V8H11V6.5Z";
 
@@ -489,9 +489,7 @@ const MainSelectionPage = () => {
               <h3>모든 녹음을 완료했습니다!</h3>
               <p>수고하셨습니다.</p>
 
-              <button className={styles.finishAllTasks}>
-                <span>모든 작업 완료</span>
-              </button>
+              <CompletionAllTasksBtn />
             </div>
           )}
 

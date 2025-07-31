@@ -12,7 +12,6 @@ interface UserData {
   gender?: string;
   ageGroup?: string;
   completedAt?: string;
-  scriptAssignments?: any[];
   lastAccessAt?: string;
 }
 

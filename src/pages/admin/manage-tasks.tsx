@@ -1,5 +1,5 @@
 import styles from "@/styles/AdminTaskManage.module.css";
-
+import { useRouter } from "next/router";
 import React, { useState, useEffect } from "react";
 
 interface Task {
@@ -147,6 +147,11 @@ const AdminTaskManager = () => {
   const [error, setError] = useState("");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
+  const router = useRouter();
+
+  const goBack = () => {
+    router.push("/admin/dashboard");
+  };
 
   // 태스크 목록 조회
   const fetchTasks = async () => {
@@ -592,6 +597,7 @@ const AdminTaskManager = () => {
           <span className={styles.headerIcon}>👥</span>
           <h1 className={styles.headerTitle}>Task Manager</h1>
           <span className={styles.badge}>테스트용</span>
+          <button onClick={goBack}>뒤로가기</button>
         </div>
 
         <div className={styles.inputSection}>

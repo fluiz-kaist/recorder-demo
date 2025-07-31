@@ -20,12 +20,7 @@ export const updateUserRelatedCache = (
     !!user.completedAt
   );
 
-  if (user.scriptAssignments) {
-    queryClient.setQueryData(
-      ["userScriptAssignments", userId],
-      user.scriptAssignments
-    );
-  }
+
 };
 
 /**
@@ -50,5 +45,4 @@ export const clearUserRelatedCache = (queryClient: QueryClient) => {
   queryClient.removeQueries({ queryKey: ["currentUserId"] });
   queryClient.removeQueries({ queryKey: ["authStatus"] });
   queryClient.removeQueries({ queryKey: ["userCompletionStatus"] });
-  queryClient.removeQueries({ queryKey: ["userScriptAssignments"] });
 };

@@ -24,7 +24,6 @@ import {
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import {
   useRegisterUserMutation,
-  useUpdateScriptAssignmentsMutation,
   useVerifyAuthorizedUserMutation,
   useUpdateWhitelistedUserMutation,
 } from "@/hooks/mutations/useUserMutations";
@@ -112,7 +111,6 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const verifyUserMutation = useVerifyAuthorizedUserMutation();
   const updateVeryUserMutation = useUpdateWhitelistedUserMutation();
   const registerUserMutation = useRegisterUserMutation();
-  const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
 
   // Local state
@@ -470,8 +468,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const displayError =
     error ||
     verifyUserMutation.error?.message ||
-    registerUserMutation.error?.message ||
-    updateScriptsMutation.error?.message;
+    registerUserMutation.error?.message
 
   // =====================================
   // ========== Rendering =============

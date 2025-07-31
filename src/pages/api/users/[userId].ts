@@ -190,7 +190,6 @@ export default async function handler(
             lastRecordedAt: "",
           },
         },
-        scriptAssignments: [],
       };
 
       // Firestore에 사용자 생성
@@ -228,7 +227,6 @@ export default async function handler(
         ageGroup,
         hasConsented,
         completedAt,
-        scriptAssignments,
         currentStatus,
         participation,
         settings,
@@ -241,9 +239,6 @@ export default async function handler(
       if (hasConsented !== undefined) updateData.hasConsented = hasConsented;
       if (completedAt !== undefined) {
         updateData.completedAt = FieldValue.serverTimestamp(); // Admin SDK로 변경
-      }
-      if (scriptAssignments !== undefined) {
-        updateData.scriptAssignments = scriptAssignments;
       }
 
       // 새로운 구조 필드들 업데이트
