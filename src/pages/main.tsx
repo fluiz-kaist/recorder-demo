@@ -308,7 +308,7 @@ const MainSelectionPage = () => {
   const unlockedServices = getUnlockedServicesCount();
   const overallProgress = currentRound?.progress
     ? Math.round(
-        (currentRound.progress.approvedTasks /
+        (currentRound.progress.completedTasks /
           currentRound.progress.totalTasks) *
           100
       )
@@ -341,7 +341,8 @@ const MainSelectionPage = () => {
                   />
                 </div>
                 <p className={styles.progressText}>
-                  전체 진행률: {totalServices}개 중 {completedServices}개 완료(
+                  전체 진행률: {currentRound?.progress?.totalTasks || 0}개 중{" "}
+                  {currentRound?.progress?.completedTasks || 0}개 완료(
                   {overallProgress}% )
                 </p>
                 <p className={styles.unlockText}>

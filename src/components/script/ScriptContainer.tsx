@@ -129,17 +129,31 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   };
 
   // 전체 진행률 계산 (실제 tasks 배열 기반)
+  // (현재 서비스만의 진행률)
+  // 현재 페이지의 실제 스크립트 기준으로 진행률 계산
   const getProgressPercentage = (): number => {
-    if (!currentRound?.progress) {
+    // flatScriptList는 현재 페이지에서 실제로 보여주는 스크립트들
+    if (flatScriptList.length === 0) {
       return 0;
     }
 
-    return Math.round(
-      (currentRound.progress.approvedTasks / currentRound.progress.totalTasks) *
-        100
-    );
-  };
+    // 완료된 스크립트 개수 계산
+    const completedCount = flatScriptList.filter(({ script, type }) =>
+      isScriptCompleted(script, type)
+    ).length;
 
+    const percentage = Math.round(
+      (completedCount / flatScriptList.length) * 100
+    );
+
+    console.log("📈 스크립트 기반 진행률:", {
+      totalScripts: flatScriptList.length,
+      completedScripts: completedCount,
+      percentage: percentage,
+    });
+
+    return percentage;
+  };
   // 로딩 상태 처리
   if (isLoading) {
     return (

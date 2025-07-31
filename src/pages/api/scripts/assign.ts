@@ -25,7 +25,7 @@ import {
   docExistsAdmin,
 } from "@/lib/firebase/firestoreAdmin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore"; // 시간용
-
+import { getEnv } from "@/utils/envConfig";
 // API 요청/응답 타입
 interface AssignScriptsRequest {
   userId: string;
@@ -82,6 +82,8 @@ export default async function handler(
       progressMode = ProgressMode.MIXED, //기본세팅 혼합
       setId = 1,
     }: AssignScriptsRequest = req.body;
+    const { isPreview, isDev } = getEnv();
+    const isDevMode = isPreview || isDev;
 
     if (!userId) {
       return res.status(400).json({
@@ -305,16 +307,19 @@ async function loadScriptData(setId: number): Promise<{
   situational: SituationalScript[];
   formal: FormalScript[];
 }> {
+  const { isPreview, isDev } = getEnv();
+  const isDevMode = isPreview || isDev;
+  const situationScriptPath = isDevMode
+    ? "public/data/dev_situ_script.json"
+    : "public/data/situational_scripts.json";
+  const formalScriptPath = isDevMode
+    ? "public/data/dev_formal_script.json"
+    : "public/data/formal_scripts.json";
+
   try {
     // 서버에서 파일 시스템 직접 접근
-    const situationalPath = path.join(
-      process.cwd(),
-      "public/data/situational_scripts.json"
-    );
-    const formalPath = path.join(
-      process.cwd(),
-      "public/data/formal_scripts.json"
-    );
+    const situationalPath = path.join(process.cwd(), situationScriptPath);
+    const formalPath = path.join(process.cwd(), formalScriptPath);
 
     const situationalData = JSON.parse(
       fs.readFileSync(situationalPath, "utf8")

@@ -82,18 +82,17 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         )} */}
 
         {/* 서비스 정보 표시 */}
-        <div className={styles.serviceInfo}>
+        {/* <div className={styles.serviceInfo}>
           <span className={styles.serviceName}>{script.service_name}</span>
           <span className={styles.serviceTarget}>
-            {" "}
             • {script.service_target}
           </span>
-        </div>
+        </div> */}
 
         {/* 태스크 이름 */}
-        <h2 className={styles.taskName}>{script.task_name}</h2>
+        {/* <h2 className={styles.taskName}>{script.task_name}</h2> */}
       </div>
-
+      {/* 메인 콘텐츠 */}
       <div
         className={`${styles.formalSentenceSection} ${
           isCompleted ? styles.completedOverlay : ""
