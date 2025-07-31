@@ -22,7 +22,7 @@ async function verifyFirebaseToken(token: string): Promise<boolean> {
 
       // exp (만료 시간) 체크
       if (payload.exp && payload.exp < now) {
-        console.log("🔥 Firebase Token 만료됨");
+        console.warn("🔥 Firebase Token 만료됨");
         return false;
       }
 
@@ -34,7 +34,7 @@ async function verifyFirebaseToken(token: string): Promise<boolean> {
           actualAud: payload.aud,
           isMatch: payload.aud === expectedProjectId,
         });
-        console.log("🔥 Firebase Token 잘못된 프로젝트 ID");
+        console.warn("🔥 Firebase Token 잘못된 프로젝트 ID");
         return false;
       }
 

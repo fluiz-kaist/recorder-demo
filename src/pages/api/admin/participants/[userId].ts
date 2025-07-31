@@ -1,12 +1,25 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  getDocByIdAdmin,
-  getAllDocsAdmin,
-} from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
+import { getDocByIdAdmin } from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
+import { Timestamp, FieldValue } from "firebase/firestore";
 import { adminDb } from "@/lib/firebase/admin"; // Admin SDK 추가
-import { User } from "@/types/firebase";
+import {
+  UserProfile,
+  UserSettings,
+  CurrentUserStatus,
+  RoundSummary,
+  UserStatistics,
+} from "@/types/user";
 
-export interface ParticipantDetail extends User {
+export interface ParticipantDetail {
+  id: string;
+  profile: UserProfile;
+  settings: UserSettings;
+  currentStatus: CurrentUserStatus;
+  roundSummaries: RoundSummary[];
+  statistics: UserStatistics;
+  updatedAt: Timestamp | FieldValue | string;
+
+  // 기존 추가 필드들 유지
   // 추가 상세 정보
   recordingHistory: Array<{
     recordingId: string;
@@ -79,7 +92,19 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userData = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
+    const userData = await getDocByIdAdmin(userCollectionName, userId);
+    // 서브컬렉션 조회
+    const roundsSnapshot = await adminDb
+      .collection(userCollectionName)
+      .doc(userId)
+      .collection("rounds")
+      .orderBy("roundNumber", "asc")
+      .get();
+
+    const roundsData = roundsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
     if (!userData) {
       return res.status(404).json({
@@ -114,31 +139,36 @@ export default async function handler(
     }
 
     // 세트별 상세 진행률 계산
-    const setDetails =
-      userData.participation?.sets?.map((set: any) => ({
-        setNumber: set.setNumber,
-        setId: set.setId,
-        status: set.status,
-        totalTasks: set.progress.totalTasks,
-        completedTasks: set.progress.completedTasks,
-        progressPercentage:
-          set.progress.totalTasks > 0
-            ? Math.round(
-                (set.progress.completedTasks / set.progress.totalTasks) * 100
-              )
-            : 0,
-        situationalProgress: {
-          total: set.progress.situational.total,
-          completed: set.progress.situational.completed,
-        },
-        formalProgress: {
-          total: set.progress.formal.total,
-          completed: set.progress.formal.completed,
-        },
-      })) || [];
+    const setDetails = roundsData.map((round: any) => ({
+      setNumber: round.roundNumber,
+      setId: round.formalSetId,
+      status: round.status,
+      totalTasks: round.progress.totalTasks,
+      completedTasks: round.progress.completedTasks,
+      progressPercentage:
+        round.progress.totalTasks > 0
+          ? Math.round(
+              (round.progress.completedTasks / round.progress.totalTasks) * 100
+            )
+          : 0,
+      situationalProgress: {
+        total: round.progress.byTaskType?.situational?.total || 0,
+        completed: round.progress.byTaskType?.situational?.completed || 0,
+      },
+      formalProgress: {
+        total: round.progress.byTaskType?.formal?.total || 0,
+        completed: round.progress.byTaskType?.formal?.completed || 0,
+      },
+    }));
 
     const participantDetail = {
-      ...userData,
+      id: userId,
+      profile: userData.profile,
+      settings: userData.settings,
+      currentStatus: userData.currentStatus,
+      roundSummaries: userData.roundSummaries,
+      statistics: userData.statistics,
+      updatedAt: userData.updatedAt,
       recordingHistory: recordingHistory.sort(
         (a, b) =>
           new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()

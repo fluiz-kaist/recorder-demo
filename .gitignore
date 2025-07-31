@@ -52,3 +52,9 @@ merged_output.txt
 
 # merged 작업 결과 파일 무시
 merged_*
+
+# showing
+showing.json
+
+#savedata
+saveData_*.txt

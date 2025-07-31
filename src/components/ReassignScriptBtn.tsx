@@ -6,7 +6,7 @@ const ReAssignScript = () => {
   const assignScriptsMutation = useAssignScriptsMutation();
 
   const reAssignScriptForFailback = async () => {
-    if (!user?.id) {
+    if (!user?.profile.userId) {
       console.error("[ReAssignScript] user id issue", user);
       alert("스크립트 재할당 실패, 다시 로그인해 주세요");
       return;
@@ -14,8 +14,8 @@ const ReAssignScript = () => {
 
     try {
       const assignResult = await assignScriptsMutation.mutateAsync({
-        userId: user.id,
-        currentSetNumber: user.participation?.currentSetNumber || 1,
+        userId: user.profile.userId,
+        currentSetNumber: user.currentStatus?.currentRoundNumber || 1,
       });
       console.log("스크립트 재할당 성공:", assignResult);
       if (confirm("성공적으로 다시 할당 받았습니다!")) {

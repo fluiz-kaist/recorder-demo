@@ -1,6 +1,7 @@
 // pages/admin/upload.tsx - 새로 생성 (간단한 업로드 페이지)
 import { useState } from "react";
 import styles from "@/styles/AdminUploadPage.module.css";
+import { useRouter } from "next/router";
 interface UploadResult {
   success: boolean;
   message: string;
@@ -17,6 +18,8 @@ export default function AdminUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
+
+  const router = useRouter();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -66,9 +69,14 @@ export default function AdminUploadPage() {
     }
   };
 
+  const goBack = () => {
+    router.push("/admin/dashboard");
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>승인된 사용자 목록 업로드</h1>
+      <button onClick={goBack}>뒤로가기</button>
 
       <div className={styles.excelGuideBox}>
         <h3 className={styles.excelGuideTitle}>📋 엑셀 파일 형식</h3>

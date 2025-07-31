@@ -1,8 +1,7 @@
 // pages/api/admin/progress/overview.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { User } from "@/types/firebase";
+import { User } from "@/types/user";
 import { adminDb } from "@/lib/firebase/admin";
-
 
 export interface ProgressOverview {
   // 전체 통계
@@ -95,9 +94,8 @@ export default async function handler(
       .get();
 
     const allUsers = usersSnapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as User)
+      (doc) => ({ id: doc.id, ...doc.data() } as unknown as User)
     );
-
     // 시간 기준점 설정
     const now = new Date();
     const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -137,43 +135,34 @@ export default async function handler(
     };
 
     // 품질 통계
-    let totalQualityScore = 0;
     let totalRecordings = 0;
     let approvedRecordings = 0;
-    let usersWithQuality = 0;
+    // let totalQualityScore = 0;
+    // let usersWithQuality = 0;
 
     // 각 사용자별 분석
     allUsers.forEach((user) => {
       // 등록 완료 여부
-      if (user.completedAt) {
+      if (user.currentStatus.isOnboardingCompleted) {
         registeredParticipants++;
       }
-
-      // 전체 진행률 계산
-      const totalTasks =
-        user.participation?.sets?.reduce(
-          (sum, set) => sum + set.progress.totalTasks,
-          0
-        ) || 0;
-      const completedTasks =
-        user.participation?.sets?.reduce(
-          (sum, set) => sum + set.progress.completedTasks,
-          0
-        ) || 0;
+      // 현재 회차 기준 진행률 계산
+      const totalTasks = user.statistics.current.totalTasks || 0;
+      const completedTasks = user.statistics.current.completedTasks || 0;
+      const approvedTasks = user.statistics.current.approvedTasks || 0;
 
       const overallProgress =
-        totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+        totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
 
       // 활성 참여자 (녹음을 시작한 사람)
       if (completedTasks > 0) {
         activeParticipants++;
       }
 
-      // 완료 참여자
+      // 완료 참여자 (현재 회차 100% 완료)
       if (overallProgress === 100) {
         completedParticipants++;
       }
-
       // 진행률 분포
       if (overallProgress === 0) {
         progressDistribution.notStarted++;
@@ -190,21 +179,20 @@ export default async function handler(
       }
 
       // 세트별 진행 현황
-      user.participation?.sets?.forEach((set) => {
-        const setKey = `set${set.setNumber}` as keyof typeof setProgress;
+      user.roundSummaries.forEach((round) => {
+        const setKey = `set${round.roundNumber}` as keyof typeof setProgress;
         if (setProgress[setKey]) {
           setProgress[setKey].assigned++;
-
-          if (set.progress.completedTasks === set.progress.totalTasks) {
+          if (round.status === "completed" || round.status === "approved") {
             setProgress[setKey].completed++;
-          } else if (set.progress.completedTasks > 0) {
+          } else if (round.progressSummary.approvedTasks > 0) {
             setProgress[setKey].inProgress++;
           }
         }
       });
 
       // 최근 활동 분석
-      const lastAccess = new Date(user.lastAccessAt);
+      const lastAccess = new Date(user.profile.lastAccessAt as string);
       if (lastAccess >= last24Hours) {
         recentActivity.last24Hours++;
       }
@@ -216,28 +204,17 @@ export default async function handler(
       }
 
       // 품질 통계
-      if (user.participation?.stats) {
-        totalRecordings += user.participation.stats.totalRecordings || 0;
-        approvedRecordings +=
-          user.participation.stats.totalApprovedRecordings || 0;
-
-        if (user.participation.stats.averageQualityScore > 0) {
-          totalQualityScore += user.participation.stats.averageQualityScore;
-          usersWithQuality++;
-        }
-      }
+      // 품질 통계 - current 기준
+      totalRecordings += user.statistics.current.completedTasks || 0;
+      approvedRecordings += user.statistics.current.approvedTasks || 0;
     });
 
-    // 품질 통계 계산
-    const averageQualityScore =
-      usersWithQuality > 0
-        ? Math.round(totalQualityScore / usersWithQuality)
-        : 0;
+    // 품질 통계 계산 - current에는 품질 점수가 없으므로 0으로 설정
+    const averageQualityScore = 0; // current 기준에서는 품질 점수 계산 불가
     const approvalRate =
       totalRecordings > 0
         ? Math.round((approvedRecordings / totalRecordings) * 100)
         : 0;
-
     const overview: ProgressOverview = {
       totalParticipants,
       registeredParticipants,

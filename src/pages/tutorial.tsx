@@ -165,6 +165,8 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
     }
   };
 
+  const isTutorialEndUser = !user?.currentStatus.isTutorialCompleted;
+
   // 로딩 및 에러 처리
   if (isLoading) {
     return (
@@ -370,22 +372,26 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
             renderPracticeCard(tutorialScripts[1])}
         </div>
 
-        {/* 튜토리얼 완료 버튼 */}
-        {currentStep === TutorialStep.FORMAL && showTutorialComplete && (
-          <div>
-            <div className={styles.tutorialDetailedInstruction}>
-              🎉 축하합니다! 모든 연습이 끝났습니다! <br />
-              이제 본격적인 녹음을 시작해 주세요!
+        {/* 튜토리얼 완료 버튼 - 튜토리얼 미완료 사용자에게만 표시 */}
+        {currentStep === TutorialStep.FORMAL &&
+          showTutorialComplete &&
+          isTutorialEndUser && (
+            <div>
+              <div className={styles.tutorialDetailedInstruction}>
+                🎉 축하합니다! 모든 연습이 끝났습니다! <br />
+                이제 본격적인 녹음을 시작해 주세요!
+              </div>
+              <button
+                onClick={goToMain}
+                className={styles.returnHomeButton}
+                disabled={isCompleting}
+              >
+                <span>
+                  {isCompleting ? "준비 중..." : "이곳을 눌러주세요!"}
+                </span>
+              </button>
             </div>
-            <button
-              onClick={goToMain}
-              className={styles.returnHomeButton}
-              disabled={isCompleting}
-            >
-              <span>{isCompleting ? "준비 중..." : "이곳을 눌러주세요!"}</span>
-            </button>
-          </div>
-        )}
+          )}
 
         {/* 네비게이션 */}
         <div className={styles.navigation}>

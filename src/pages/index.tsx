@@ -1,12 +1,19 @@
-// pages/index.tsx - 리팩토링 버전
+// pages/index.tsx
+// 첫 진입 화면
+// 화이트리스트(verifyUsers)에 등록된 참가자인지 확인 후
+// 참가자가 맞고 참가 이력이 없을 때 동의 화면으로 진입, 동의 후 User를 생성
+// 참가자가 맞고 참가 이력이 있을 때 main으로 이동
+
+import fs from "fs";
+import path from "path";
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
-import Head from "next/head";
-import { GetStaticProps } from "next";
 import { useQueryClient } from "@tanstack/react-query";
-import fs from "fs";
-import path from "path";
+
+import { GetStaticProps } from "next";
+import Head from "next/head";
+
 import styles from "@/styles/ConsentPage.module.css";
 
 // Hooks
@@ -14,16 +21,20 @@ import {
   useMinimalUserQuery,
   useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import {
   useRegisterUserMutation,
-  useUpdateScriptAssignmentsMutation,
   useVerifyAuthorizedUserMutation,
+  useUpdateWhitelistedUserMutation,
 } from "@/hooks/mutations/useUserMutations";
 import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
-import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
 // Utils
 import { generateUserHash, generateSecureUserId } from "@/utils/hash";
+
+// =================================
+// ========== 타입, 상수=============
+// ===================================
 
 // Constants
 const ageGroups = [
@@ -58,13 +69,18 @@ interface PendingAuthData {
   name: string;
 }
 
-// Custom hook for auth state management
+/**
+ * 복합 상태 관리 훅 (Composite State Hook)
+ * - 여러 개의 개별 훅을 조합하여 하나의 인터페이스로 제공
+ * - 인증 관련 상태들과 파생 상태를 통합 관리
+ */
 function useAuthState() {
   const {
     user: firebaseUser,
     isLoading: firebaseLoading,
     signInWithToken,
     isAuthenticated,
+    saveIdTokenToCookie,
   } = useFirebaseAuth();
   const { data: minimalUserInfo } = useMinimalUserQuery();
   const { data: userCompletionStatus, isLoading: completionLoading } =
@@ -74,6 +90,7 @@ function useAuthState() {
     firebaseUser,
     firebaseLoading,
     signInWithToken,
+    saveIdTokenToCookie,
     isAuthenticated,
     minimalUserInfo,
     userCompletionStatus,
@@ -82,18 +99,18 @@ function useAuthState() {
   };
 }
 
-// Main component
 export default function ConsentPage({ consentText }: ConsentPageProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-
-  // State management hooks
+  // =================================================
+  // ========== 상태 관리와 Hook & Mutations =============
+  // ===================================================
   const authState = useAuthState();
 
   // Mutations
   const verifyUserMutation = useVerifyAuthorizedUserMutation();
+  const updateVeryUserMutation = useUpdateWhitelistedUserMutation();
   const registerUserMutation = useRegisterUserMutation();
-  const updateScriptsMutation = useUpdateScriptAssignmentsMutation();
   const assignScriptsMutation = useAssignScriptsMutation();
 
   // Local state
@@ -106,12 +123,30 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   });
   const [error, setError] = useState<string>("");
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
-
+  const [isProcessed, setIsProcessed] = useState<boolean>(false);
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
-  const [isProcessed, setIsProcessed] = useState<boolean>(false);
 
-  // Auth completion handler
+  // =================================
+  // ========== 함수 =============
+  // =================================
+
+  /**
+   *  유틸리티 함수: 사용자 입력 상태 업데이트
+   * - 모든 핸들러 함수에서 공통으로 사용되는 기본 함수
+   * - 에러 상태도 함께 초기화
+   */
+  const updateUserInput = useCallback((updates: Partial<UserInput>) => {
+    setUserInput((prev) => ({ ...prev, ...updates }));
+    setError("");
+  }, []);
+
+  /**
+   *  핵심 함수: Firebase 인증 플로우 완료
+   * - 인증 쿠키 생성 → Firebase 로그인 → 캐시 무효화 → 리다이렉트
+   * - 기존 사용자와 신규 사용자 모두에서 사용
+   * - 인증 상태를 완전히 설정하는 중앙 집중식 함수
+   */
   const completeAuthFlow = useCallback(
     async (authData: PendingAuthData) => {
       if (isRedirecting) return;
@@ -120,7 +155,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
         setIsRedirecting(true);
         console.log("🔄 인증 플로우 완료 시작:", authData);
 
-        // Step 1: Create auth cookies and Firebase token
+        // [1] auth cookie와 firebase token 생성
         const response = await fetch("/api/auth/completeAuth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -140,101 +175,63 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
         const data = await response.json();
         console.log("🍪 인증 쿠키 생성 완료");
 
-        // Step 2: Firebase Auth login if needed
+        //[2] firebase 로그인
         if (data.customToken && !authState.firebaseUser) {
+          // if (process.env.NODE_ENV === "development") {
+          //   throw new Error("테스트용 Firebase Auth 실패");
+          // }
           try {
             const user = await authState.signInWithToken(data.customToken);
-            const idToken = await user.getIdToken();
-            document.cookie = `firebase-token=${idToken}; path=/; max-age=3600`;
-            console.log("🔥 Firebase Auth 완료");
-          } catch (error) {
-            console.error("Firebase Auth 실패:", error);
+            await authState.saveIdTokenToCookie(user);
+            console.log("🔥 Firebase Auth 및 ID Token 저장 완료");
+          } catch (firebaseError) {
+            console.error("Firebase Auth 실패:", firebaseError);
+            // Firebase 오류 시 전체 플로우 중단
+            throw new Error("인증 서비스에 문제가 발생하였습니다.");
           }
         }
 
+        // [3] 기존 사용자인 경우에만 캐시 무효화 및 리다이렉트
+
         // Step 3: Invalidate caches
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["user"] }),
-          queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] }),
-        ]);
+        if (authData.isExistingUser) {
+          // ✅ 잠시 대기 후 캐시 무효화 (Firebase Auth 상태 안정화)
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-        // Step 4: Clean up and redirect
-        localStorage.removeItem("pendingAuth");
-        setPendingAuthData(null);
-        await router.push("/main");
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["user"] }),
+            queryClient.invalidateQueries({
+              queryKey: ["userCompletionStatus"],
+            }),
+          ]);
 
-        console.log("✅ 인증 플로우 완료");
+          localStorage.removeItem("pendingAuth");
+          setPendingAuthData(null);
+          console.log("✅ 기존 사용자 인증 플로우 완료");
+          await router.push("/main");
+        } else {
+          console.log("🔧 신규 사용자 - Firebase Auth만 완료, 등록 대기 중");
+        }
       } catch (error) {
         console.error("인증 플로우 실패:", error);
-
-        setError("인증에 실패했습니다. 다시 시도해주세요.");
+        const errorMessage = "등록된 참가자인지 확인하지 못했습니다.";
+        setError(
+          error instanceof Error
+            ? `${errorMessage}\n${error.message}`
+            : `${errorMessage}\n입력 정보를 확인해주세요. 본 작업은 안내 메일을 받으신 뒤 참가할 수 있습니다.`
+        );
         setIsRedirecting(false);
       }
     },
-    [authState, queryClient, router, isRedirecting, setPendingAuthData]
+    [authState, queryClient, setPendingAuthData, isRedirecting, router]
   );
-  useEffect(() => {
-    const savedPendingAuth = localStorage.getItem("pendingAuth");
-    if (savedPendingAuth && !isProcessed) {
-      try {
-        const authData = JSON.parse(savedPendingAuth);
-        setPendingAuthData(authData);
-      } catch (error) {
-        console.error("저장된 pendingAuth 데이터 파싱 오류:", error);
-        localStorage.removeItem("pendingAuth");
-      }
-    }
-  }, [isProcessed]);
 
-  // Auto-redirect for completed users
-  useEffect(() => {
-    if (
-      authState.isFullyAuthenticated &&
-      !authState.firebaseLoading &&
-      !authState.completionLoading &&
-      !pendingAuthData &&
-      !isRedirecting
-    ) {
-      console.log("이미 완료된 사용자, 메인으로 리다이렉트");
-      setIsRedirecting(true);
-      router.push("/main");
-    }
-  }, [
-    authState.isFullyAuthenticated,
-    authState.firebaseLoading,
-    authState.completionLoading,
-    pendingAuthData,
-    isRedirecting,
-    router,
-  ]);
-
-  // Handle pending auth for existing users (only once)
-  useEffect(() => {
-    if (
-      pendingAuthData?.isExistingUser &&
-      !authState.firebaseLoading &&
-      !authState.completionLoading &&
-      !isRedirecting
-    ) {
-      console.log("기존 사용자 처리");
-      completeAuthFlow(pendingAuthData);
-      setIsProcessed(true); // 중복 실행 방지
-    }
-  }, [
-    pendingAuthData,
-    authState.firebaseLoading,
-    authState.completionLoading,
-    isRedirecting,
-    completeAuthFlow,
-  ]);
-
-  // Input handlers
-  const updateUserInput = useCallback((updates: Partial<UserInput>) => {
-    setUserInput((prev) => ({ ...prev, ...updates }));
-    setError("");
-  }, []);
-
-  // User verification
+  /**
+   *  1단계: 화이트리스트 인증
+   * - 이름 + 주민번호로 참가 자격 확인
+   * - 기존 사용자 → completeAuthFlow 실행
+   * - 신규 사용자 → pendingAuthData 설정하여 동의 화면으로 전환
+   */
   const handleVerifyUser = useCallback(async () => {
     if (!userInput.name || !userInput.socialNumber) {
       setError("이름과 주민번호를 입력해주세요.");
@@ -266,7 +263,13 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     completeAuthFlow,
   ]);
 
-  // New user registration
+  // 동의 후 절차: 신규 유저 등록
+  /**
+   * 3단계: 신규 사용자 등록 완료
+   * - 동의 + 개인정보 입력 후 최종 등록
+   * - Firebase Auth → Firestore 등록 → 화이트리스트 업데이트 → 리다이렉트
+   * - 가장 복잡한 플로우를 담당하는 함수
+   */
   const handleCompleteRegistration = useCallback(async () => {
     if (!userInput.gender || !userInput.ageGroup || !userInput.hasConsented) {
       setError("모든 항목을 선택하고 동의해주세요.");
@@ -279,20 +282,45 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     }
 
     try {
+      console.group("user 컬랙션에 등록하기 시작합니다");
       const userId = generateSecureUserId();
       const userHash = generateUserHash(
         pendingAuthData.name,
         userInput.socialNumber || pendingAuthData.name
       );
 
-      // Complete auth flow first
-      await completeAuthFlow({
-        ...pendingAuthData,
-        userId,
-        userHash,
-      });
+      // Step 1: Firebase Auth 완료 (필요한 경우)
+      if (!authState.firebaseUser) {
+        console.log("🔧 Firebase Auth 진행");
+        try {
+          // if (process.env.NODE_ENV === "development") {
+          //   throw new Error("테스트용 Firebase 등록 실패");
+          // }
 
-      // Register user
+          await completeAuthFlow({
+            ...pendingAuthData,
+            userId,
+            userHash,
+          });
+          console.log("✅ Firebase Auth 완료");
+
+          // // ✅ Firebase Auth 상태 안정화를 위한 대기
+          // await new Promise((resolve) => setTimeout(resolve, 200));
+
+          // // 🔥 추가: Firebase 인증 성공 여부 재확인
+          // if (!authState.firebaseUser) {
+          //   throw new Error("Firebase 인증이 완료되지 않았습니다.");
+          // }
+        } catch (authError) {
+          console.error("Firebase Auth 단계 실패:", authError);
+          throw authError; // 상위로 전파하여 전체 등록 중단
+        }
+      }
+
+      // step 2 : verifyiedUser에 userId 입력
+
+      // Step 2: Firestore에 사용자 등록
+      console.log("🔥 Firestore - users컬렉션 사용자 등록 시작");
       await registerUserMutation.mutateAsync({
         userId,
         gender: userInput.gender,
@@ -301,16 +329,130 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
         userName: pendingAuthData.name || "noName",
         authorizedUserId: userHash,
       });
+      console.log("✅ Firestore - users컬렉션 등록 완료");
 
-      console.log("✅ 신규 사용자 등록 완료");
+      console.log(" 🔥  very 컬렉션의 userId 업데이트 작업 시작");
+      await updateVeryUserMutation.mutateAsync({
+        userId,
+      });
+      console.log(" ✅ very 컬렉션의 userId 업데이트 작업 완료");
+
+      // Step 3: 등록 완료 후 정리 작업
+      console.log("🔧 등록 완료 후 정리 작업 시작");
+
+      // ✅ 잠시 대기 후 캐시 무효화
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user"] }),
+        queryClient.invalidateQueries({ queryKey: ["userCompletionStatus"] }),
+      ]);
+
+      // pendingAuth 제거
+      localStorage.removeItem("pendingAuth");
+      setPendingAuthData(null);
+
+      console.log("✅ 신규 사용자 등록 및 정리 완료");
+      console.groupEnd();
+
+      // 성공적으로 등록 완료 후 메인으로 이동
+      setIsRedirecting(true);
+      await router.push("/main");
     } catch (error) {
       console.error("등록 실패:", error);
       setError(
         error instanceof Error ? error.message : "등록 중 오류가 발생했습니다."
       );
+      //  실패 시에도 로딩 상태 해제
+      setIsRedirecting(false);
     }
-  }, [userInput, pendingAuthData, completeAuthFlow, registerUserMutation]);
+  }, [
+    userInput,
+    pendingAuthData,
+    completeAuthFlow,
+    registerUserMutation,
+    authState.firebaseUser,
+    queryClient,
+    router,
+    updateVeryUserMutation,
+  ]);
+  // =====================================
+  // ========== useEffect 훅 =============
+  // =====================================
+  // [1]  초기 설정: localStorage에서 pendingAuth 복원
+  useEffect(() => {
+    const savedPendingAuth = localStorage.getItem("pendingAuth");
+    if (savedPendingAuth && !isProcessed) {
+      try {
+        const authData = JSON.parse(savedPendingAuth);
+        setPendingAuthData(authData);
+      } catch (error) {
+        console.error("저장된 pendingAuth 데이터 파싱 오류:", error);
+        localStorage.removeItem("pendingAuth");
+      }
+    }
+  }, [isProcessed]);
 
+  // [2] 완전 인증된 사용자 처리 (최우선 - 바로 리다이렉트)
+  // 모든 인증이 완료되어 바로 메인으로 보내야 하는 사용자
+  useEffect(() => {
+    if (
+      authState.isFullyAuthenticated &&
+      !authState.firebaseLoading &&
+      !authState.completionLoading &&
+      !pendingAuthData &&
+      !isRedirecting
+    ) {
+      console.log("이미 완료된 사용자, 메인으로 리다이렉트");
+      setIsRedirecting(true);
+      router.push("/main");
+    }
+  }, [
+    authState.isFullyAuthenticated,
+    authState.firebaseLoading,
+    authState.completionLoading,
+    pendingAuthData,
+    isRedirecting,
+    router,
+  ]);
+
+  // [3] 기존 사용자 재인증 처리 (pendingAuth가 있는 경우)
+  // 동의는 이미 했지만, 브라우저 새로고침 등으로 인해 Firebase 인증이 끊어진 기존 사용자
+  useEffect(() => {
+    if (
+      pendingAuthData?.isExistingUser &&
+      !authState.firebaseLoading &&
+      !authState.completionLoading &&
+      !isRedirecting &&
+      !isProcessed
+    ) {
+      console.log("기존 사용자 처리");
+      const handleExistingUser = async () => {
+        try {
+          await completeAuthFlow(pendingAuthData);
+          setIsProcessed(true);
+        } catch (error) {
+          console.error("기존 사용자 처리 실패:", error);
+          //  실패 시 처리 상태 초기화 (재시도 허용)
+          setIsProcessed(false);
+          // 사용자에게 재시도 옵션 제공을 위해 pendingAuth는 유지
+        }
+      };
+
+      handleExistingUser();
+    }
+  }, [
+    isProcessed,
+    pendingAuthData,
+    authState.firebaseLoading,
+    authState.completionLoading,
+    isRedirecting,
+    completeAuthFlow,
+  ]);
+
+  // =====================================
+  // ========== UI states =============
+  // =====================================
   // Loading states
   const isLoading =
     verifyUserMutation.isPending ||
@@ -326,9 +468,11 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const displayError =
     error ||
     verifyUserMutation.error?.message ||
-    registerUserMutation.error?.message ||
-    updateScriptsMutation.error?.message;
+    registerUserMutation.error?.message;
 
+  // =====================================
+  // ========== Rendering =============
+  // =====================================
   // Render loading screen
   if (isPageLoading) {
     return (
@@ -371,6 +515,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
+            <p>음성 녹음은 8월 1일 낮 12시부터 참여하실 수 있습니다.</p>
 
             <div className={styles.inputGroup}>
               <h3>이름</h3>
@@ -514,7 +659,27 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           </div>
 
           {displayError && (
-            <div className={styles.errorMessage}>❌ {displayError}</div>
+            <div className={styles.errorMessage}>
+              ❌ {displayError}
+              {/* 🔥 Firebase 에러 시 재시도 버튼 추가 */}
+              {(displayError.includes("Firebase") ||
+                displayError.includes("인증")) && (
+                <button
+                  onClick={() => {
+                    setError("");
+                    setIsProcessed(false); // 재시도 허용
+                    if (pendingAuthData?.isExistingUser) {
+                      // 기존 사용자는 바로 재시도
+                      completeAuthFlow(pendingAuthData);
+                    }
+                  }}
+                  className={styles.retryButton}
+                  style={{ marginLeft: "10px" }}
+                >
+                  다시 시도
+                </button>
+              )}
+            </div>
           )}
 
           <div className={styles.submitSection}>

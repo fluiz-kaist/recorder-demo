@@ -1,13 +1,25 @@
 // hooks/queries/useUserQueries.ts - Firebase Auth 기반으로 완전 변경
-
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import { User } from "@/types/firebase";
+import { useEffect, useRef, useMemo, useCallback } from "react";
+import {
+  useQuery,
+  UseQueryResult,
+  useQueryClient,
+} from "@tanstack/react-query";
+// import { User } from "@/types/firebase";
+import { User } from "@/types/user";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { db } from "@/lib/firebase/config";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, Unsubscribe } from "firebase/firestore";
 import { Timestamp, FieldValue } from "firebase/firestore";
+import {
+  getCurrentRoundData,
+  subscribeToCurrentRound,
+  subscribeToUserRounds,
+  getUserRounds,
+} from "@/lib/firebase/userService";
+import { ParticipationRound } from "@/types/user";
 /**
- * 🔥 Firebase Auth 기반 인증 상태 확인
+ * Firebase Auth 기반 인증 상태 확인
  * HTTP 쿠키 대신 Firebase Auth 상태 사용
  */
 export const useAuthStatusQuery = (): UseQueryResult<
@@ -32,32 +44,40 @@ export const useAuthStatusQuery = (): UseQueryResult<
 };
 
 /**
- * 🔥 Firebase Auth + Firestore Client SDK 기반 사용자 정보 조회
+ * Firebase Auth + Firestore Client SDK 기반 사용자 정보 조회
  * 보안 규칙이 자동으로 적용됩니다
  */
+
 export const useUserQuery = (
   userId?: string | null
 ): UseQueryResult<User, Error> => {
   const { user: firebaseUser, isAuthenticated } = useFirebaseAuth();
   const targetUserId = userId || firebaseUser?.uid;
 
+  // 🔧 등록 과정 중인지 확인 - 한 곳에서만 체크
+  const isPendingRegistration = (() => {
+    try {
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        const authData = JSON.parse(pendingAuth);
+        // 신규 사용자이고 아직 등록 과정 중이면 true
+        return !authData.isExistingUser;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
+
   return useQuery({
     queryKey: targetUserId ? ["user", targetUserId] : ["user", "no-user"],
     queryFn: async (): Promise<User> => {
-      console.log(
-        "🔥 useUserQuery (Firestore 직접 조회) 실행, targetUserId:",
-        targetUserId
-      );
+      console.log("🔥 useUserQuery 실행, targetUserId:", targetUserId);
 
-      if (!targetUserId) {
-        throw new Error("사용자 ID가 없습니다.");
+      if (!targetUserId || !isAuthenticated || !firebaseUser) {
+        throw new Error("인증이 필요합니다.");
       }
 
-      if (!isAuthenticated || !firebaseUser) {
-        throw new Error("Firebase 인증이 필요합니다.");
-      }
-
-      // 🔥 Firestore Client SDK 직접 사용 - 보안 규칙 자동 적용
       const userCollectionName =
         process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
       const userDocRef = doc(db, userCollectionName, targetUserId);
@@ -71,39 +91,23 @@ export const useUserQuery = (
         }
 
         const userData = userDoc.data();
-        console.log("✅ Firestore에서 사용자 데이터 조회 성공:", {
-          id: targetUserId,
-          userName: userData?.userName,
-        });
+        console.log("✅ Firestore에서 사용자 데이터 조회 성공");
 
-        return {
-          id: targetUserId,
-          ...userData,
-        } as User;
+        return userData as User;
       } catch (error: any) {
         console.error("❌ Firestore 사용자 조회 오류:", error);
-
-        // Firebase Auth 권한 오류 처리
-        if (error.code === "permission-denied") {
-          throw new Error("접근 권한이 없습니다.");
-        }
-
-        // 네트워크 오류 처리
-        if (error.code === "unavailable") {
-          throw new Error("네트워크 연결을 확인해주세요.");
-        }
-
         throw error;
       }
     },
-    enabled: isAuthenticated && !!targetUserId && !!firebaseUser,
-    staleTime: 5 * 60 * 1000, // 5분
+    //  pendingAuth만으로 등록 과정 중 쿼리 방지
+    enabled:
+      isAuthenticated &&
+      !!targetUserId &&
+      !!firebaseUser &&
+      !isPendingRegistration,
+    staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => {
-      // 등록되지 않은 사용자나 권한 오류는 재시도하지 않음
-      if (
-        error?.message === "USER_NOT_REGISTERED" ||
-        error?.message === "접근 권한이 없습니다."
-      ) {
+      if (error?.message === "USER_NOT_REGISTERED") {
         return false;
       }
       return failureCount < 2;
@@ -112,7 +116,7 @@ export const useUserQuery = (
 };
 
 /**
- * 🔥 Firebase Auth 기반 최소 사용자 정보
+ * Firebase Auth 기반 최소 사용자 정보
  * useUserQuery 결과에서 필요한 정보만 추출
  */
 export const useMinimalUserQuery = (): UseQueryResult<
@@ -131,23 +135,37 @@ export const useMinimalUserQuery = (): UseQueryResult<
     error,
   } = useUserQuery(firebaseUser?.uid);
 
+  const isPendingRegistration = (() => {
+    try {
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        const authData = JSON.parse(pendingAuth);
+        return !authData.isExistingUser;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
+
   return useQuery({
     queryKey: ["minimalUserInfo", firebaseUser?.uid],
     queryFn: async () => {
       if (fullUser && firebaseUser) {
         console.log("🔥 useMinimalUserQuery: Firebase 사용자 데이터에서 추출", {
           id: firebaseUser.uid,
-          userName: fullUser.userName,
+          userName: fullUser.profile.userName,
+          completedAt: fullUser.profile.createdAt,
         });
         return {
           id: firebaseUser.uid,
-          userName: fullUser.userName,
-          completedAt: fullUser.completedAt,
+          userName: fullUser.profile.userName,
+          completedAt: fullUser.profile.createdAt,
         };
       }
       return null;
     },
-    enabled: !!fullUser && !!firebaseUser,
+    enabled: !!fullUser && !!firebaseUser && !isPendingRegistration,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,
@@ -157,7 +175,7 @@ export const useMinimalUserQuery = (): UseQueryResult<
 };
 
 /**
- * 🔥 Firebase Auth 기반 사용자 등록 완료 상태 확인
+ * Firebase Auth 기반 사용자 등록 완료 상태 확인
  */
 export const useUserCompletionStatusQuery = (
   userId?: string | null
@@ -165,11 +183,24 @@ export const useUserCompletionStatusQuery = (
   const { user: firebaseUser, isAuthenticated } = useFirebaseAuth();
   const targetUserId = userId || firebaseUser?.uid;
 
+  const isPendingRegistration = (() => {
+    try {
+      const pendingAuth = localStorage.getItem("pendingAuth");
+      if (pendingAuth) {
+        const authData = JSON.parse(pendingAuth);
+        return !authData.isExistingUser;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
+
   return useQuery({
     queryKey: ["userCompletionStatus", targetUserId],
     queryFn: async (): Promise<boolean> => {
       console.log(
-        "🔥 useUserCompletionStatusQuery 실행, targetUserId:",
+        " useUserCompletionStatusQuery 실행, targetUserId:",
         targetUserId
       );
 
@@ -194,7 +225,7 @@ export const useUserCompletionStatusQuery = (
       }
 
       try {
-        // 🔥 Firestore Client SDK 직접 사용
+        // Firestore Client SDK 직접 사용
         const userCollectionName =
           process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
         const userDocRef = doc(db, userCollectionName, targetUserId);
@@ -225,7 +256,11 @@ export const useUserCompletionStatusQuery = (
         return false;
       }
     },
-    enabled: !!targetUserId && isAuthenticated && !!firebaseUser,
+    enabled:
+      !!targetUserId &&
+      isAuthenticated &&
+      !!firebaseUser &&
+      !isPendingRegistration,
     staleTime: 5 * 60 * 1000, // 5분
     retry: 1,
   });
@@ -238,38 +273,30 @@ export const useIsTutorialCompleted = (): boolean => {
   const { user: firebaseUser } = useFirebaseAuth();
   const { data: fullUser } = useUserQuery(firebaseUser?.uid);
 
-  return (
-    fullUser?.currentStatus?.isTutorialCompleted ||
-    fullUser?.recordingStatus?.isTutorialCompleted ||
-    false
-  );
+  return fullUser?.currentStatus?.isTutorialCompleted || false;
 };
 
 /**
- * 🔥 Firebase Auth 기반 현재 세트 번호 조회
+ *  Firebase Auth 기반 현재 세트 번호 조회
  */
 export const useCurrentSetNumber = (): number => {
   const { user: firebaseUser } = useFirebaseAuth();
   const { data: fullUser } = useUserQuery(firebaseUser?.uid);
 
-  return fullUser?.participation?.currentSetNumber || 1;
+  return fullUser?.currentStatus?.currentRoundNumber || 1;
 };
 
 /**
- * 🔥 Firebase Auth 기반 현재 세트 ID 조회
+ * Firebase Auth 기반 현재 세트 ID 조회
  */
 export const useCurrentSetId = (): number => {
   const { user: firebaseUser } = useFirebaseAuth();
   const { data: fullUser } = useUserQuery(firebaseUser?.uid);
-  const currentSetNumber = fullUser?.participation?.currentSetNumber || 1;
-  const currentSet = fullUser?.participation?.sets?.find(
-    (set) => set.setNumber === currentSetNumber
-  );
-  return currentSet?.setId || 1;
+  return fullUser?.currentStatus?.currentRoundNumber || 1;
 };
 
 /**
- * 🔥 Firebase Auth 기반 전체 녹음 작업 완료 상태 확인
+ * Firebase Auth 기반 전체 녹음 작업 완료 상태 확인
  */
 export const useAllRecordingCompletionQuery = (
   userId?: string | null
@@ -280,20 +307,18 @@ export const useAllRecordingCompletionQuery = (
   return useQuery({
     queryKey: ["allRecordingCompletion", userId || firebaseUser?.uid],
     queryFn: async (): Promise<boolean> => {
-      console.log("🔥 전체 녹음 완료 상태 확인:", {
+      console.log(" 전체 녹음 완료 상태 확인:", {
         completedPercentage:
-          fullUser?.currentStatus?.progress?.completedPercentage,
+          fullUser?.currentStatus?.currentRoundProgress?.completedPercentage,
         isAllRecordingCompleted:
           fullUser?.recordingStatus?.isAllRecordingCompleted,
       });
 
       // 서버 데이터에서 모든 녹음 완료 여부 확인
-      if (fullUser?.currentStatus?.progress?.completedPercentage === 100) {
-        return true;
-      }
-
-      // 레거시 구조도 확인
-      if (fullUser?.recordingStatus?.isAllRecordingCompleted) {
+      if (
+        fullUser?.currentStatus?.currentRoundProgress?.completedPercentage ===
+        100
+      ) {
         return true;
       }
 
@@ -306,7 +331,7 @@ export const useAllRecordingCompletionQuery = (
 };
 
 /**
- * 🔥 Firebase Auth 기반 인증 상태 확인 유틸리티
+ * Firebase Auth 기반 인증 상태 확인 유틸리티
  */
 export const useIsAuthenticated = (): boolean => {
   const { isAuthenticated } = useFirebaseAuth();
@@ -314,7 +339,7 @@ export const useIsAuthenticated = (): boolean => {
 };
 
 /**
- * 🔥 Firebase Auth 상태를 직접 노출하는 훅 (필요시 사용)
+ * Firebase Auth 상태를 직접 노출하는 훅 (필요시 사용)
  */
 export const useFirebaseAuthStatus = () => {
   const { user, isLoading, isAuthenticated, signOut } = useFirebaseAuth();
@@ -325,4 +350,124 @@ export const useFirebaseAuthStatus = () => {
     isFirebaseAuthenticated: isAuthenticated,
     firebaseSignOut: signOut,
   };
+};
+
+/**
+ * 🔧 실시간 구독 → 일반 쿼리로 변경
+ * 무한 재렌더링 문제 해결 및 성능 최적화
+ */
+
+/**
+ * 현재 라운드 데이터 조회 (일반 쿼리)
+ */
+export const useCurrentRoundQuery = (
+  userId: string | undefined | null,
+  roundNumber: number | undefined
+) => {
+  return useQuery({
+    queryKey: ["currentRound", userId, roundNumber],
+    queryFn: async () => {
+      if (!userId || !roundNumber || roundNumber <= 0) {
+        throw new Error("Invalid parameters");
+      }
+      return getCurrentRoundData(userId, roundNumber);
+    },
+    enabled: Boolean(userId && roundNumber && roundNumber > 0),
+    staleTime: 30 * 1000, // 30초 동안 fresh
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 2,
+  });
+};
+
+/**
+ * 사용자 모든 라운드 조회 (일반 쿼리)
+ */
+export const useUserRoundsQuery = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ["userRounds", userId],
+    queryFn: async () => {
+      if (!userId) {
+        throw new Error("User ID is required");
+      }
+      // 🔧 새로운 함수 필요 - getUserRounds 구현 필요
+      return getUserRounds(userId);
+    },
+    enabled: Boolean(userId),
+    staleTime: 60 * 1000, // 1분 동안 fresh
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 2,
+  });
+};
+
+/**
+ * 🚀 데이터 업데이트를 위한 유틸리티 훅들
+ */
+
+/**
+ * 현재 라운드 데이터 수동 새로고침
+ */
+export const useRefreshCurrentRound = () => {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (userId: string, roundNumber: number) => {
+      return queryClient.invalidateQueries({
+        queryKey: ["currentRound", userId, roundNumber],
+      });
+    },
+    [queryClient]
+  );
+};
+
+/**
+ * 사용자 라운드 목록 수동 새로고침
+ */
+export const useRefreshUserRounds = () => {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (userId: string) => {
+      return queryClient.invalidateQueries({
+        queryKey: ["userRounds", userId],
+      });
+    },
+    [queryClient]
+  );
+};
+
+/**
+ * 🎯 녹음 완료 후 캐시 업데이트 유틸리티
+ */
+export const useUpdateRoundProgress = () => {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (userId: string, roundNumber: number, updateData: Partial<any>) => {
+      // 1. 현재 라운드 캐시 업데이트
+      queryClient.setQueryData(
+        ["currentRound", userId, roundNumber],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            ...updateData,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      );
+
+      // 2. 사용자 라운드 목록도 업데이트
+      queryClient.setQueryData(["userRounds", userId], (oldData: any[]) => {
+        if (!oldData) return oldData;
+        return oldData.map((round) =>
+          round.roundNumber === roundNumber
+            ? { ...round, ...updateData }
+            : round
+        );
+      });
+    },
+    [queryClient]
+  );
 };

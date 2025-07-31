@@ -1,3 +1,5 @@
+// old!
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 export enum ScriptType {
   FORMAL = "formal", // 정식/공식 (이미지에서 보이는 것)
@@ -118,8 +120,6 @@ export interface UserScriptAssignment {
 //     };
 //   };
 
-//   // 스크립트 관련 (기존 유지하되 확장)
-//   scriptAssignments: UserScriptAssignment[];
 
 //   // 기존 API 호환용 필드들
 //   completedScripts?: {
@@ -333,7 +333,6 @@ export interface User {
       lastRecordedAt?: string;
     };
   };
-  scriptAssignments?: any[]; // 기존 호환용
 }
 
 // 상황발화 데이터 타입 (고정 26개)

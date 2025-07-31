@@ -36,7 +36,7 @@ export default async function handler(
   }
 
   const regiUserCollectionName =
-    process.env.NEXT_PUBLIC_DB_REGISTERED_USERS_COLLECTION || "regi-users-temp";
+    process.env.NEXT_PUBLIC_DB_WHITELIST_USERS_COLLECTION || "whitelist-temp";
 
   try {
     // 1. 파일 업로드 처리 (OS별 임시 디렉토리 사용)

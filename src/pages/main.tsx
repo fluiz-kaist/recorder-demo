@@ -3,14 +3,14 @@ import { useRouter } from "next/router";
 import styles from "@/styles/MainSelectionPage.module.css";
 import Head from "next/head";
 import {
-  useCurrentSetNumber,
+  useCurrentRoundQuery,
   useMinimalUserQuery,
   useUserQuery,
   useAuthStatusQuery,
   useUserCompletionStatusQuery,
 } from "@/hooks/queries/useUserQueries";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
-
+import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
 const LOCK_ICON =
   "M12,17A1.5,1.5 0 0,0 13.5,15.5A1.5,1.5 0 0,0 12,14A1.5,1.5 0 0,0 10.5,15.5A1.5,1.5 0 0,0 12,17M17,8H16V6.5C16,4.57 14.43,3 12.5,3A3.5,3.5 0 0,0 9,6.5V8H8A2,2 0 0,0 6,10V20A2,2 0 0,0 8,22H17A2,2 0 0,0 19,20V10A2,2 0 0,0 17,8M11,6.5C11,5.67 11.67,5 12.5,5A1.5,1.5 0 0,1 14,6.5V8H11V6.5Z";
 
@@ -29,7 +29,12 @@ const MainSelectionPage = () => {
   const userName = minimalUserInfo?.userName;
 
   // 진행 상태 (서버)
-  const { data: fullUser, isLoading: isFullUserLoading } = useUserQuery();
+  const { data: fullUser, isLoading: isFullUserLoading } = useUserQuery(
+    authStatus?.userId
+  );
+  const currentRoundNumber = fullUser?.currentStatus?.currentRoundNumber || 0;
+  const { data: currentRound, isLoading: isRoundLoading } =
+    useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
 
   // console.log("fullUser?", fullUser);
@@ -48,11 +53,10 @@ const MainSelectionPage = () => {
 
   // 각 서비스별 완료 상태 (situational + formal 태스크 모두 확인)
   const getServiceCompletionStatus = (serviceName: string) => {
-    if (!fullUser?.participation?.sets?.[0]) return "not-started";
+    if (!currentRound?.tasks) return "not-started";
 
-    const currentSet = fullUser.participation.sets[0];
-    const situationalTasks = currentSet.tasks?.situational || [];
-    const formalTasks = currentSet.tasks?.formal || [];
+    const situationalTasks = currentRound.tasks.situational || [];
+    const formalTasks = currentRound.tasks.formal || [];
 
     // situational과 formal 태스크를 합친 전체 태스크
     const allTasks = [...situationalTasks, ...formalTasks];
@@ -74,11 +78,10 @@ const MainSelectionPage = () => {
 
   // 서비스별 진행률 계산 (situational + formal 태스크 모두 확인)
   const getServiceProgress = (serviceName: string) => {
-    if (!fullUser?.participation?.sets?.[0]) return 0;
+    if (!currentRound?.tasks) return 0;
 
-    const currentSet = fullUser.participation.sets[0];
-    const situationalTasks = currentSet.tasks?.situational || [];
-    const formalTasks = currentSet.tasks?.formal || [];
+    const situationalTasks = currentRound.tasks.situational || [];
+    const formalTasks = currentRound.tasks.formal || [];
 
     // situational과 formal 태스크를 합친 전체 태스크
     const allTasks = [...situationalTasks, ...formalTasks];
@@ -227,7 +230,7 @@ const MainSelectionPage = () => {
     );
   }
   // fullUser 로딩 중일 때 처리 (하지만 튜토리얼은 접근 가능하게)
-  if (isFullUserLoading) {
+  if (isFullUserLoading || isRoundLoading) {
     return (
       <>
         <Head>
@@ -303,9 +306,13 @@ const MainSelectionPage = () => {
     (name) => getServiceCompletionStatus(name) === "completed"
   ).length;
   const unlockedServices = getUnlockedServicesCount();
-  const overallProgress =
-    fullUser?.currentStatus?.progress?.completedPercentage || 0;
-
+  const overallProgress = currentRound?.progress
+    ? Math.round(
+        (currentRound.progress.approvedTasks /
+          currentRound.progress.totalTasks) *
+          100
+      )
+    : 0;
   return (
     <>
       <Head>
@@ -489,9 +496,7 @@ const MainSelectionPage = () => {
               <h3>모든 녹음을 완료했습니다!</h3>
               <p>수고하셨습니다.</p>
 
-              <button className={styles.finishAllTasks}>
-                <span>모든 작업 완료</span>
-              </button>
+              <CompletionAllTasksBtn />
             </div>
           )}
 
@@ -517,10 +522,10 @@ const MainSelectionPage = () => {
               <p>
                 다음 해금 서비스: {getNextUnlockService() || "모든 주제 해금됨"}
               </p>
-              <p>현재 세트: {fullUser?.participation?.currentSetNumber || 0}</p>
-              <p>
-                할당된 세트 수: {fullUser?.participation?.sets?.length || 0}
-              </p>
+              <p>현재 라운드: {currentRoundNumber}</p>
+              <p>라운드 상태: {currentRound?.status || "없음"}</p>
+              <p>라운드 로딩: {isRoundLoading ? "🔄" : "✅"}</p>
+              <p></p>
               {/* 각 서비스별 상태 표시 */}
               <div style={{ marginTop: "8px", fontSize: "12px" }}>
                 {SERVICE_ORDER.map((service, index) => (

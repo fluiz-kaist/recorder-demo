@@ -1,8 +1,15 @@
 // pages/api/test/manage-tasks-admin.ts - Admin SDK 기반 테스트 API
 import { NextApiRequest, NextApiResponse } from "next";
 import { adminDb } from "@/lib/firebase/admin";
-import { FieldValue } from "firebase-admin/firestore";
-import { User, RecordingTask } from "@/types/firebase";
+import { Timestamp } from "firebase-admin/firestore";
+import {
+  User,
+  ParticipationRound,
+  Task,
+  TaskStatus,
+  RoundStatus,
+  RoundProgress,
+} from "@/types/user";
 
 export default async function handler(
   req: NextApiRequest,
@@ -72,7 +79,14 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
   const userData = userDoc.data() as User;
 
   // 스크립트가 할당되지 않은 경우 빈 배열 반환
-  if (!userData.participation?.sets?.length) {
+  // 현재 회차 정보 가져오기
+  const currentRoundNumber = userData.currentStatus?.currentRoundNumber || 1;
+  const roundDocRef = adminDb
+    .collection(`${userCollectionName}/${userId}/rounds`)
+    .doc(currentRoundNumber.toString());
+
+  const roundDoc = await roundDocRef.get();
+  if (!roundDoc.exists) {
     return res.status(200).json({
       success: true,
       data: {
@@ -85,36 +99,39 @@ async function getUserTasks(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
+  const roundData = roundDoc.data() as ParticipationRound;
+
   // 태스크 목록 구성
-  const taskList = userData.participation.sets.flatMap((set, setIndex) => [
-    ...set.tasks.situational.map((task, taskIndex) => ({
-      id: `${setIndex}-situational-${taskIndex}`,
-      setIndex,
+  const taskList = [
+    ...roundData.tasks.situational.map((task, taskIndex) => ({
+      id: `${currentRoundNumber}-situational-${taskIndex}`,
+      roundNumber: currentRoundNumber,
       taskType: "situational" as const,
       taskIndex,
       taskKey: task.taskKey,
       status: task.status,
       completedAt: task.completedAt,
-      recordingId: task.recordingId,
+      audioRecordId: task.audioRecordId,
     })),
-    ...set.tasks.formal.map((task, taskIndex) => ({
-      id: `${setIndex}-formal-${taskIndex}`,
-      setIndex,
+    ...roundData.tasks.formal.map((task, taskIndex) => ({
+      id: `${currentRoundNumber}-formal-${taskIndex}`,
+      roundNumber: currentRoundNumber,
       taskType: "formal" as const,
       taskIndex,
       taskKey: task.taskKey,
       status: task.status,
       completedAt: task.completedAt,
-      recordingId: task.recordingId,
+      audioRecordId: task.audioRecordId,
     })),
-  ]);
+  ];
 
   return res.status(200).json({
     success: true,
     data: {
       userId,
       totalTasks: taskList.length,
-      completedTasks: taskList.filter((t) => t.status === "completed").length,
+      completedTasks: taskList.filter((t) => t.status === TaskStatus.COMPLETED)
+        .length,
       tasks: taskList,
       tutorialCompleted: userData.currentStatus?.isTutorialCompleted || false,
     },
@@ -148,30 +165,36 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
   const userData = userDoc.data() as User;
   const now = new Date().toISOString();
 
-  // 업데이트할 세트들을 복사
-  const updatedSets = [...userData.participation.sets];
+  // 현재 회차 문서 참조
+  const currentRoundNumber = userData.currentStatus?.currentRoundNumber || 1;
+  const roundDocRef = adminDb
+    .collection(`${userCollectionName}/${userId}/rounds`)
+    .doc(currentRoundNumber.toString());
+
+  const roundDoc = await roundDocRef.get();
+  const roundData = roundDoc.data() as ParticipationRound;
+
+  // 태스크 업데이트 로직
+  const updatedTasks = { ...roundData.tasks };
 
   // 각 업데이트 적용
   updates.forEach(
     (update: {
-      setIndex: number;
       taskType: "situational" | "formal";
       taskIndex: number;
       status: string;
     }) => {
-      const { setIndex, taskType, taskIndex, status } = update;
+      const { taskType, taskIndex, status } = update;
+      // 한 번만 현재 시간을 가져와서 모든 곳에서 동일한 시간 사용
+      const now = Timestamp.now();
+      if (updatedTasks[taskType][taskIndex]) {
+        const task = updatedTasks[taskType][taskIndex];
 
-      if (
-        updatedSets[setIndex] &&
-        updatedSets[setIndex].tasks[taskType][taskIndex]
-      ) {
-        const task = updatedSets[setIndex].tasks[taskType][taskIndex];
-
-        if (status === "completed" && task.status !== "completed") {
-          task.status = "completed";
+        if (status === "completed" && task.status !== TaskStatus.COMPLETED) {
+          task.status = TaskStatus.COMPLETED;
           task.completedAt = now;
-          task.recordingId =
-            task.recordingId || `admin_test_${task.taskKey}_${Date.now()}`;
+          task.audioRecordId =
+            task.audioRecordId || `admin_test_${task.taskKey}_${Date.now()}`;
           task.quality = task.quality || {
             duration: 10.0,
             volumeLevel: 0.8,
@@ -179,9 +202,9 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
             isValidRecording: true,
           };
         } else if (status === "not_started") {
-          task.status = "not_started";
+          task.status = TaskStatus.NOT_STARTED;
           task.completedAt = undefined;
-          task.recordingId = undefined;
+          task.audioRecordId = undefined;
           task.quality = undefined;
         }
       }
@@ -189,50 +212,73 @@ async function updateTaskStatus(req: NextApiRequest, res: NextApiResponse) {
   );
 
   // 진행률 재계산
-  updatedSets.forEach((set) => {
-    const situationalCompleted = set.tasks.situational.filter(
-      (t) => t.status === "completed"
-    ).length;
-    const formalCompleted = set.tasks.formal.filter(
-      (t) => t.status === "completed"
-    ).length;
-    const totalCompleted = situationalCompleted + formalCompleted;
-    const totalTasks = set.tasks.situational.length + set.tasks.formal.length;
+  // 진행률 재계산
+  const situationalCompleted = updatedTasks.situational.filter(
+    (t) => t.status === TaskStatus.COMPLETED
+  ).length;
+  const formalCompleted = updatedTasks.formal.filter(
+    (t) => t.status === TaskStatus.COMPLETED
+  ).length;
+  const totalCompleted = situationalCompleted + formalCompleted;
+  const totalTasks =
+    updatedTasks.situational.length + updatedTasks.formal.length;
 
-    set.progress = {
-      ...set.progress,
-      totalTasks,
-      completedTasks: totalCompleted,
-      submittedTasks: totalCompleted,
-      approvedTasks: totalCompleted,
+  const newProgress: RoundProgress = {
+    totalTasks,
+    completedTasks: totalCompleted,
+    submittedTasks: totalCompleted, // 완료되면 제출된 것으로 간주
+    approvedTasks: totalCompleted, // 테스트용이므로 자동 승인
+    byTaskType: {
       situational: {
-        total: set.tasks.situational.length,
+        total: updatedTasks.situational.length,
         completed: situationalCompleted,
         submitted: situationalCompleted,
         approved: situationalCompleted,
       },
       formal: {
-        total: set.tasks.formal.length,
+        total: updatedTasks.formal.length,
         completed: formalCompleted,
         submitted: formalCompleted,
         approved: formalCompleted,
       },
-    };
+    },
+  };
 
-    if (totalCompleted === totalTasks) {
-      set.status = "completed";
-      set.completedAt = now;
-    } else if (totalCompleted > 0) {
-      set.status = "in_progress";
-    } else {
-      set.status = "assigned";
-    }
-  });
+  // 회차 상태 결정
+  let roundStatus = RoundStatus.ASSIGNED;
+  if (totalCompleted === totalTasks) {
+    roundStatus = RoundStatus.COMPLETED;
+  } else if (totalCompleted > 0) {
+    roundStatus = RoundStatus.IN_PROGRESS;
+  }
 
   // 🔥 Admin SDK로 Firestore 업데이트 (보안 규칙 우회)
+  // 서브컬렉션 업데이트
+
+  await roundDocRef.update({
+    tasks: updatedTasks,
+    progress: newProgress,
+    status: roundStatus,
+    updatedAt: now,
+  });
+
+  // 메인 문서의 현재 상태 업데이트
   await userDocRef.update({
-    "participation.sets": updatedSets,
-    updatedAt: FieldValue.serverTimestamp(),
+    "currentStatus.currentRoundProgress": {
+      completedPercentage: Math.round((totalCompleted / totalTasks) * 100),
+      submittedPercentage: Math.round((totalCompleted / totalTasks) * 100),
+      approvedPercentage: Math.round((totalCompleted / totalTasks) * 100),
+    },
+    "statistics.current": {
+      ...userData.statistics?.current,
+      completedTasks: totalCompleted,
+      submittedTasks: totalCompleted,
+      approvedTasks: totalCompleted,
+      completedPercentage: Math.round((totalCompleted / totalTasks) * 100),
+      approvedPercentage: Math.round((totalCompleted / totalTasks) * 100),
+      lastUpdatedAt: now,
+    },
+    updatedAt: now,
   });
 
   return res.status(200).json({
@@ -254,7 +300,6 @@ async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  // 🔥 Admin SDK 사용
   const userDocRef = adminDb.collection(userCollectionName).doc(userId);
   const userDoc = await userDocRef.get();
 
@@ -266,137 +311,121 @@ async function completeAllTasks(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const userData = userDoc.data() as User;
+  const currentRoundNumber = userData.currentStatus?.currentRoundNumber || 1;
 
-  if (!userData.participation?.sets?.length) {
+  // 현재 회차 문서 가져오기
+  const roundDocRef = adminDb
+    .collection(`${userCollectionName}/${userId}/rounds`)
+    .doc(currentRoundNumber.toString());
+
+  const roundDoc = await roundDocRef.get();
+  if (!roundDoc.exists) {
     return res.status(400).json({
       success: false,
-      message: "할당된 세트가 없습니다.",
+      message: "현재 회차가 할당되지 않았습니다.",
     });
   }
+  // 한 번만 현재 시간을 가져와서 모든 곳에서 동일한 시간 사용
+  const now = Timestamp.now();
+  const roundData = roundDoc.data() as ParticipationRound;
 
-  const now = new Date().toISOString();
-  const updatedSets = userData.participation.sets.map((set) => {
-    // 모든 태스크를 완료 상태로 변경
-    const updatedSituationalTasks = set.tasks.situational.map((task) => ({
+  // 모든 태스크를 완료 상태로 변경
+  const updatedTasks = {
+    situational: roundData.tasks.situational.map((task) => ({
       ...task,
-      status: "completed" as const,
-      completedAt: task.completedAt || now,
-      recordingId:
-        task.recordingId || `admin_complete_${task.taskKey}_${Date.now()}`,
+      status: TaskStatus.COMPLETED,
+      completedAt: now,
+      audioRecordId:
+        task.audioRecordId || `admin_complete_${task.taskKey}_${Date.now()}`,
       quality: task.quality || {
         duration: 10.5,
         volumeLevel: 0.8,
         silenceRatio: 0.1,
         isValidRecording: true,
       },
-    }));
-
-    const updatedFormalTasks = set.tasks.formal.map((task) => ({
+    })),
+    formal: roundData.tasks.formal.map((task) => ({
       ...task,
-      status: "completed" as const,
-      completedAt: task.completedAt || now,
-      recordingId:
-        task.recordingId || `admin_complete_${task.taskKey}_${Date.now()}`,
+      status: TaskStatus.COMPLETED,
+      completedAt: now,
+      audioRecordId:
+        task.audioRecordId || `admin_complete_${task.taskKey}_${Date.now()}`,
       quality: task.quality || {
         duration: 8.2,
         volumeLevel: 0.75,
         silenceRatio: 0.15,
         isValidRecording: true,
       },
-    }));
+    })),
+  };
 
-    const totalTasks =
-      updatedSituationalTasks.length + updatedFormalTasks.length;
-    const completedTasks = totalTasks;
+  const totalTasks =
+    updatedTasks.situational.length + updatedTasks.formal.length;
 
-    return {
-      ...set,
-      tasks: {
-        situational: updatedSituationalTasks,
-        formal: updatedFormalTasks,
+  const newProgress: RoundProgress = {
+    totalTasks,
+    completedTasks: totalTasks,
+    submittedTasks: totalTasks,
+    approvedTasks: totalTasks,
+    byTaskType: {
+      situational: {
+        total: updatedTasks.situational.length,
+        completed: updatedTasks.situational.length,
+        submitted: updatedTasks.situational.length,
+        approved: updatedTasks.situational.length,
       },
-      progress: {
-        ...set.progress,
-        totalTasks,
-        completedTasks,
-        submittedTasks: completedTasks,
-        approvedTasks: completedTasks,
-        situational: {
-          total: updatedSituationalTasks.length,
-          completed: updatedSituationalTasks.length,
-          submitted: updatedSituationalTasks.length,
-          approved: updatedSituationalTasks.length,
-        },
-        formal: {
-          total: updatedFormalTasks.length,
-          completed: updatedFormalTasks.length,
-          submitted: updatedFormalTasks.length,
-          approved: updatedFormalTasks.length,
-        },
+      formal: {
+        total: updatedTasks.formal.length,
+        completed: updatedTasks.formal.length,
+        submitted: updatedTasks.formal.length,
+        approved: updatedTasks.formal.length,
       },
-      status: "completed" as const,
-      completedAt: now,
-      submittedAt: now,
-      approvedAt: now,
-    };
+    },
+  };
+
+  // 서브컬렉션 업데이트
+  await roundDocRef.update({
+    tasks: updatedTasks,
+    progress: newProgress,
+    status: RoundStatus.COMPLETED,
+    completedAt: now,
+    submittedAt: now,
+    approvedAt: now,
   });
 
-  const totalCompletedSets = updatedSets.length;
-  const totalRecordings = updatedSets.reduce(
-    (sum, set) => sum + set.progress.completedTasks,
-    0
-  );
-
-  const updatedCurrentStatus = {
-    isTutorialCompleted: true,
-    canStartRecording: false,
-    progress: {
+  // 메인 문서 업데이트
+  await userDocRef.update({
+    "currentStatus.currentRoundProgress": {
       completedPercentage: 100,
       submittedPercentage: 100,
       approvedPercentage: 100,
     },
-    pendingApproval: false,
-    canStartNextSet: totalCompletedSets < userData.participation.maxAllowedSets,
-  };
-
-  // 🔥 Admin SDK로 업데이트 (보안 규칙 우회)
-  await userDocRef.update({
-    "participation.sets": updatedSets,
-    "participation.totalCompletedSets": totalCompletedSets,
-    "participation.stats.totalRecordings": totalRecordings,
-    "participation.stats.totalApprovedRecordings": totalRecordings,
-    "participation.stats.averageQualityScore": 85,
-    "participation.stats.lastParticipationAt": now,
-    currentStatus: updatedCurrentStatus,
-    "recordingStatus.isAllRecordingCompleted": true,
-    "recordingStatus.allRecordingCompletedAt": now,
-    "recordingStatus.progress.mainSituationalCompleted": updatedSets.reduce(
-      (sum, set) => sum + set.tasks.situational.length,
-      0
-    ),
-    "recordingStatus.progress.mainFormalCompleted": updatedSets.reduce(
-      (sum, set) => sum + set.tasks.formal.length,
-      0
-    ),
-    "recordingStatus.progress.lastRecordedAt": now,
-    updatedAt: FieldValue.serverTimestamp(),
+    "statistics.current": {
+      roundNumber: currentRoundNumber,
+      totalTasks: totalTasks,
+      completedTasks: totalTasks,
+      submittedTasks: totalTasks,
+      approvedTasks: totalTasks,
+      recordingTime:
+        (userData.statistics?.current?.recordingTime || 0) + totalTasks * 10,
+      completedPercentage: 100,
+      approvedPercentage: 100,
+      lastUpdatedAt: now,
+    },
+    updatedAt: now,
   });
-
-  console.log(`Admin API: 사용자 ${userId}의 모든 태스크 완료 처리`);
 
   return res.status(200).json({
     success: true,
     message: "Admin API로 모든 태스크가 완료되었습니다.",
     data: {
       userId,
-      totalSets: updatedSets.length,
-      completedSets: totalCompletedSets,
-      totalTasks: totalRecordings,
-      completedAt: now,
+      roundNumber: currentRoundNumber,
+      totalTasks: totalTasks,
+      completedAt: new Date().toISOString(),
     },
   });
 }
-
 // 🔥 Admin SDK로 튜토리얼 상태 업데이트
 async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
   const userCollectionName =
@@ -420,11 +449,12 @@ async function updateTutorialStatus(req: NextApiRequest, res: NextApiResponse) {
       message: "사용자를 찾을 수 없습니다.",
     });
   }
-
+  // 한 번만 현재 시간을 가져와서 모든 곳에서 동일한 시간 사용
+  const now = Timestamp.now();
   await userDocRef.update({
     "currentStatus.isTutorialCompleted": isTutorialCompleted,
     "recordingStatus.isTutorialCompleted": isTutorialCompleted,
-    updatedAt: FieldValue.serverTimestamp(),
+    updatedAt: now,
   });
 
   return res.status(200).json({
@@ -446,7 +476,6 @@ async function resetUserData(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  // 🔥 Admin SDK 사용
   const userDocRef = adminDb.collection(userCollectionName).doc(userId);
   const userDoc = await userDocRef.get();
 
@@ -458,67 +487,91 @@ async function resetUserData(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const userData = userDoc.data() as User;
+  const currentRoundNumber = userData.currentStatus?.currentRoundNumber || 1;
 
-  // 모든 태스크를 not_started로 리셋
-  if (userData.participation?.sets?.length) {
-    const resetSets = userData.participation.sets.map((set) => ({
-      ...set,
-      tasks: {
-        situational: set.tasks.situational.map((task) => ({
-          ...task,
-          status: "not_started" as const,
-          completedAt: undefined,
-          recordingId: undefined,
-          quality: undefined,
-        })),
-        formal: set.tasks.formal.map((task) => ({
-          ...task,
-          status: "not_started" as const,
-          completedAt: undefined,
-          recordingId: undefined,
-          quality: undefined,
-        })),
-      },
-      progress: {
-        ...set.progress,
-        completedTasks: 0,
-        submittedTasks: 0,
-        approvedTasks: 0,
-        situational: {
-          total: set.tasks.situational.length,
-          completed: 0,
-          submitted: 0,
-          approved: 0,
-        },
-        formal: {
-          total: set.tasks.formal.length,
-          completed: 0,
-          submitted: 0,
-          approved: 0,
-        },
-      },
-      status: "assigned" as const,
-      completedAt: undefined,
-      submittedAt: undefined,
-      approvedAt: undefined,
-    }));
+  // 현재 회차 문서 가져오기
+  const roundDocRef = adminDb
+    .collection(`${userCollectionName}/${userId}/rounds`)
+    .doc(currentRoundNumber.toString());
 
-    await userDocRef.update({
-      "participation.sets": resetSets,
-      "participation.totalCompletedSets": 0,
-      "participation.stats.totalRecordings": 0,
-      "participation.stats.totalApprovedRecordings": 0,
-      "participation.stats.averageQualityScore": 0,
-      "currentStatus.isTutorialCompleted": false,
-      "currentStatus.canStartRecording": true,
-      "currentStatus.progress.completedPercentage": 0,
-      "currentStatus.progress.submittedPercentage": 0,
-      "currentStatus.progress.approvedPercentage": 0,
-      "recordingStatus.isAllRecordingCompleted": false,
-      "recordingStatus.isTutorialCompleted": false,
-      updatedAt: FieldValue.serverTimestamp(),
+  const roundDoc = await roundDocRef.get();
+  if (!roundDoc.exists) {
+    return res.status(400).json({
+      success: false,
+      message: "현재 회차가 할당되지 않았습니다.",
     });
   }
+
+  const roundData = roundDoc.data() as ParticipationRound;
+
+  // 현재 회차의 모든 태스크 리셋
+  const resetTasks = {
+    situational: roundData.tasks.situational.map((task) => ({
+      ...task,
+      status: TaskStatus.NOT_STARTED,
+      completedAt: undefined,
+      audioRecordId: undefined,
+      quality: undefined,
+    })),
+    formal: roundData.tasks.formal.map((task) => ({
+      ...task,
+      status: TaskStatus.NOT_STARTED,
+      completedAt: undefined,
+      audioRecordId: undefined,
+      quality: undefined,
+    })),
+  };
+
+  const resetProgress: RoundProgress = {
+    totalTasks: resetTasks.situational.length + resetTasks.formal.length,
+    completedTasks: 0,
+    submittedTasks: 0,
+    approvedTasks: 0,
+    byTaskType: {
+      situational: {
+        total: resetTasks.situational.length,
+        completed: 0,
+        submitted: 0,
+        approved: 0,
+      },
+      formal: {
+        total: resetTasks.formal.length,
+        completed: 0,
+        submitted: 0,
+        approved: 0,
+      },
+    },
+  };
+
+  // 서브컬렉션 업데이트
+  await roundDocRef.update({
+    tasks: resetTasks,
+    progress: resetProgress,
+    status: RoundStatus.ASSIGNED,
+  });
+  // 한 번만 현재 시간을 가져와서 모든 곳에서 동일한 시간 사용
+  const now = Timestamp.now();
+  // 메인 문서 업데이트
+  await userDocRef.update({
+    "currentStatus.isTutorialCompleted": false,
+    "currentStatus.currentRoundProgress": {
+      completedPercentage: 0,
+      submittedPercentage: 0,
+      approvedPercentage: 0,
+    },
+    "statistics.current": {
+      roundNumber: currentRoundNumber,
+      totalTasks: resetProgress.totalTasks,
+      completedTasks: 0,
+      submittedTasks: 0,
+      approvedTasks: 0,
+      recordingTime: 0,
+      completedPercentage: 0,
+      approvedPercentage: 0,
+      lastUpdatedAt: now,
+    },
+    updatedAt: now,
+  });
 
   return res.status(200).json({
     success: true,

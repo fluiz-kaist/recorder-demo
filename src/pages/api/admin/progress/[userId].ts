@@ -1,18 +1,24 @@
 // pages/api/admin/progress/[userId].ts - Admin SDK로 변경
 import { NextApiRequest, NextApiResponse } from "next";
 import { getDocByIdAdmin } from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
-import { FieldValue, Timestamp } from "firebase-admin/firestore"; // Admin SDK로 변경
-import { User } from "@/types/firebase";
-
+import { Timestamp } from "firebase-admin/firestore"; // Admin SDK로 변경
+import { User, ParticipationRound } from "@/types/user";
 interface UserProgressDetail {
   userId: string;
   userName?: string;
+  // basicInfo: UserProfile;
   basicInfo: {
+    userId: string;
+    userName: string;
+    authorizedUserId: string;
     gender: "남성" | "여성";
     ageGroup: string;
-    createdAt: string;
-    completedAt?: string | FieldValue | Timestamp;
-    lastAccessAt: string;
+    hasConsented: boolean;
+    consentedAt?: string; // undefined 허용
+    createdAt: string; // 필수값
+
+    lastAccessAt?: string; // undefined 허용
+    // Client SDK는 중첩 객체에서 serverTimestamp 사용 가능, Admin SDK에서만 문자열 변환 필요
   };
 
   // 전체 진행 상황
@@ -23,39 +29,49 @@ interface UserProgressDetail {
     remainingTasks: number;
   };
 
-  // 세트별 상세 진행
-  setDetails: Array<{
-    setNumber: number;
-    setId: number;
+  // 회차별 상세 진행
+  roundDetails: Array<{
+    roundNumber: number;
+    formalSetId: number;
     status: string;
-    assignedAt?: string;
-    completedAt?: string;
+    assignedAt?: string; // string으로 변경
+    completedAt?: string; // string으로 변경
+    approvedAt?: string; // string으로 변경
 
     progress: {
       totalTasks: number;
       completedTasks: number;
-      percentage: number;
+      submittedTasks: number;
+      approvedTasks: number;
     };
 
     taskBreakdown: {
       situational: {
         total: number;
         completed: number;
+        submitted: number;
+        approved: number;
         remaining: number;
         tasks: Array<{
           taskKey: string;
           status: string;
-          completedAt?: string;
+          completedAt?: string; // string으로 변경
+          submittedAt?: string; // string으로 변경
+          approvedAt?: string; // string으로 변경
         }>;
       };
       formal: {
         total: number;
         completed: number;
+        submitted: number;
+        approved: number;
         remaining: number;
         tasks: Array<{
           taskKey: string;
           status: string;
-          completedAt?: string;
+          completedAt?: string; // string으로 변경
+          submittedAt?: string; // string으로 변경
+          approvedAt?: string; // string으로 변경
         }>;
       };
     };
@@ -77,8 +93,8 @@ interface UserProgressDetail {
 
   // 활동 패턴
   activityPattern: {
-    firstRecordingAt?: string;
-    lastRecordingAt?: string;
+    firstRecordingAt?: string; // string으로 변경
+    lastRecordingAt?: string; // string으로 변경
     averageSessionLength?: number;
     mostActiveTimeOfDay?: string;
     totalSessions: number;
@@ -112,6 +128,9 @@ export default async function handler(
       });
     }
 
+    // 현재 시간을 한 번만 생성 (API 호출 시점의 통일된 시간)
+    const currentTime = new Date().toISOString();
+
     const userCollectionName =
       process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
@@ -125,7 +144,10 @@ export default async function handler(
     }
 
     // 사용자 정보 조회
-    const userData = await getDocByIdAdmin(userCollectionName, userId); // Admin SDK로 변경
+    const userData = (await getDocByIdAdmin(
+      userCollectionName,
+      userId
+    )) as User; // 타입 캐스팅 추가
 
     if (!userData) {
       return res.status(404).json({
@@ -134,92 +156,150 @@ export default async function handler(
       });
     }
 
-    // 전체 진행률 계산
-    const totalTasks =
-      userData.participation?.sets?.reduce(
-        (sum: any, set: any) => sum + set.progress.totalTasks,
-        0
-      ) || 0;
-    const completedTasks =
-      userData.participation?.sets?.reduce(
-        (sum: any, set: any) => sum + set.progress.completedTasks,
-        0
-      ) || 0;
+    // 필수 필드 존재 여부 확인 추가
+    if (!userData.profile || !userData.statistics || !userData.currentStatus) {
+      return res.status(500).json({
+        success: false,
+        message: "사용자 데이터 구조가 올바르지 않습니다.",
+      });
+    }
+
+    // 전체 진행률 계산 - statistics.current에서 가져오기
+    const totalTasksCompleted = userData.statistics.current.completedTasks || 0;
+    const totalTasksApproved = userData.statistics.current.approvedTasks || 0;
+    // 현재 진행 중인 회차가 있다면 해당 회차의 진행률도 포함
+    const currentRoundProgress = userData.currentStatus.currentRoundProgress;
+    const currentRoundTotalEstimate =
+      userData.currentStatus.currentRoundNumber > 0
+        ? userData.statistics.current.totalTasks
+        : 0;
+
+    const totalTasks = userData.statistics.current.totalTasks || 0;
+    const completedTasks = totalTasksCompleted;
+    const approvedTasks = totalTasksApproved;
+
     const overallPercentage =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    // 세트별 상세 정보
-    const setDetails =
-      userData.participation?.sets?.map((set: any) => ({
-        setNumber: set.setNumber,
-        setId: set.setId,
-        status: set.status,
-        assignedAt: set.assignedAt,
-        completedAt: set.completedAt,
+    // 회차별 상세 정보 - roundSummaries에서 기본 정보 + 서브컬렉션에서 상세 정보
+    const roundDetails = [];
 
-        progress: {
-          totalTasks: set.progress.totalTasks,
-          completedTasks: set.progress.completedTasks,
-          percentage:
-            set.progress.totalTasks > 0
-              ? Math.round(
-                  (set.progress.completedTasks / set.progress.totalTasks) * 100
-                )
-              : 0,
-        },
+    for (const roundSummary of userData.roundSummaries || []) {
+      try {
+        // 각 회차의 상세 정보를 서브컬렉션에서 조회
+        const roundData = (await getDocByIdAdmin(
+          `${userCollectionName}/${userId}/rounds`,
+          roundSummary.roundNumber.toString()
+        )) as ParticipationRound;
 
-        taskBreakdown: {
-          situational: {
-            total: set.progress.situational.total,
-            completed: set.progress.situational.completed,
-            remaining:
-              set.progress.situational.total -
-              set.progress.situational.completed,
-            tasks: set.tasks.situational.map((task: any) => ({
-              taskKey: task.taskKey,
-              status: task.status,
-              completedAt: task.completedAt,
-            })),
-          },
-          formal: {
-            total: set.progress.formal.total,
-            completed: set.progress.formal.completed,
-            remaining:
-              set.progress.formal.total - set.progress.formal.completed,
-            tasks: set.tasks.formal.map((task: any) => ({
-              taskKey: task.taskKey,
-              status: task.status,
-              completedAt: task.completedAt,
-            })),
-          },
-        },
-      })) || [];
+        if (roundData) {
+          roundDetails.push({
+            roundNumber: roundSummary.roundNumber,
+            formalSetId: roundSummary.formalSetId,
+            status: roundSummary.status,
+            // 간단하게 현재 시간 사용 (실제 값이 있으면 그대로, 없으면 현재 시간)
+            assignedAt: roundSummary.assignedAt
+              ? String(roundSummary.assignedAt)
+              : currentTime,
+            completedAt: roundSummary.completedAt
+              ? String(roundSummary.completedAt)
+              : undefined,
+            approvedAt: roundSummary.approvedAt
+              ? String(roundSummary.approvedAt)
+              : undefined,
 
+            progress: {
+              totalTasks: roundData.progress.totalTasks,
+              completedTasks: roundData.progress.completedTasks,
+              submittedTasks: roundData.progress.submittedTasks,
+              approvedTasks: roundData.progress.approvedTasks,
+            },
+
+            taskBreakdown: {
+              situational: {
+                total: roundData.progress.byTaskType.situational.total,
+                completed: roundData.progress.byTaskType.situational.completed,
+                submitted: roundData.progress.byTaskType.situational.submitted,
+                approved: roundData.progress.byTaskType.situational.approved,
+                remaining:
+                  roundData.progress.byTaskType.situational.total -
+                  roundData.progress.byTaskType.situational.completed,
+                // 작업 배열도 간단하게 현재 시간 사용
+                tasks: roundData.tasks.situational.map((task: any) => ({
+                  taskKey: task.taskKey,
+                  status: task.status,
+                  completedAt: task.completedAt
+                    ? String(task.completedAt)
+                    : undefined,
+                  submittedAt: task.submittedAt
+                    ? String(task.submittedAt)
+                    : undefined,
+                  approvedAt: task.approvedAt
+                    ? String(task.approvedAt)
+                    : undefined,
+                })),
+              },
+              formal: {
+                total: roundData.progress.byTaskType.formal.total,
+                completed: roundData.progress.byTaskType.formal.completed,
+                submitted: roundData.progress.byTaskType.formal.submitted,
+                approved: roundData.progress.byTaskType.formal.approved,
+                remaining:
+                  roundData.progress.byTaskType.formal.total -
+                  roundData.progress.byTaskType.formal.completed,
+                tasks: roundData.tasks.formal.map((task: any) => ({
+                  taskKey: task.taskKey,
+                  status: task.status,
+                  completedAt: task.completedAt || "undefined",
+                  submittedAt: task.submittedAt || "undefined",
+                  approvedAt: task.approvedAt || "undefined",
+                })),
+              },
+            },
+          });
+        }
+      } catch (error) {
+        console.error(`회차 ${roundSummary.roundNumber} 조회 실패:`, error);
+        // 개별 회차 조회 실패 시에도 전체 응답은 계속 진행
+      }
+    }
     // 녹음 품질 정보 (간단 버전)
+    // 녹음 품질 정보 (현재 회차 기준)
     const qualityInfo = {
-      averageScore: userData.participation?.stats?.averageQualityScore || 0,
-      totalRecordings: userData.participation?.stats?.totalRecordings || 0,
-      approvedRecordings:
-        userData.participation?.stats?.totalApprovedRecordings || 0,
-      recentRecordings: [], // 실제로는 별도 쿼리 필요
+      averageScore: 0, // current에는 품질 점수가 없으므로 0으로 설정 또는 별도 계산 필요
+      totalRecordings: userData.statistics.current.completedTasks || 0,
+      approvedRecordings: userData.statistics.current.approvedTasks || 0,
+      recentRecordings: [], // TODO: 최근 녹음 정보는 별도 쿼리나 roundDetails에서 추출 필요
     };
-
-    // 활동 패턴 (기본 정보만)
+    // 활동 패턴 - statistics에서 가져오기
     const activityPattern = {
-      firstRecordingAt: userData.participation?.stats?.firstParticipationAt,
-      lastRecordingAt: userData.participation?.stats?.lastParticipationAt,
-      totalSessions: userData.participation?.sets?.length || 0,
+      firstRecordingAt: undefined, // current에는 첫 참여 시점이 없으므로 undefined
+      lastRecordingAt: userData.statistics.current.lastUpdatedAt
+        ? String(userData.statistics.current.lastUpdatedAt)
+        : undefined,
+      averageSessionLength: undefined, // current에는 평균 세션 길이가 없음
+      mostActiveTimeOfDay: "undefined", // TODO: 별도 분석 필요하면 구현
+      totalSessions: 1, // 현재 회차이므로 1로 설정
     };
-
     const userProgressDetail: UserProgressDetail = {
-      userId: userData.id,
-      userName: userData.userName,
+      userId: userData.profile.userId,
+      userName: userData.profile.userName,
       basicInfo: {
-        gender: userData.gender,
-        ageGroup: userData.ageGroup,
-        createdAt: userData.createdAt,
-        completedAt: userData.completedAt,
-        lastAccessAt: userData.lastAccessAt,
+        userId: userData.profile.userId,
+        userName: userData.profile.userName,
+        authorizedUserId: userData.profile.authorizedUserId,
+        gender: userData.profile.gender,
+        ageGroup: userData.profile.ageGroup,
+        hasConsented: userData.profile.hasConsented,
+        consentedAt: userData.profile.consentedAt
+          ? String(userData.profile.consentedAt)
+          : undefined,
+        createdAt: userData.profile.createdAt
+          ? String(userData.profile.createdAt)
+          : currentTime,
+        lastAccessAt: userData.profile.lastAccessAt
+          ? String(userData.profile.lastAccessAt)
+          : undefined,
       },
       overallProgress: {
         percentage: overallPercentage,
@@ -227,7 +307,7 @@ export default async function handler(
         completedTasks,
         remainingTasks: totalTasks - completedTasks,
       },
-      setDetails,
+      roundDetails,
       qualityInfo,
       activityPattern,
     };

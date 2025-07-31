@@ -1,5 +1,5 @@
 import styles from "@/styles/AdminTaskManage.module.css";
-
+import { useRouter } from "next/router";
 import React, { useState, useEffect } from "react";
 
 interface Task {
@@ -147,6 +147,11 @@ const AdminTaskManager = () => {
   const [error, setError] = useState("");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
+  const router = useRouter();
+
+  const goBack = () => {
+    router.push("/admin/dashboard");
+  };
 
   // 태스크 목록 조회
   const fetchTasks = async () => {
@@ -583,6 +588,8 @@ const AdminTaskManager = () => {
     }
   };
 
+  console.log("여기서 테스트 데이터가?", taskData);
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -590,6 +597,7 @@ const AdminTaskManager = () => {
           <span className={styles.headerIcon}>👥</span>
           <h1 className={styles.headerTitle}>Task Manager</h1>
           <span className={styles.badge}>테스트용</span>
+          <button onClick={goBack}>뒤로가기</button>
         </div>
 
         <div className={styles.inputSection}>
@@ -637,10 +645,12 @@ const AdminTaskManager = () => {
                   <div>
                     <p className={styles.statTitle}>완료율</p>
                     <p className={styles.statValue}>
-                      {Math.round(
-                        (taskData.completedTasks / taskData.totalTasks) * 100
-                      )}
-                      %
+                      {taskData.completedTasks !== 0
+                        ? `${Math.round(
+                            (taskData.completedTasks / taskData.totalTasks) *
+                              100
+                          )}%`
+                        : "시작 안함"}
                     </p>
                   </div>
                 </div>
@@ -704,17 +714,17 @@ const AdminTaskManager = () => {
                   >
                     상황발화만 전부
                   </button>
-                  <button
+                  {/* <button
                     onClick={presetPatterns.eightyPercent}
                     disabled={loading}
                     className={styles.button}
                   >
                     각 세트 80%까지
-                  </button>
+                  </button> */}
                 </div>
 
                 {/* 세트별 랜덤 완료 버튼들 */}
-                <div style={{ marginTop: "10px" }}>
+                {/* <div style={{ marginTop: "10px" }}>
                   <h4 style={{ fontSize: "14px", marginBottom: "8px" }}>
                     세트별 랜덤 완료:
                   </h4>
@@ -761,7 +771,7 @@ const AdminTaskManager = () => {
                       </div>
                     );
                   })}
-                </div>
+                </div> */}
               </div>
 
               <div className={styles.taskCardActions}>
