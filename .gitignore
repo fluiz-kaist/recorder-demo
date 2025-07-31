@@ -55,3 +55,6 @@ merged_*
 
 # showing
 showing.json
+
+#savedata
+saveData_*.txt

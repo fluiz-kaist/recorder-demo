@@ -304,13 +304,13 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           });
           console.log("✅ Firebase Auth 완료");
 
-          // ✅ Firebase Auth 상태 안정화를 위한 대기
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          // // ✅ Firebase Auth 상태 안정화를 위한 대기
+          // await new Promise((resolve) => setTimeout(resolve, 200));
 
-          // 🔥 추가: Firebase 인증 성공 여부 재확인
-          if (!authState.firebaseUser) {
-            throw new Error("Firebase 인증이 완료되지 않았습니다.");
-          }
+          // // 🔥 추가: Firebase 인증 성공 여부 재확인
+          // if (!authState.firebaseUser) {
+          //   throw new Error("Firebase 인증이 완료되지 않았습니다.");
+          // }
         } catch (authError) {
           console.error("Firebase Auth 단계 실패:", authError);
           throw authError; // 상위로 전파하여 전체 등록 중단

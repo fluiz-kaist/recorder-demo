@@ -64,54 +64,57 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
         </div>
 
         <div className={styles.tableBody}>
-          {participantsData.participants.map((participant: any) => (
-            <div key={participant.userId} className={styles.tableRow}>
-              <div className={styles.tableCell}>
-                {participant.userName || "미설정"}
-                <button
-                  className={styles.copyButton}
-                  onClick={() =>
-                    navigator.clipboard.writeText(participant.userId)
-                  }
-                  title="ID 복사"
-                >
-                  📋
-                </button>
-              </div>
-              <div className={styles.tableCell}>{participant.gender}</div>
-              <div className={styles.tableCell}>{participant.ageGroup}</div>
-              <div className={styles.tableCell}>
-                <div className={styles.progressContainer}>
-                  <div className={styles.progressBar}>
-                    <div
-                      className={styles.progressFill}
-                      style={{
-                        width: `${participant.overallProgress}%`,
-                        backgroundColor:
-                          participant.overallProgress === 100
-                            ? "#10b981"
-                            : "#3b82f6",
-                      }}
-                    />
+          {participantsData.participants.map((participant: any) => {
+            // console.log("여기서 pargiti?", participant);
+            return (
+              <div key={participant.userId} className={styles.tableRow}>
+                <div className={styles.tableCell}>
+                  {participant.userName || "미설정"}
+                  <button
+                    className={styles.copyButton}
+                    onClick={() =>
+                      navigator.clipboard.writeText(participant.userId)
+                    }
+                    title="ID 복사"
+                  >
+                    📋
+                  </button>
+                </div>
+                <div className={styles.tableCell}>{participant.gender}</div>
+                <div className={styles.tableCell}>{participant.ageGroup}</div>
+                <div className={styles.tableCell}>
+                  <div className={styles.progressContainer}>
+                    <div className={styles.progressBar}>
+                      <div
+                        className={styles.progressFill}
+                        style={{
+                          width: `${participant.overallProgress}%`,
+                          backgroundColor:
+                            participant.overallProgress === 100
+                              ? "#10b981"
+                              : "#3b82f6",
+                        }}
+                      />
+                    </div>
+                    <span className={styles.progressText}>
+                      {participant.overallProgress}%
+                    </span>
                   </div>
-                  <span className={styles.progressText}>
-                    {participant.overallProgress}%
-                  </span>
+                </div>
+                <div className={styles.tableCell}>
+                  {participant.totalRecordings}
+                </div>
+                <div className={styles.tableCell}>
+                  {getStatusBadge(participant.status)}
+                </div>
+                <div className={styles.tableCell}>
+                  {participant.lastAccessAt
+                    ? formatFirestoreTimestampKST(participant.lastAccessAt)
+                    : "정보 없음"}
                 </div>
               </div>
-              <div className={styles.tableCell}>
-                {participant.totalRecordings}
-              </div>
-              <div className={styles.tableCell}>
-                {getStatusBadge(participant.status)}
-              </div>
-              <div className={styles.tableCell}>
-                {participant.lastAccessAt
-                  ? formatFirestoreTimestampKST(participant.lastAccessAt)
-                  : "정보 없음"}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

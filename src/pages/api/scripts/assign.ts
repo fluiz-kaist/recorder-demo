@@ -1,22 +1,29 @@
 // pages/api/scripts/assign.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import {
-  User,
-  ParticipationSet,
-  RecordingTask,
-  ProgressMode,
   SituationalScript,
   FormalScript,
   FormalScriptSets,
 } from "@/types/firebase";
 import path from "path";
 import fs from "fs";
+import {
+  User,
+  ParticipationRound,
+  Task,
+  TaskStatus,
+  RoundStatus,
+  RoundSummary,
+  CurrentUserStatus,
+  ProgressMode,
+} from "@/types/user";
 
 import {
   getDocByIdTypedAdmin,
   updateDocByIdAdmin,
+  saveDocAdmin,
 } from "@/lib/firebase/firestoreAdmin";
-import { FieldValue } from "firebase-admin/firestore"; // 시간용
+import { FieldValue, Timestamp } from "firebase-admin/firestore"; // 시간용
 
 // API 요청/응답 타입
 interface AssignScriptsRequest {
@@ -29,12 +36,29 @@ interface AssignScriptsRequest {
 interface AssignScriptsResponse {
   success: boolean;
   message?: string;
-  participationSet?: ParticipationSet;
+  participationRound?: ParticipationRound;
   scripts: {
     situational: SituationalScript[];
     formal: FormalScript[];
   };
 }
+/**
+ * [assign.ts 설명]
+ *
+ * 튜토리얼 완료 후 사용자에게 첫 번째 또는 새로운 발화 세트를 할당하는 API입니다.
+ * 할당된 발화 태스크들은 사용자별 서브컬렉션에 저장되어 진행 상황을 추적합니다.
+ *
+ * ✅ setNumber vs setId 구분
+ * - setNumber: 사용자의 진행 회차 (1회차, 2회차 등) — 사용자 진행 기록 및 UI 표시용
+ * - setId: 실제 불러올 정형 발화 세트 번호 — formal_scripts.json에서 해당 세트 스크립트 로딩용
+ *
+ * 📝 사용 예시:
+ * - 1회차 시작: { userId: "...", setNumber: 1, setId: 1, progressMode: "mixed" }
+ * - 2회차 시작: { userId: "...", setNumber: 2, setId: 2, progressMode: "mixed" }
+ *
+ * ⚠️ 주의사항: setNumber와 setId를 명확히 구분하지 않으면
+ *    스크립트 로딩 오류 또는 진행 기록 혼란이 발생할 수 있습니다.
+ */
 
 export default async function handler(
   req: NextApiRequest,
@@ -54,7 +78,7 @@ export default async function handler(
     const {
       userId,
       setNumber = 1,
-      progressMode = "mixed", //기본세팅 혼합
+      progressMode = ProgressMode.MIXED, //기본세팅 혼합
       setId = 1,
     }: AssignScriptsRequest = req.body;
 
@@ -66,7 +90,7 @@ export default async function handler(
       });
     }
 
-    console.log("🎯 [assign] 스크립트 로컬 저장 요청:", {
+    console.log("🎯 [assign] 발화 세트 할당 요청:", {
       userId,
       setNumber,
       progressMode,
@@ -81,116 +105,170 @@ export default async function handler(
     if (!userData) {
       return res.status(404).json({
         success: false,
-        message: "사용자를 찾을 수 없습니다. 먼저 회원가입을 완료해주세요.",
+        message: "사용자를 찾을 수 없습니다. 튜토리얼을 먼저 완료해주세요.",
         scripts: { situational: [], formal: [] },
       });
     }
 
     // 2. 이미 해당 세트가 할당되어 있는지 확인
-    const existingSet = userData.participation?.sets?.find(
-      (set) => set.setNumber === setNumber
+    const existingRound = userData.roundSummaries?.find(
+      (summary) => summary.roundNumber === setNumber
     );
 
-    if (existingSet) {
-      // 기존 세트가 있으면 해당 스크립트 데이터와 함께 반환
-      const scripts = await getScriptsForSet(existingSet);
+    if (existingRound) {
+      // 기존 회차가 있으면 항상 서브컬렉션도 있어야 함
+      const existingRoundDetail =
+        await getDocByIdTypedAdmin<ParticipationRound>(
+          `${userCollectionName}/${userId}/rounds`,
+          setNumber.toString()
+        );
+
+      if (!existingRoundDetail) {
+        // 이는 서브컬렉션이 생성되지 않은 상황 → 새로 생성해야 함
+        console.log("🔄 [assign] 서브컬렉션 생성:", { userId, setNumber });
+
+        // 기존 요약 정보로 서브컬렉션 생성
+        const scripts = await loadScriptData(existingRound.formalSetId);
+        const newRoundDetail = recreateParticipationRound(
+          userId,
+          existingRound,
+          scripts
+        );
+
+        // 서브컬렉션에 저장
+        await saveDocAdmin(
+          `${userCollectionName}/${userId}/rounds`,
+          setNumber.toString(),
+          newRoundDetail
+        );
+
+        return res.status(200).json({
+          success: true,
+          message: `${setNumber}회차 진행 데이터를 생성했습니다.`,
+          participationRound: newRoundDetail,
+          scripts,
+        });
+      }
+
+      // 기존 라운드의 스크립트 데이터 조회
+      const scripts = await getScriptsForSet(existingRoundDetail);
+
+      console.log("✅ [assign] 기존 세트 반환:", {
+        userId,
+        setNumber,
+        taskCount: existingRoundDetail.progress.totalTasks,
+      });
+
       return res.status(200).json({
         success: true,
-        message: `세트 ${setNumber}가 이미 할당되어 있습니다.`,
-        participationSet: existingSet,
+        message: `${setNumber}회차 발화 세트를 불러왔습니다.`,
+        participationRound: existingRoundDetail,
         scripts,
       });
     }
-
     // 3. 스크립트 데이터 로드 (서버에서 직접 파일 읽기)
     const scripts = await loadScriptData(setId);
 
     // 4. 새로운 ParticipationSet 생성
-    // task 내부의 데이터이므로 date string사용
-    const now = new Date().toISOString();
-    const newParticipationSet: ParticipationSet = {
-      setNumber,
-      setId,
+    // 한 번만 현재 시간을 가져와서 모든 곳에서 동일한 시간 사용
+    const now = Timestamp.now();
+    const newParticipationRound: ParticipationRound = {
+      userId,
+      roundNumber: setNumber,
+      formalSetId: setId,
       progressMode,
+      status: RoundStatus.ASSIGNED,
+      assignedAt: now,
+
       tasks: {
         situational: createSituationalTasks(scripts.situational, now),
         formal: createFormalTasks(scripts.formal, now),
       },
+
       progress: {
         totalTasks: scripts.situational.length + scripts.formal.length,
         completedTasks: 0,
         submittedTasks: 0,
         approvedTasks: 0,
-        situational: {
-          total: scripts.situational.length,
-          completed: 0,
-          submitted: 0,
-          approved: 0,
-        },
-        formal: {
-          total: scripts.formal.length,
-          completed: 0,
-          submitted: 0,
-          approved: 0,
+        byTaskType: {
+          situational: {
+            total: scripts.situational.length,
+            completed: 0,
+            submitted: 0,
+            approved: 0,
+          },
+          formal: {
+            total: scripts.formal.length,
+            completed: 0,
+            submitted: 0,
+            approved: 0,
+          },
         },
         currentTaskIndex: 0,
         currentTaskType: "situational",
       },
-      status: "assigned",
-      assignedAt: now,
     };
 
     // 5. 사용자 데이터 업데이트
-    const updatedParticipation = {
-      currentSetNumber: setNumber,
-      totalCompletedSets: userData.participation?.totalCompletedSets || 0,
-      maxAllowedSets: userData.participation?.maxAllowedSets || 3,
-      preferredMode: progressMode,
-      sets: [...(userData.participation?.sets || []), newParticipationSet],
-      stats: userData.participation?.stats || {
-        totalRecordings: 0,
-        totalApprovedRecordings: 0,
-        averageQualityScore: 0,
-        firstParticipationAt: now,
+    const newRoundSummary: RoundSummary = {
+      roundNumber: setNumber,
+      formalSetId: setId,
+      status: RoundStatus.ASSIGNED,
+      assignedAt: now,
+      progressSummary: {
+        totalTasks: newParticipationRound.progress.totalTasks,
+        approvedTasks: 0,
+        approvalRate: 0,
       },
     };
 
-    const updatedCurrentStatus = {
+    const updatedCurrentStatus: CurrentUserStatus = {
+      isOnboardingCompleted:
+        userData.currentStatus?.isOnboardingCompleted || false,
       isTutorialCompleted: userData.currentStatus?.isTutorialCompleted || false,
+      currentRoundNumber: setNumber,
       canStartRecording: true,
-      nextTask: {
-        taskKey: newParticipationSet.tasks.situational[0]?.taskKey || "",
-        taskType: "situational" as const,
-        index: 0,
-      },
-      progress: {
+      canStartNextRound: false,
+      hasPendingApproval: false,
+      currentRoundProgress: {
         completedPercentage: 0,
         submittedPercentage: 0,
         approvedPercentage: 0,
       },
-      pendingApproval: false,
-      canStartNextSet: false,
+      nextTask: {
+        taskKey: newParticipationRound.tasks.situational[0]?.taskKey || "",
+        taskType: "situational",
+        taskIndex: 0,
+      },
     };
 
     // 6. Firestore 업데이트
+    // Firestore 업데이트 - 메인 문서와 서브컬렉션 분리
     await updateDocByIdAdmin(userCollectionName, userId, {
-      participation: updatedParticipation,
+      // roundSummaries 배열에 새 항목 추가
+      roundSummaries: [...(userData.roundSummaries || []), newRoundSummary],
       currentStatus: updatedCurrentStatus,
-      lastAccessAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
+    // 서브컬렉션에 상세 라운드 데이터 저장
+    await updateDocByIdAdmin(
+      `${userCollectionName}/${userId}/rounds`,
+      setNumber.toString(),
+      newParticipationRound
+    );
     console.log("✅ [assign] 스크립트 할당 완료:", {
       userId,
       setNumber,
-      totalTasks: newParticipationSet.progress.totalTasks,
+      totalTasks: newRoundSummary.progressSummary.totalTasks,
       situationalTasks: scripts.situational.length,
       formalTasks: scripts.formal.length,
     });
 
     return res.status(200).json({
       success: true,
-      message: `세트 ${setNumber} 할당이 완료되었습니다.`,
-      participationSet: newParticipationSet,
+      message: `${setNumber}회차 발화 세트 할당이 완료되었습니다.`, // 수정
+      participationRound: newParticipationRound, // 변경
       scripts,
     });
   } catch (error) {
@@ -266,42 +344,42 @@ function filterFormalScriptsBySet(
 // 상황발화 태스크 생성
 function createSituationalTasks(
   scripts: SituationalScript[],
-  assignedAt: string
-): RecordingTask[] {
+  assignedAt: FieldValue | string // 타입 확장
+): Task[] {
   return scripts.map((script) => ({
     taskKey: script.task_key,
     taskType: "situational",
-    status: "not_started",
+    status: TaskStatus.ASSIGNED, // enum 사용
     assignedAt,
   }));
 }
-
 // 정형발화 태스크 생성
 function createFormalTasks(
   scripts: FormalScript[],
-  assignedAt: string
-): RecordingTask[] {
+  assignedAt: FieldValue | string // 타입 확장
+): Task[] {
   return scripts.map((script) => ({
     taskKey: script.task_key,
     taskType: "formal",
-    setId: script["set-id"],
-    status: "not_started",
+    status: TaskStatus.ASSIGNED, // enum 사용
     assignedAt,
   }));
 }
 
 // 기존 세트의 스크립트 데이터 조회
-async function getScriptsForSet(participationSet: ParticipationSet): Promise<{
+async function getScriptsForSet(
+  participationRound: ParticipationRound
+): Promise<{
   situational: SituationalScript[];
   formal: FormalScript[];
 }> {
-  const scripts = await loadScriptData(participationSet.setId);
+  const scripts = await loadScriptData(participationRound.formalSetId); // setId → formalSetId
 
-  // 할당된 태스크에 해당하는 스크립트만 필터링
-  const situationalTaskKeys = participationSet.tasks.situational.map(
+  // 나머지 로직은 동일
+  const situationalTaskKeys = participationRound.tasks.situational.map(
     (task) => task.taskKey
   );
-  const formalTaskKeys = participationSet.tasks.formal.map(
+  const formalTaskKeys = participationRound.tasks.formal.map(
     (task) => task.taskKey
   );
 
@@ -333,3 +411,70 @@ async function getScriptsForSet(participationSet: ParticipationSet): Promise<{
  *
  * 둘 다 명확히 구분해 설정하지 않으면 스크립트 로딩 또는 기록에 오류 발생 가능
  */
+// 기존 요약 데이터를 기반으로 새로운 ParticipationRound 생성
+function recreateParticipationRound(
+  userId: string,
+  existingRound: RoundSummary,
+  scripts: { situational: SituationalScript[]; formal: FormalScript[] }
+): ParticipationRound {
+  const baseRound: ParticipationRound = {
+    userId: userId,
+    roundNumber: existingRound.roundNumber,
+    formalSetId: existingRound.formalSetId,
+    progressMode: ProgressMode.MIXED, // 기본값
+    status: existingRound.status,
+    assignedAt: existingRound.assignedAt,
+
+    // 태스크 재구성
+    tasks: {
+      situational: scripts.situational.map((script) => ({
+        taskKey: script.task_key,
+        taskType: "situational" as const,
+        status: TaskStatus.ASSIGNED, // 기본 상태로 설정
+        assignedAt: existingRound.assignedAt,
+      })),
+      formal: scripts.formal.map((script) => ({
+        taskKey: script.task_key,
+        taskType: "formal" as const,
+        status: TaskStatus.ASSIGNED, // 기본 상태로 설정
+        assignedAt: existingRound.assignedAt,
+      })),
+    },
+
+    // 진행률 재구성
+    progress: {
+      totalTasks: scripts.situational.length + scripts.formal.length,
+      completedTasks: 0, // 기본값
+      submittedTasks: 0,
+      approvedTasks: 0,
+      byTaskType: {
+        situational: {
+          total: scripts.situational.length,
+          completed: 0,
+          submitted: 0,
+          approved: 0,
+        },
+        formal: {
+          total: scripts.formal.length,
+          completed: 0,
+          submitted: 0,
+          approved: 0,
+        },
+      },
+      currentTaskIndex: 0,
+      currentTaskType: "situational",
+    },
+  };
+
+  // undefined가 아닌 경우에만 추가
+  // 하지만 할당 시에는 당연히 ud이므로 패스 됨
+  if (existingRound.completedAt !== undefined) {
+    baseRound.completedAt = existingRound.completedAt;
+  }
+
+  if (existingRound.approvedAt !== undefined) {
+    baseRound.approvedAt = existingRound.approvedAt;
+  }
+
+  return baseRound;
+}

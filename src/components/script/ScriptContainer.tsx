@@ -8,10 +8,12 @@ import {
   useMinimalUserQuery,
   useUserQuery,
   useAuthStatusQuery,
+  useCurrentRoundQuery,
 } from "@/hooks/queries/useUserQueries";
 import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { getNextServiceSlug, ServiceName } from "@/lib/serviceMapping";
+import { User, ParticipationRound, Task, TaskStatus } from "@/types/user";
 export interface MergedScript {
   scriptType: "situational" | "formal";
   situation?: SituationalScript;
@@ -38,21 +40,26 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     new Set()
   );
   const { data: authStatus } = useAuthStatusQuery();
-  const { data: minimalUser } = useMinimalUserQuery();
-  // ✅ 수정: 명시적으로 userId 전달
-  // ScriptContainer.tsx에서
   const { data: fullUser, isLoading: isUserLoading } = useUserQuery(
     authStatus?.userId
   );
+  const currentRoundNumber = fullUser?.currentStatus?.currentRoundNumber || 0;
+  const { data: currentRound, isLoading: isRoundLoading } =
+    useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
 
-  // 🔥 fullUser 상태 확인
+  console.log("🔍 currentRound 쿼리 키:", [
+    "currentRound",
+    authStatus?.userId,
+    currentRoundNumber,
+  ]);
+
+  // 통합 로딩 상태
+  const isLoading = isUserLoading || isRoundLoading;
+
+  // fullUser 상태 확인
   useEffect(() => {
     console.log("🔍 fullUser 전체 구조:", {
       fullUser: fullUser,
-      participation: fullUser?.participation,
-      sets: fullUser?.participation?.sets,
-      "sets 타입": typeof fullUser?.participation?.sets,
-      "sets 길이": fullUser?.participation?.sets?.length,
     });
   }, [fullUser]);
   const scrollToTop = useScrollToTop();
@@ -72,9 +79,9 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
   const current = flatScriptList[scriptIndex];
 
-  // 🎯 핵심 함수: 실제 tasks 배열에서 직접 상태 확인
+  //  실제 tasks 배열에서 직접 상태 확인
   const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
-    // ✅ 재녹음 모드 체크를 맨 앞으로 이동
+    // 재녹음 모드 체크
     const taskKey = String(
       "task_key" in script && script.task_key
         ? script.task_key
@@ -84,80 +91,70 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     );
 
     const scriptKey = `${type}-${taskKey}`;
-
-    // 재녹음 모드면 항상 false 반환
     if (reRecordingScripts.has(scriptKey)) {
       return false;
     }
 
-    if (!fullUser?.participation?.sets?.[0]) {
+    // currentRound 사용
+    if (!currentRound?.tasks) {
       return false;
     }
 
-    const set = fullUser.participation.sets[0];
-
-    if (!taskKey) {
-      console.warn("⚠️ taskKey를 찾을 수 없음:", script);
-      return false;
-    }
-
-    // 해당 타입의 tasks 배열에서 직접 찾기
     const tasks =
       type === ScriptType.SITUATIONAL
-        ? set.tasks?.situational || []
-        : set.tasks?.formal || [];
+        ? currentRound.tasks.situational || []
+        : currentRound.tasks.formal || [];
 
-    // 매칭되는 task 찾기
     const matchedTask = tasks.find((task) => String(task.taskKey) === taskKey);
 
+    console.log("🔍 완료 상태 체크:", {
+      taskKey,
+      type,
+      tasks,
+      matchedTask,
+      status: matchedTask?.status,
+    });
+
     if (!matchedTask) {
-      console.log(`❌ [${type}] Task not found: ${taskKey}`);
-      console.log(
-        "Available tasks:",
-        tasks.map((t) => t.taskKey)
-      );
       return false;
     }
 
-    // 완료 상태 체크
-    const completedStatuses = ["completed", "submitted", "approved"];
-    const isCompleted = completedStatuses.includes(matchedTask.status || "");
-
-    console.log(`🎯 [${type}] ${taskKey}:`, {
-      status: matchedTask.status,
-      isCompleted,
-      hasAudioRecord: !!matchedTask.audioRecordId,
-    });
-
-    return isCompleted;
+    // 신규: TaskStatus enum 사용
+    const completedStatuses = [
+      TaskStatus.COMPLETED,
+      TaskStatus.SUBMITTED,
+      TaskStatus.APPROVED,
+    ];
+    return completedStatuses.includes(matchedTask.status);
   };
 
   // 전체 진행률 계산 (실제 tasks 배열 기반)
   const getProgressPercentage = (): number => {
-    if (!fullUser?.participation?.sets?.[0] || flatScriptList.length === 0) {
+    if (!currentRound?.progress) {
       return 0;
     }
 
-    const completedCount = flatScriptList.filter(({ script, type }) =>
-      isScriptCompleted(script, type)
-    ).length;
-
-    const percentage = Math.round(
-      (completedCount / flatScriptList.length) * 100
+    return Math.round(
+      (currentRound.progress.approvedTasks / currentRound.progress.totalTasks) *
+        100
     );
-
-    console.log(
-      `📊 Progress: ${completedCount}/${flatScriptList.length} = ${percentage}%`
-    );
-
-    return percentage;
   };
 
   // 로딩 상태 처리
-  if (isUserLoading) {
+  if (isLoading) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingText}>사용자 데이터 로딩 중...</div>
+      </div>
+    );
+  }
+  if (!currentRound) {
+    console.log("여기임? 1", currentRound);
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingText}>
+          현재 진행 중인 라운드가 없습니다.
+        </div>
       </div>
     );
   }
@@ -229,7 +226,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return reRecordingScripts.has(scriptKey);
   };
 
-  // 🎯 다음 버튼 활성화 조건 함수
+  // 다음 버튼 활성화 조건 함수
   const canGoToNext = (): boolean => {
     // 마지막 스크립트면 항상 비활성화
     if (scriptIndex === flatScriptList.length - 1) {

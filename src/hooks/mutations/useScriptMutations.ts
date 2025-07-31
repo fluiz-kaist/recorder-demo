@@ -156,11 +156,12 @@ export const useAssignScriptsMutation = (): UseMutationResult<
       }
 
       // localStorage에 저장
-      if (data.participationSet) {
+      if (data.participationRound) {
+        // participationSet → participationRound
         ScriptDataManager.saveScriptData(
           userId,
-          data.participationSet.setNumber,
-          data.participationSet.setId,
+          data.participationRound.roundNumber, // setNumber → roundNumber
+          data.participationRound.formalSetId, // setId → formalSetId
           data.scripts
         );
       }

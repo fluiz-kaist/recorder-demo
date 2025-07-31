@@ -1,3 +1,5 @@
+// old!
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 export enum ScriptType {
   FORMAL = "formal", // 정식/공식 (이미지에서 보이는 것)

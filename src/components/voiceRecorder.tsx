@@ -512,7 +512,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       (recordingEndTime.getTime() - recordingStartTime.getTime()) / 1000;
     const actualDuration = audioDuration || recordingTime;
 
-    if (!audioBlob || !audioDuration || !fullUser?.id) {
+    if (!audioBlob || !audioDuration || !fullUser?.profile.userId) {
       console.error("업로드에 필요한 데이터가 없습니다.");
       return;
     }
@@ -536,7 +536,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         message: "음성 파일을 업로드하고 있습니다...",
       });
       console.log("업로드 시작:", {
-        userId: fullUser.id,
+        userId: fullUser.profile.userId,
         scriptType,
         scriptId: scriptData.id,
         duration: audioDuration,
@@ -550,9 +550,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           ? scriptData.formal_script
           : "";
 
-      const gender = fullUser ? fullUser.gender : "불명";
-      const ageGroup = fullUser ? fullUser.ageGroup : "불명";
-      const userName = fullUser ? fullUser.userName : "불명";
+      const gender = fullUser ? fullUser.profile.gender : "불명";
+      const ageGroup = fullUser ? fullUser.profile.ageGroup : "불명";
+      const userName = fullUser ? fullUser.profile.userName : "불명";
 
       const typedScript = scriptData as {
         service_name: string;
@@ -563,7 +563,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       const uploadResult = await uploadAudioMutation.mutateAsync({
         // === 기본 정보 ===
-        userId: fullUser.id,
+        userId: fullUser.profile.userId,
         taskKey: typedScript.task_key, // "건강-건강정보-1"
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
@@ -603,20 +603,18 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       });
 
       const completeResult = await completeUserScriptMutation.mutateAsync({
-        userId: fullUser.id,
+        userId: fullUser.profile.userId,
         taskKey: typedScript.task_key,
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         status: "completed", // 또는 "in_progress", "not_started"
         audioRecordId: uploadResult.recordingId,
+        recordingDuration: actualDuration
       });
       console.log("✅ completeResult:", completeResult);
 
       //  - 캐시 상태 확인
-      console.log(
-        "제출 직전 fullUser:",
-        fullUser?.participation?.sets?.[0]?.tasks
-      );
+      console.log("제출 직전 fullUser:", fullUser);
 
       // 잠시 후 캐시 상태 다시 확인
       // setTimeout(() => {

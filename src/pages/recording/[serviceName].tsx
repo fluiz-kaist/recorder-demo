@@ -6,8 +6,9 @@ import Head from "next/head";
 import { fromSlug } from "@/lib/serviceMapping"; // 한글 ↔ 슬러그 변환
 import { ScriptContainer } from "@/components/script/ScriptContainer";
 import {
-  useCurrentSetNumber,
-  useCurrentSetId,
+  useUserQuery,
+  useCurrentRoundQuery,
+  useAuthStatusQuery,
 } from "@/hooks/queries/useUserQueries";
 
 import { SERVICE_NAME_TO_SLUG, ServiceName } from "@/lib/serviceMapping";
@@ -48,24 +49,46 @@ const mergeScriptsByTaskKey = (
 
 export default function ScriptPage({ serviceName }: ScriptPageProps) {
   const router = useRouter();
-  const currentSetNumber = useCurrentSetNumber();
-  const currentSetId = useCurrentSetId();
+  const { data: authStatus } = useAuthStatusQuery();
+  const { data: fullUser, isLoading: isUserLoading } = useUserQuery(
+    authStatus?.userId
+  );
+  const currentRoundNumber = fullUser?.currentStatus?.currentRoundNumber || 0;
+  const { data: currentRound, isLoading: isRoundLoading } =
+    useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
+
+  const currentSetId = currentRound?.formalSetId || 1;
 
   // 선택사항: 상황발화 + 정형발화 모두 조회하고 싶다면
   const {
     data: allScripts,
     isLoading,
     isError,
-  } = useAllScriptsByServiceQuery(serviceName, currentSetNumber, currentSetId);
+  } = useAllScriptsByServiceQuery(
+    serviceName,
+    currentSetId // setNumber 제거, setId만 사용
+  );
 
   if (router.isFallback) {
     return <div>로딩 중...</div>;
   }
 
-  // console.log("assl", allScripts);
+  // isLoading은 스크립트 쿼리 로딩
+  if (isUserLoading || isRoundLoading || isLoading) {
+    return <div>데이터 로딩 중...</div>;
+  }
 
-  if (isLoading) return <div>로딩 중...</div>;
   if (isError) return <div>에러 발생</div>;
+  if (!currentRound) {
+    console.log("여긴가?", currentRound);
+    return (
+      <>
+        <div>현재 진행 중인 라운드가 없습니다</div>
+        <ReAssignScript />
+      </>
+    );
+  }
+
   if (!allScripts)
     return (
       <>
@@ -73,7 +96,6 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
         <ReAssignScript />
       </>
     );
-
   console.log("allScripts?", allScripts);
 
   const mergedScripts = mergeScriptsByTaskKey(

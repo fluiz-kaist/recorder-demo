@@ -1,11 +1,11 @@
 // hooks/mutations/useUserMutations.ts - Firebase Auth + Firestore Client SDK 기반으로 완전 변경
-
 import {
   useMutation,
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User } from "@/types/firebase";
+// import { User } from "@/types/firebase";
+import { User, ProgressMode } from "@/types/user";
 import { RegisterUserRequest } from "@/types/api";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { db } from "@/lib/firebase/config";
@@ -15,8 +15,6 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
-  collection,
-  addDoc,
 } from "firebase/firestore";
 
 /**
@@ -127,9 +125,9 @@ export const useRegisterUserMutation = (): UseMutationResult<
         throw new Error("Firebase 인증이 필요합니다.");
       }
 
-      if (firebaseUser.uid !== userId) {
-        throw new Error("인증된 사용자와 등록 요청 사용자가 다릅니다.");
-      }
+      // if (firebaseUser.uid !== userId) {
+      //   throw new Error("인증된 사용자와 등록 요청 사용자가 다릅니다.");
+      // }
 
       console.log("🔥 Firestore 직접 사용자 등록 시작:", userId);
 
@@ -139,36 +137,74 @@ export const useRegisterUserMutation = (): UseMutationResult<
       const userDocRef = doc(db, userCollectionName, userId);
 
       const userDoc: User = {
-        id: userId,
-        gender,
-        ageGroup,
-        hasConsented,
-        userName,
-        authorizedUserId,
-        createdAt: new Date().toISOString(),
-        lastAccessAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(), // 등록 즉시 완료로 설정
+        // profile 그룹
+        profile: {
+          userId: userId,
+          authorizedUserId,
+          userName,
+          gender,
+          ageGroup,
+          hasConsented,
+          consentedAt: serverTimestamp(), // 새로 추가
+          createdAt: serverTimestamp(),
+          lastAccessAt: serverTimestamp(),
+        },
+
+        // settings
+        settings: {
+          autoSubmitAfterRecording: false,
+          allowAutoApproval: true,
+          requireManualReview: false,
+          preferredProgressMode: ProgressMode.MIXED,
+          maxAllowedRounds: 2,
+        },
+
+        // currentStatus 확장
         currentStatus: {
+          isOnboardingCompleted: true,
           isTutorialCompleted: false,
-          canStartRecording: false, // 기본값으로 false 설정
-          pendingApproval: false, // 기본값 설정
-          canStartNextSet: false, // 기본값 설정
-          progress: {
+          currentRoundNumber: 1,
+          canStartRecording: false,
+          canStartNextRound: false,
+          hasPendingApproval: false,
+          currentRoundProgress: {
             completedPercentage: 0,
             submittedPercentage: 0,
             approvedPercentage: 0,
           },
+          nextTask: null,
         },
-        participation: {
-          currentSetNumber: 0,
-          totalCompletedSets: 0,
-          maxAllowedSets: 3, // 또는 정책상 정한 값
-          preferredMode: "mixed",
-          sets: [],
-          stats: {
-            totalRecordings: 0,
-            totalApprovedRecordings: 0,
-            averageQualityScore: 0,
+
+        roundSummaries: [],
+
+        //  statistics
+        statistics: {
+          // 현재 회차 통계 (실시간 업데이트)
+          current: {
+            roundNumber: 1, // 첫 회차부터 시작
+            totalTasks: 0, // 아직 할당된 작업 없음
+            completedTasks: 0,
+            submittedTasks: 0,
+            approvedTasks: 0,
+            recordingTime: 0, // 초 단위
+            completedPercentage: 0, // 0-100
+            approvedPercentage: 0, // 0-100
+            lastUpdatedAt: serverTimestamp(), // Firebase 서버 타임스탬프
+          },
+        },
+
+        updatedAt: serverTimestamp(),
+
+        //  레거시 호환용 (점진적 제거 예정이지만 일단 유지)
+        completedAt: serverTimestamp(),
+        recordingStatus: {
+          isTutorialCompleted: false,
+          isAllRecordingCompleted: false,
+          progress: {
+            totalAssigned: 0,
+            tutorialCompleted: 0,
+            mainSituationalCompleted: 0,
+            mainFormalCompleted: 0,
           },
         },
       };
@@ -205,7 +241,7 @@ export const useRegisterUserMutation = (): UseMutationResult<
       );
       queryClient.setQueryData(["minimalUserInfo", variables.userId], {
         id: variables.userId,
-        userName: user.userName,
+        userName: user.profile.userName,
         completedAt: user.completedAt,
       });
     },
@@ -216,7 +252,7 @@ export const useRegisterUserMutation = (): UseMutationResult<
 };
 
 /**
- * 🔥 Firebase Auth + Firestore Client SDK 기반 사용자 정보 업데이트 뮤테이션
+ * Firebase Auth + Firestore Client SDK 기반 사용자 정보 업데이트 뮤테이션
  */
 export const useUpdateUserMutation = (): UseMutationResult<
   User,
@@ -241,7 +277,7 @@ export const useUpdateUserMutation = (): UseMutationResult<
 
       console.log("🔥 Firestore 사용자 정보 업데이트 시작:", userId, updates);
 
-      // 🔥 Firestore Client SDK로 직접 업데이트
+      //  Firestore Client SDK로 직접 업데이트
       const userCollectionName =
         process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
       const userDocRef = doc(db, userCollectionName, userId);
@@ -250,7 +286,7 @@ export const useUpdateUserMutation = (): UseMutationResult<
         // 업데이트할 데이터 준비
         const updateData = {
           ...updates,
-          lastAccessAt: new Date().toISOString(),
+          lastAccessAt: serverTimestamp(),
         };
 
         // Firestore에 업데이트
@@ -262,12 +298,9 @@ export const useUpdateUserMutation = (): UseMutationResult<
           throw new Error("업데이트 후 사용자 데이터를 찾을 수 없습니다.");
         }
 
-        const updatedUser = {
-          id: userId,
-          ...updatedDoc.data(),
-        } as User;
-
+        const updatedUser = updatedDoc.data() as User;
         console.log("✅ Firestore 사용자 정보 업데이트 완료:", updatedUser);
+
         return updatedUser;
       } catch (error: any) {
         console.error("❌ Firestore 사용자 정보 업데이트 실패:", error);
@@ -300,7 +333,7 @@ export const useUpdateUserMutation = (): UseMutationResult<
 };
 
 /**
- * 🔥 Firebase Auth 기반 마지막 접속 시간 업데이트 뮤테이션
+ *  Firebase Auth 기반 마지막 접속 시간 업데이트 뮤테이션
  */
 export const useUpdateLastAccessMutation = (): UseMutationResult<
   void,
@@ -324,7 +357,7 @@ export const useUpdateLastAccessMutation = (): UseMutationResult<
 
       try {
         await updateDoc(userDocRef, {
-          lastAccessAt: new Date().toISOString(),
+          lastAccessAt: serverTimestamp(),
         });
 
         console.log("✅ 마지막 접속 시간 업데이트 완료");
@@ -345,7 +378,7 @@ export const useUpdateLastAccessMutation = (): UseMutationResult<
 };
 
 /**
- * 🔥 Firebase Auth 기반 로그아웃 뮤테이션
+ * Firebase Auth 기반 로그아웃 뮤테이션
  */
 export const useLogoutUserMutation = (): UseMutationResult<
   void,
@@ -399,8 +432,16 @@ export interface CompleteScriptRequest {
   userId: string;
   taskKey: string;
   taskType: "situational" | "formal";
-  status: "not_started" | "in_progress" | "completed";
   audioRecordId: string;
+  // status:
+  //   | "not_started"
+  //   | "in_progress"
+  //   | "completed"
+  //   | "submitted"
+  //   | "approved"
+  //   | "rejected";
+  status: string; // 모든 TaskStatus 값 허용
+  recordingDuration: number;
 }
 
 export interface CompleteScriptResponse {
@@ -455,20 +496,24 @@ export const useCompleteScriptMutation = (): UseMutationResult<
     },
 
     onSuccess: (_, variables) => {
-      // 🔥 Firebase Auth 기반 캐시 무효화
+      const { userId } = variables;
+
+      // 🔥 메인 user 문서 무효화
       queryClient.invalidateQueries({
-        queryKey: ["user", variables.userId],
+        queryKey: ["user", userId],
       });
 
+      // 🔥 현재 라운드 캐시 무효화 (이게 핵심!)
       queryClient.invalidateQueries({
-        queryKey: ["user"],
-        exact: false,
+        queryKey: ["currentRound", userId],
       });
 
-      console.log(
-        "✅ 스크립트 완료 처리 및 캐시 업데이트 완료:",
-        variables.taskKey
-      );
+      // 🔥 모든 라운드 관련 캐시 무효화
+      queryClient.invalidateQueries({
+        queryKey: ["rounds", userId],
+      });
+
+      console.log("✅ 모든 관련 캐시 무효화 완료:", variables.taskKey);
     },
 
     onError: (error) => {

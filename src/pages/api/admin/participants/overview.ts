@@ -1,7 +1,7 @@
 // pages/api/admin/participants/overview.ts - 용어 및 컬렉션 정리
 import { NextApiRequest, NextApiResponse } from "next";
 import { adminDb } from "@/lib/firebase/admin";
-import { User } from "@/types/firebase";
+import { User, RoundStatus } from "@/types/user";
 
 export interface ParticipantOverview {
   userId: string;
@@ -32,12 +32,7 @@ interface ParticipantsOverviewResponse {
   data?: {
     participants: ParticipantOverview[];
     totalCount: number;
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPrevPage: boolean;
-    };
+
     statistics: {
       // 3단계 통계
       totalApplicants: number; // 참가 신청자 (authorizedUsers)
@@ -57,24 +52,31 @@ interface ParticipantsOverviewResponse {
 const calculateParticipantStatus = (
   user: User
 ): ParticipantOverview["status"] => {
-  if (!user.completedAt) return "not_started";
+  console.log("여기서 user 데이터 뭐라고 나오지? ", user);
+  if (!user.currentStatus.isOnboardingCompleted) return "not_started";
 
-  const totalTasks =
-    user.participation?.sets?.reduce(
-      (sum, set) => sum + set.progress.totalTasks,
-      0
-    ) || 0;
-  const completedTasks =
-    user.participation?.sets?.reduce(
-      (sum, set) => sum + set.progress.completedTasks,
-      0
-    ) || 0;
+  // 현재 진행중인 라운드가 있는지 확인
+  if (user.currentStatus.currentRoundNumber === 0) return "not_started";
 
-  if (completedTasks === totalTasks && totalTasks > 0) return "completed";
-  if (completedTasks > 0) return "in_progress";
+  // 전체 완료 여부 확인 - statistics.current 또는 overall 사용
+  const totalApprovedTasks =
+    user.statistics.overall?.totalTasksApproved ||
+    user.statistics.current.approvedTasks;
+  const totalCompletedTasks =
+    user.statistics.overall?.totalTasksCompleted ||
+    user.statistics.current.completedTasks;
+
+  if (
+    totalApprovedTasks > 0 &&
+    user.currentStatus.currentRoundProgress.approvedPercentage === 100
+  ) {
+    return "completed";
+  }
+
+  if (totalCompletedTasks > 0) return "in_progress";
 
   // 7일 이상 비활성화 체크
-  const lastAccess = new Date(user.lastAccessAt);
+  const lastAccess = new Date(user.profile.lastAccessAt as string);
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   if (lastAccess < sevenDaysAgo) return "inactive";
 
@@ -83,20 +85,30 @@ const calculateParticipantStatus = (
 
 // 전체 진행률 계산 함수
 const calculateOverallProgress = (user: User): number => {
-  if (!user.participation?.sets?.length) return 0;
-
-  const totalTasks = user.participation.sets.reduce(
-    (sum, set) => sum + set.progress.totalTasks,
-    0
-  );
-  const completedTasks = user.participation.sets.reduce(
-    (sum, set) => sum + set.progress.completedTasks,
-    0
+  // roundSummaries와 현재 진행률을 모두 고려
+  const completedRounds = user.roundSummaries.filter(
+    (round) =>
+      round.status === RoundStatus.COMPLETED ||
+      round.status === RoundStatus.APPROVED
   );
 
-  return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  if (
+    completedRounds.length === 0 &&
+    user.currentStatus.currentRoundNumber === 0
+  ) {
+    return 0;
+  }
+
+  // statistics.overall이 있으면 사용, 없으면 current 사용
+  const totalTasks =
+    user.statistics.overall?.totalTasksCompleted ||
+    user.statistics.current.completedTasks;
+  const approvedTasks =
+    user.statistics.overall?.totalTasksApproved ||
+    user.statistics.current.approvedTasks;
+
+  return totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
 };
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ParticipantsOverviewResponse>
@@ -126,8 +138,6 @@ export default async function handler(
 
     // 쿼리 파라미터 추출
     const {
-      page = "1",
-      limit: queryLimit = "20",
       sortBy = "createdAt",
       sortOrder = "desc",
       status,
@@ -136,96 +146,102 @@ export default async function handler(
       search,
     } = req.query;
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(queryLimit as string, 10);
-
+    //TODO: 관리자 제대로 패스 해주기 필요
     // 1. 참가 신청자 수 조회 (화이트리스트)
     const applicantsSnapshot = await adminDb
       .collection(applicantsCollection)
       .get();
     const totalApplicants = applicantsSnapshot.size;
 
-    // 2. 가입 완료자 쿼리 생성 (users)
-    let registeredUsersQuery = adminDb
+    // 2-1. 전체 통계용 쿼리 (필터 없음)
+    const allUsersSnapshot = await adminDb
       .collection(registeredUsersCollection)
-      .orderBy(sortBy as string, sortOrder as "asc" | "desc");
+      .get();
+    const totalRegisteredUsers = allUsersSnapshot.size;
+    console.log("totalRegisteredUsers?", totalRegisteredUsers);
+
+    // 튜토리얼 완료자 계산 (전체 기준)
+    const allUsers = allUsersSnapshot.docs.map(
+      (doc) => ({ ...doc.data() } as User)
+    );
+    const activeParticipants = allUsers.filter(
+      (user) => user.currentStatus.isTutorialCompleted
+    ).length;
+
+    // 2-2. 필터링된 쿼리 (페이지네이션용)
+    const filteredQuery = adminDb.collection(registeredUsersCollection);
+    // const filteredQuery = adminDb
+    //   .collection(registeredUsersCollection)
+    //   .orderBy(sortBy as string, sortOrder as "asc" | "desc");
 
     // 필터 적용
-    if (gender) {
-      registeredUsersQuery = registeredUsersQuery.where("gender", "==", gender);
-    }
-    if (ageGroup) {
-      registeredUsersQuery = registeredUsersQuery.where(
-        "ageGroup",
-        "==",
-        ageGroup
-      );
-    }
+    // if (gender) {
+    //   filteredQuery = filteredQuery.where("profile.gender", "==", gender);
+    // }
+    // if (ageGroup) {
+    //   filteredQuery = filteredQuery.where("profile.ageGroup", "==", ageGroup);
+    // }
 
-    // 가입 완료자 쿼리 실행
-    const registeredUsersSnapshot = await registeredUsersQuery.get();
-    const totalRegisteredUsers = registeredUsersSnapshot.size;
+    const filteredSnapshot = await filteredQuery.get();
 
-    // 페이지네이션 계산
-    const totalPages = Math.ceil(totalRegisteredUsers / limitNum);
-    const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = startIndex + limitNum;
-
-    // 현재 페이지 데이터 추출
-    const allRegisteredUsers = registeredUsersSnapshot.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() } as User))
-      .slice(startIndex, endIndex);
+    const tt = filteredSnapshot.size;
+    console.log("tt?", tt);
+    const filteredUsers = filteredSnapshot.docs.map(
+      (doc) => ({ ...doc.data() } as User)
+    );
 
     // 검색 필터 적용 (클라이언트 사이드)
-    let filteredUsers = allRegisteredUsers;
+    let finalUsers = filteredUsers;
     if (search) {
       const searchTerm = (search as string).toLowerCase();
-      filteredUsers = allRegisteredUsers.filter(
+      finalUsers = filteredUsers.filter(
         (user) =>
-          user.userName?.toLowerCase().includes(searchTerm) ||
-          user.id.toLowerCase().includes(searchTerm)
+          user.profile.userName?.toLowerCase().includes(searchTerm) ||
+          user.profile.userId.toLowerCase().includes(searchTerm)
       );
     }
-
     // 참여자 데이터 변환
+
+    console.log("filteredUsers?", filteredUsers);
     const participants: ParticipantOverview[] = filteredUsers.map((user) => {
       const participantStatus = calculateParticipantStatus(user);
       const overallProgress = calculateOverallProgress(user);
 
-      return {
-        userId: user.id,
-        userName: user.userName,
-        gender: user.gender,
-        ageGroup: user.ageGroup,
-        createdAt: user.createdAt,
-        lastAccessAt: user.lastAccessAt,
+      console.log("이거 뭐야? participantStatus", participantStatus);
 
-        hasStarted: !!user.completedAt,
-        currentSetNumber: user.participation?.currentSetNumber || 1,
-        totalCompletedSets: user.participation?.totalCompletedSets || 0,
+      return {
+        userId: user.profile.userId,
+        userName: user.profile.userName,
+        gender: user.profile.gender,
+        ageGroup: user.profile.ageGroup,
+        createdAt: user.profile.createdAt as string,
+        lastAccessAt: user.profile.lastAccessAt as string,
+
+        hasStarted: user.currentStatus.isOnboardingCompleted,
+        currentSetNumber: user.currentStatus.currentRoundNumber,
+        totalCompletedSets:
+          user.statistics.overall?.totalParticipationRounds || 0,
         overallProgress,
 
-        totalRecordings: user.participation?.stats?.totalRecordings || 0,
+        totalRecordings:
+          user.statistics.overall?.totalTasksCompleted ||
+          user.statistics.current.completedTasks,
         totalApprovedRecordings:
-          user.participation?.stats?.totalApprovedRecordings || 0,
-        averageQualityScore:
-          user.participation?.stats?.averageQualityScore || 0,
+          user.statistics.overall?.totalTasksApproved ||
+          user.statistics.current.approvedTasks,
+        averageQualityScore: user.statistics.overall?.averageQualityScore || 0,
 
         status: participantStatus,
-        lastRecordingAt: user.participation?.stats?.lastParticipationAt,
+        lastRecordingAt:
+          (user.statistics.overall?.lastParticipationAt as string) || undefined,
       };
     });
 
-    // 상태별 필터링
-    let finalParticipants = participants;
-    if (status) {
-      finalParticipants = participants.filter((p) => p.status === status);
-    }
-
-    // 작업 참여자 수 계산 (실제 작업을 시작한 사람들)
-    const activeParticipants = participants.filter(
-      (p) => p.hasStarted && p.totalRecordings > 0
-    ).length;
+    console.log(
+      "totalRegisteredUsers, activeParticipants",
+      totalRegisteredUsers,
+      activeParticipants
+    );
 
     // 전체 통계 계산
     const statistics = {
@@ -249,14 +265,8 @@ export default async function handler(
     return res.status(200).json({
       success: true,
       data: {
-        participants: finalParticipants,
-        totalCount: finalParticipants.length,
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1,
-        },
+        participants: participants,
+        totalCount: participants.length,
         statistics,
       },
     });

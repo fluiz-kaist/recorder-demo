@@ -77,6 +77,8 @@ const AdminDashboard = () => {
     return <div className={styles.error}>데이터 로딩에 실패했습니다.</div>;
   }
 
+  console.log("대시보드 participants", participants.data);
+
   return (
     <>
       <div className={styles.container}>
@@ -216,7 +218,8 @@ const OverviewTab = ({
             {statistics.activeParticipants.toLocaleString()}
           </div>
           <div className={styles.statDescription}>
-            실제 작업 시작 ({conversionRates.registeredToActive}%)
+            {/* 실제 작업 시작 ({conversionRates.registeredToActive}%) */}
+            튜토리얼 완료자
           </div>
         </div>
 
@@ -287,7 +290,7 @@ const OverviewTab = ({
       </div>
 
       {/* 진행률 분포 (기존 로직 유지) */}
-      {progressData && (
+      {/* {progressData && (
         <div className={styles.section}>
           <h3>진행률 분포</h3>
           <div className={styles.progressBars}>
@@ -353,10 +356,10 @@ const OverviewTab = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* 최근 활동 */}
-      <div className={styles.section}>
+      {/* <div className={styles.section}>
         <h3>최근 활동</h3>
         <div className={styles.activityGrid}>
           <div className={styles.activityItem}>
@@ -372,7 +375,7 @@ const OverviewTab = ({
             <strong>{conversionRates.applicantToActive}%</strong>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
@@ -380,6 +383,8 @@ const OverviewTab = ({
 // 참여자 관리 탭 (기존 로직 유지)
 const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
   if (!participantsData) return <div>데이터 없음</div>;
+
+  console.log("participantsData?", participantsData);
 
   const getStatusBadge = (status: string) => {
     const statusClass =

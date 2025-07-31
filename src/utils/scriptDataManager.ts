@@ -38,8 +38,8 @@ export class ScriptDataManager {
   // API에서 받은 데이터 저장
   static saveScriptData(
     userId: string,
-    setNumber: number,
-    setId: number,
+    roundNumber: number, // setNumber → roundNumber (의미 명확화)
+    formalSetId: number, // setId → formalSetId (의미 명확화)
     scripts: {
       situational: SituationalScript[];
       formal: FormalScript[];
@@ -51,8 +51,8 @@ export class ScriptDataManager {
       version: "1.0",
       loadedAt: now,
       userId,
-      setNumber,
-      setId,
+      setNumber: roundNumber, // 내부적으로는 기존 필드명 유지
+      setId: formalSetId, // 내부적으로는 기존 필드명 유지,
       situationalScripts: scripts.situational,
       formalScripts: scripts.formal,
       indexes: this.createSimpleIndexes(scripts.situational, scripts.formal),
