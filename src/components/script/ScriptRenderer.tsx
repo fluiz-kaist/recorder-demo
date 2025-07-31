@@ -99,14 +99,14 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
           isCompleted ? styles.completedOverlay : ""
         }`}
       >
-        <div className={styles.formalSentenceLabel}>정형화 문장</div>
+        {/* <div className={styles.formalSentenceLabel}>정형화 문장</div> */}
         <div className={styles.formalSentence}>{script.formal_script}</div>
         <div className={styles.formalInstruction}>위 문장을 읽어주세요</div>
         {isCompleted && <div className={styles.completedText}>제출 완료</div>}
         {/* Set ID 정보 (필요시) */}
-        <div className={styles.setInfo}>
+        {/* <div className={styles.setInfo}>
           <span className={styles.setId}>세트 {script["set-id"]}</span>
-        </div>
+        </div> */}
       </div>
     </>
   );

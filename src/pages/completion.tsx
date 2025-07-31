@@ -10,12 +10,18 @@ const CompletionPage: React.FC = () => {
   // React Query를 사용하여 사용자 정보 가져오기
   const { data: user, isLoading, error } = useUserQuery();
   const isFinishedUser =
-    (user?.participation?.currentSetNumber ?? 0) >=
-    (user?.participation?.maxAllowedSets ?? Infinity);
+    (user?.currentStatus.currentRoundNumber ?? 0) >
+    (user?.settings.maxAllowedRounds ?? Infinity);
 
+  const isWaitingForAdminApproval =
+    // user?.currentStatus.nextTask === null &&
+    // user?.currentStatus.canStartNextRound === false;
+    user?.currentStatus.canStartNextRound === false;
+
+  const isAllTasksCompleted =
+    user?.currentStatus.currentRoundProgress?.completedPercentage === 100;
   // 구글 폼 URL (실제 URL로 변경 필요)
-  const googleFormUrl =
-    "https://forms.google.com/forms/d/e/YOUR_FORM_ID/viewform";
+  const googleFormUrl = "https://forms.gle/FHkLvP67rapjfFAu5";
 
   // 구글 폼으로 이동
   const handleGoToFeedbackForm = () => {
@@ -66,7 +72,7 @@ const CompletionPage: React.FC = () => {
     );
   }
 
-  // 사용자가 모든 작업이 끝난 상태인 경우
+  // 사용자가 참여 가능한 모든 라운드에서의 모든 작업이 끝난 상태인 경우
   if (isFinishedUser) {
     return (
       <div className={styles.container}>
@@ -98,52 +104,58 @@ const CompletionPage: React.FC = () => {
       </div>
     );
   }
+  if (isWaitingForAdminApproval) {
+    // 정상적인 1라운드 완료 페이지
+    return (
+      <div className={styles.container}>
+        <div className={styles.contentCard}>
+          <div className={styles.iconContainer}>
+            <div className={styles.successIcon}>✅</div>
+          </div>
 
-  // 정상적인 작업 완료 페이지
-  return (
-    <div className={styles.container}>
-      <div className={styles.contentCard}>
-        <div className={styles.iconContainer}>
-          <div className={styles.successIcon}>✅</div>
-        </div>
+          <h1 className={styles.title}>모든 작업이 완료되었습니다!</h1>
 
-        <h1 className={styles.title}>모든 작업이 완료되었습니다!</h1>
-
-        <div className={styles.messageContainer}>
-          <p className={styles.message}>
-            {user?.userName ? `${user.userName}님, ` : ""}수고하셨습니다.
-          </p>
-          <p className={styles.message}>
-            작업 중 불편했던 점이나 개선사항이 있으시면 피드백을 남겨주세요.
-          </p>
-        </div>
-
-        <div className={styles.feedbackSection}>
-          <h2 className={styles.sectionTitle}>음성 피드백 남기기</h2>
-          <p className={styles.sectionDescription}>
-            버튼을 눌러 음성으로 의견을 말씀해주세요.
-          </p>
-
+          <div className={styles.messageContainer}>
+            <p className={styles.message}>
+              {user?.profile.userName ? `${user.profile.userName}님, ` : ""}
+              수고하셨습니다.
+            </p>
+            <p>
+              모든 작업을 완료했습니다. 관리자에 의해 승인될 때까지 기다려
+              주세요.
+            </p>
+            <p className={styles.message}>
+              작업 중 불편했던 점이나 개선사항이 있으시면 피드백을 남겨주세요.
+            </p>
+          </div>
           {/* 음성 녹음 컴포넌트 자리 (사용자가 따로 추가할 예정) */}
-          <div className={styles.voiceRecorderPlaceholder}>
-            <SimpleVoiceRecorder />
+          {/* <div className={styles.feedbackSection}>
+            <h2 className={styles.sectionTitle}>음성 피드백 남기기</h2>
+            <p className={styles.sectionDescription}>
+              버튼을 눌러 음성으로 의견을 말씀해주세요.
+            </p>
+
+
+            <div className={styles.voiceRecorderPlaceholder}>
+              <SimpleVoiceRecorder />
+            </div>
+          </div> */}
+
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>설문 조사 작성하기</h2>
+            {/* <p className={styles.sectionDescription}>설문조사를 작성해주세요.</p> */}
+
+            <button
+              className={styles.primaryButton}
+              onClick={handleGoToFeedbackForm}
+            >
+              구글 폼 열기
+            </button>
           </div>
         </div>
-
-        <div className={styles.formSection}>
-          <h2 className={styles.sectionTitle}>설문 조사 작성하기</h2>
-          {/* <p className={styles.sectionDescription}>설문조사를 작성해주세요.</p> */}
-
-          <button
-            className={styles.primaryButton}
-            onClick={handleGoToFeedbackForm}
-          >
-            구글 폼 열기
-          </button>
-        </div>
       </div>
-    </div>
-  );
+    );
+  }
 };
 
 export default CompletionPage;

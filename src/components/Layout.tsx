@@ -3,10 +3,10 @@ import { useRouter } from "next/router";
 import styles from "@/styles/Layout.module.css";
 import { useIsAuthenticated } from "@/hooks/queries/useUserQueries";
 import { useLogoutUserMutation } from "@/hooks/mutations/useUserMutations";
-import { AdminLogoutButton } from "@/pages/admin/dashboard";
 import AssistantIntro from "@/components/guide/AssistantIntro";
 import VoiceGuide from "@/components/guide/VoiceGuide";
 import MicPermission from "@/components/guide/MicPermission";
+import { useUserQuery } from "@/hooks/queries/useUserQueries";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,6 +34,24 @@ const Layout = ({ children }: LayoutProps) => {
 
   // 인증 상태 확인
   const isAuthenticated = useIsAuthenticated();
+
+  const { data: user, isLoading } = useUserQuery();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      const isInWaitingState = user.currentStatus?.canStartNextRound === false;
+      // user.currentStatus?.nextTask === null &&
+      // user.currentStatus?.canStartNextRound === false;
+
+      const isOnCompletionPage = router.pathname === "/completion";
+
+      const isAdminRoute = router.pathname.includes("/admin");
+
+      if (!isAdminRoute && isInWaitingState && !isOnCompletionPage) {
+        router.replace("/completion");
+      }
+    }
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     const checkAdminCookie = () => {
@@ -298,28 +316,32 @@ const Layout = ({ children }: LayoutProps) => {
       <footer className={styles.footer}>
         <div className={styles.footerContainer}>
           {/* 푸터 - 도움말 버튼 */}
-          <div className={styles.footerButtons}>
-            <button
-              className={styles.footerButton}
-              onClick={() => openGuideModal("assistant")}
-            >
-              비서 소개
-            </button>
-            <button
-              className={styles.footerButton}
-              onClick={() => openGuideModal("voice")}
-            >
-              녹음 안내
-            </button>
-            <button
-              className={styles.footerButton}
-              onClick={() => openGuideModal("method")}
-            >
-              마이크
-              <br />
-              사용
-            </button>
-          </div>
+          {shouldShowHomeButton ? (
+            <div className={styles.footerButtons}>
+              <button
+                className={styles.footerButton}
+                onClick={() => openGuideModal("assistant")}
+              >
+                비서 소개
+              </button>
+              <button
+                className={styles.footerButton}
+                onClick={() => openGuideModal("voice")}
+              >
+                녹음 안내
+              </button>
+              <button
+                className={styles.footerButton}
+                onClick={() => openGuideModal("method")}
+              >
+                마이크
+                <br />
+                사용
+              </button>
+            </div>
+          ) : (
+            <></>
+          )}
 
           {/* 구분선 */}
           <div className={styles.divider}></div>

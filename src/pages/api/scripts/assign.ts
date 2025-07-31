@@ -22,6 +22,7 @@ import {
   getDocByIdTypedAdmin,
   updateDocByIdAdmin,
   saveDocAdmin,
+  docExistsAdmin,
 } from "@/lib/firebase/firestoreAdmin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore"; // 시간용
 
@@ -117,13 +118,13 @@ export default async function handler(
 
     if (existingRound) {
       // 기존 회차가 있으면 항상 서브컬렉션도 있어야 함
-      const existingRoundDetail =
-        await getDocByIdTypedAdmin<ParticipationRound>(
-          `${userCollectionName}/${userId}/rounds`,
-          setNumber.toString()
-        );
+      // 서브컬렉션 문서 존재 여부만 먼저 확인
+      const roundExists = await docExistsAdmin(
+        `${userCollectionName}/${userId}/rounds`,
+        setNumber.toString()
+      );
 
-      if (!existingRoundDetail) {
+      if (!roundExists) {
         // 이는 서브컬렉션이 생성되지 않은 상황 → 새로 생성해야 함
         console.log("🔄 [assign] 서브컬렉션 생성:", { userId, setNumber });
 
@@ -149,8 +150,26 @@ export default async function handler(
           scripts,
         });
       }
+      // 존재하면 데이터 로드
+      const existingRoundDetail =
+        await getDocByIdTypedAdmin<ParticipationRound>(
+          `${userCollectionName}/${userId}/rounds`,
+          setNumber.toString()
+        );
 
-      // 기존 라운드의 스크립트 데이터 조회
+      // null 체크 추가 - 이론적으로는 roundExists가 true이므로 null일 수 없지만 타입 안전성을 위해
+      if (!existingRoundDetail) {
+        console.error(
+          "❌ [assign] 예상치 못한 상황: 문서는 존재하지만 데이터를 가져올 수 없음"
+        );
+        return res.status(500).json({
+          success: false,
+          message: "데이터 로딩 중 오류가 발생했습니다.",
+          scripts: { situational: [], formal: [] },
+        });
+      }
+
+      // 이제 existingRoundDetail은 확실히 ParticipationRound 타입
       const scripts = await getScriptsForSet(existingRoundDetail);
 
       console.log("✅ [assign] 기존 세트 반환:", {
@@ -228,7 +247,7 @@ export default async function handler(
       isTutorialCompleted: userData.currentStatus?.isTutorialCompleted || false,
       currentRoundNumber: setNumber,
       canStartRecording: true,
-      canStartNextRound: false,
+      canStartNextRound: true, //처음 배정하는 건
       hasPendingApproval: false,
       currentRoundProgress: {
         completedPercentage: 0,
@@ -252,7 +271,7 @@ export default async function handler(
     });
 
     // 서브컬렉션에 상세 라운드 데이터 저장
-    await updateDocByIdAdmin(
+    await saveDocAdmin(
       `${userCollectionName}/${userId}/rounds`,
       setNumber.toString(),
       newParticipationRound

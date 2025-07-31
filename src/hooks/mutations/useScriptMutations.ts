@@ -133,6 +133,7 @@ export const useAssignScriptsMutation = (): UseMutationResult<
   Error,
   AssignScriptsRequest
 > => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       userId,
@@ -169,7 +170,30 @@ export const useAssignScriptsMutation = (): UseMutationResult<
       return data as AssignScriptsResponse;
     },
     onSuccess: (data, variables) => {
-      console.log("스크립트 할당 완료:", data);
+      console.log("✅ 스크립트 할당 완료:", data);
+
+      // 🔥 핵심 수정: 관련 쿼리들 모두 무효화
+      // 1. 사용자 쿼리 무효화 (roundSummaries 업데이트됨)
+      queryClient.invalidateQueries({
+        queryKey: ["user", variables.userId],
+      });
+
+      // 2. 현재 라운드 쿼리 무효화 (새 라운드 생성됨)
+      queryClient.invalidateQueries({
+        queryKey: ["currentRound", variables.userId],
+      });
+
+      // 3. 사용자 완료 상태 쿼리도 무효화
+      queryClient.invalidateQueries({
+        queryKey: ["userCompletionStatus", variables.userId],
+      });
+
+      // 4. 최소 사용자 정보도 무효화
+      queryClient.invalidateQueries({
+        queryKey: ["minimalUserInfo", variables.userId],
+      });
+
+      console.log("🔄 관련 쿼리 무효화 완료");
     },
     onError: (error) => {
       console.error("스크립트 할당 중 오류:", error);

@@ -165,7 +165,7 @@ export const useRegisterUserMutation = (): UseMutationResult<
           isTutorialCompleted: false,
           currentRoundNumber: 1,
           canStartRecording: false,
-          canStartNextRound: false,
+          canStartNextRound: true,//생성시에는 허락 
           hasPendingApproval: false,
           currentRoundProgress: {
             completedPercentage: 0,

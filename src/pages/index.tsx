@@ -468,7 +468,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const displayError =
     error ||
     verifyUserMutation.error?.message ||
-    registerUserMutation.error?.message
+    registerUserMutation.error?.message;
 
   // =====================================
   // ========== Rendering =============
@@ -515,6 +515,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
+            <p>음성 녹음은 8월 1일 낮 12시부터 참여하실 수 있습니다.</p>
 
             <div className={styles.inputGroup}>
               <h3>이름</h3>

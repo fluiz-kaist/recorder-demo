@@ -128,7 +128,21 @@ export async function getDocByIdTypedAdmin<T>(
   id: string
 ): Promise<T | null> {
   const data = await getDocByIdAdmin(colName, id);
-  return data as T | null;
+
+  return data as T;
+}
+
+export async function docExistsAdmin(
+  colName: string,
+  id: string
+): Promise<boolean> {
+  try {
+    const docSnap = await adminDb.collection(colName).doc(id).get();
+    return docSnap.exists;
+  } catch (err) {
+    console.error("❌ 문서 존재 확인 실패:", err);
+    return false; // 에러 발생 시 false 반환
+  }
 }
 
 export async function getAllDocsTypedAdmin<T>(
