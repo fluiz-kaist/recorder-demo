@@ -28,8 +28,6 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         return "상황";
       case ScriptType.FORMAL:
         return "포멀";
-      case ScriptType.QA_SCENARIO:
-        return "시나리오";
       default:
         return "기타";
     }
@@ -186,7 +184,7 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
   };
 
   // 타입에 따른 렌더링
-  console.log("여기 스크립트 타입?", scriptType);
+  // console.log("여기 스크립트 타입?", scriptType);
   switch (scriptType) {
     case ScriptType.SITUATIONAL:
       return renderSituationalScript(script as SituationalScript);

@@ -104,14 +104,14 @@ const MainSelectionPage = () => {
       navigator.vibrate(50);
     }
   };
-  console.log("🔍 메인 페이지 상세 상태:", {
-    "authStatus 전체": authStatus,
-    "authStatus.isAuthenticated": authStatus?.isAuthenticated,
-    "authStatus.userId": authStatus?.userId,
-    // "쿠키 직접 확인": document.cookie,
-    "useUserQuery enabled 조건":
-      !!authStatus?.isAuthenticated && !!authStatus?.userId,
-  });
+  // console.log("🔍 메인 페이지 상세 상태:", {
+  //   "authStatus 전체": authStatus,
+  //   "authStatus.isAuthenticated": authStatus?.isAuthenticated,
+  //   "authStatus.userId": authStatus?.userId,
+  //   // "쿠키 직접 확인": document.cookie,
+  //   "useUserQuery enabled 조건":
+  //     !!authStatus?.isAuthenticated && !!authStatus?.userId,
+  // });
   // 키보드 접근성을 위한 핸들러
   const handleKeyDown = (e: React.KeyboardEvent, handler: () => void) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -208,7 +208,7 @@ const MainSelectionPage = () => {
     return null; // 모든 서비스 해금됨
   };
 
-  console.log("인증 정보 로딩 중?", authStatus, completionLoading);
+  // console.log("인증 정보 로딩 중?", authStatus, completionLoading);
   // 사용자 인증 정보 로딩 중
   if (!authStatus?.isAuthenticated || completionLoading) {
     return (
