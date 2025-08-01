@@ -42,7 +42,28 @@ interface OpenAIWhisperResponse {
     no_speech_prob: number;
   }>;
 }
+// 클로징 멘트 제거 함수
+const removeGenericClosings = (text: string): string => {
+  const patterns = [
+    /시청\s*해\s*주셔서\s*감사합니다[.!]?/gi,
+    /영상이\s*도움이\s*되셨다면[^\n\.!?]*[\.!?]?/gi,
+    /구독\s*(과|및)?\s*좋아요[^\n\.!?]*[\.!?]?/gi,
+    /좋아요\s*(와|및)?\s*구독[^\n\.!?]*[\.!?]?/gi,
+    /좋아요\s*눌러\s*주세요[^\n\.!?]*[\.!?]?/gi,
+    /채널\s*구독[^\n\.!?]*[\.!?]?/gi,
+    /알림\s*설정[^\n\.!?]*[\.!?]?/gi,
+    /댓글\s*(도|까지)?\s*부탁드립니다[^\n\.!?]*[\.!?]?/gi,
+    /댓글\s*남겨\s*주세요[^\n\.!?]*[\.!?]?/gi,
+    /다음\s*영상에서\s*만나요[^\n\.!?]*[\.!?]?/gi,
+    /다음\s*시간에\s*뵙겠습니다[^\n\.!?]*[\.!?]?/gi,
+    /구독\s*좋아요\s*댓글[^\n\.!?]*[\.!?]?/gi,
+    /많은\s*관심\s*부탁드립니다[^\n\.!?]*[\.!?]?/gi,
+  ];
 
+  return patterns
+    .reduce((acc, pattern) => acc.replace(pattern, ""), text)
+    .trim();
+};
 // 파일 파싱을 위한 Promise 래퍼
 const parseForm = (
   req: NextApiRequest
@@ -107,7 +128,8 @@ const callWhisperAPI = async (
   audioBuffer: Buffer,
   filename: string,
   model: string = "whisper-1",
-  language?: string
+  language?: string,
+  prompt?: string
 ): Promise<OpenAIWhisperResponse> => {
   const apiKey = process.env.OPENAI_API_KEY;
 
@@ -127,10 +149,15 @@ const callWhisperAPI = async (
     formData.append("language", language);
   }
 
+  // prompt 파라미터
+  if (prompt && prompt !== "") {
+    console.log("프롬", prompt);
+    formData.append("prompt", prompt);
+  }
+
   // 응답 형식을 JSON으로 설정
   formData.append("response_format", "json");
   formData.append("temperature", "0.0"); // 가장 보수적인 설정
-
 
   console.log("[o] OpenAI Whisper API 호출 시작");
 
@@ -268,12 +295,16 @@ export default async function handler(
     // 파일명 설정 (확장자 포함)
     const filename = `audio.${audioFormat}`;
 
+    const prompt =
+      "이 음성은 앱을 실행하거나 정보를 입력하거나 요청하는 실용적인 목적의 발화입니다.";
+
     // OpenAI Whisper API 호출
     const whisperResponse = await callWhisperAPI(
       audioBuffer,
       filename,
       model,
-      language
+      language,
+      prompt
     );
 
     console.log("[o] Whisper API 응답 받음");
@@ -285,9 +316,19 @@ export default async function handler(
         error: "음성을 인식할 수 없습니다. 더 명확하게 말씀해 주세요.",
       });
     }
+    const rawText = whisperResponse.text.trim();
+    const cleanedText = removeGenericClosings(rawText);
+
+    if (!cleanedText || cleanedText.trim() === "") {
+      return res.status(200).json({
+        success: false,
+        error:
+          "유효한 발화가 인식되지 않았습니다. 구체적으로 다시 말씀해 주세요.",
+      });
+    }
 
     const transcription: WhisperTranscriptionResult = {
-      transcript: whisperResponse.text.trim(),
+      transcript: cleanedText,
       // Whisper API는 기본적으로 confidence를 제공하지 않음
       // 필요한 경우 segments의 avg_logprob을 사용하여 계산할 수 있음
     };

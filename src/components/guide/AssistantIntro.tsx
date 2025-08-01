@@ -23,7 +23,7 @@ const AssistantIntro: React.FC = () => {
       <div className={styles.descriptionSection}>
         <p className={styles.mainDescription}>
           이 비서는 <strong>여러분의 말을 듣고, </strong>
-          <span className={styles.highlight}>일을 대신해줍니다.</span>
+          <span className={styles.highlight}>일을 대신해</span>줍니다.
         </p>
       </div>
 

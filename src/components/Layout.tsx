@@ -7,7 +7,7 @@ import AssistantIntro from "@/components/guide/AssistantIntro";
 import VoiceGuide from "@/components/guide/VoiceGuide";
 import MicPermission from "@/components/guide/MicPermission";
 import { useUserQuery } from "@/hooks/queries/useUserQueries";
-
+import { useTaskTracking } from "@/hooks/useTaskTracking";
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -36,6 +36,9 @@ const Layout = ({ children }: LayoutProps) => {
   const isAuthenticated = useIsAuthenticated();
 
   const { data: user, isLoading } = useUserQuery();
+
+  const { submitPendingData, endTracking, clearAllTrackingData } =
+    useTaskTracking();
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -150,6 +153,44 @@ const Layout = ({ children }: LayoutProps) => {
     setGuideModalType(type);
     setShowGuideModal(true);
   };
+
+  // 추적 데이터 처리 함수 추가
+  const handleLogoutWithTracking = async () => {
+    try {
+      // 현재 진행 중인 추적 종료
+      endTracking("logout");
+
+      // 모든 미제출 데이터 제출
+      const result = await submitPendingData();
+      console.log(`로그아웃 ; ${result.totalCount}개 제출 완료`);
+
+      // 혹시 남은 데이터 정리
+      clearAllTrackingData();
+    } catch (error) {
+      console.error("로그아웃 시 추적 데이터 처리 실패:", error);
+      // 실패해도 로그아웃은 진행
+    }
+
+    // 기존 로그아웃 실행
+    handleLogout();
+  };
+
+  // 버튼에서 사용
+  <button
+    className={styles.logoutButton}
+    onClick={() => {
+      triggerHapticFeedback();
+      handleLogoutWithTracking();
+    }}
+    onKeyDown={(e) => handleKeyDown(e, handleLogoutWithTracking)}
+  >
+    <span className={styles.logoutIcon}>
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+      </svg>
+    </span>
+    <span className={styles.logoutText}>작업 종료하기</span>
+  </button>;
 
   const renderGuideModal = () => {
     if (!showGuideModal) return null;
@@ -291,9 +332,9 @@ const Layout = ({ children }: LayoutProps) => {
               className={styles.logoutButton}
               onClick={() => {
                 triggerHapticFeedback();
-                handleLogout();
+                handleLogoutWithTracking();
               }}
-              onKeyDown={(e) => handleKeyDown(e, handleLogout)}
+              onKeyDown={(e) => handleKeyDown(e, handleLogoutWithTracking)}
             >
               <span className={styles.logoutIcon}>
                 <svg viewBox="0 0 24 24" fill="currentColor">

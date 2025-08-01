@@ -28,8 +28,6 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         return "상황";
       case ScriptType.FORMAL:
         return "포멀";
-      case ScriptType.QA_SCENARIO:
-        return "시나리오";
       default:
         return "기타";
     }
@@ -82,18 +80,17 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         )} */}
 
         {/* 서비스 정보 표시 */}
-        <div className={styles.serviceInfo}>
+        {/* <div className={styles.serviceInfo}>
           <span className={styles.serviceName}>{script.service_name}</span>
           <span className={styles.serviceTarget}>
-            {" "}
             • {script.service_target}
           </span>
-        </div>
+        </div> */}
 
         {/* 태스크 이름 */}
-        <h2 className={styles.taskName}>{script.task_name}</h2>
+        {/* <h2 className={styles.taskName}>{script.task_name}</h2> */}
       </div>
-
+      {/* 메인 콘텐츠 */}
       <div
         className={`${styles.formalSentenceSection} ${
           isCompleted ? styles.completedOverlay : ""
@@ -187,7 +184,7 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
   };
 
   // 타입에 따른 렌더링
-  console.log("여기 스크립트 타입?", scriptType);
+  // console.log("여기 스크립트 타입?", scriptType);
   switch (scriptType) {
     case ScriptType.SITUATIONAL:
       return renderSituationalScript(script as SituationalScript);

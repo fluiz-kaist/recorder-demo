@@ -1,0 +1,77 @@
+[
+  {
+    "service_name": "교통",
+    "service_target": "고속버스",
+    "task_name": "고속버스표 예매",
+    "task_key": "교통-고속버스-1",
+    "main_content": "고속버스를 타고 다른 지역에 가려고 합니다.\n터미널 직원에게 고속버스 표를 예매할 때 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "어디를 가려고 하는지는 자유롭게 말씀하셔도 됩니다. 평소처럼 편하게 말씀해주세요.",
+    "id": 3
+  },
+  {
+    "service_name": "건강",
+    "service_target": "건강정보",
+    "task_name": "건강 정보 기록",
+    "task_key": "건강-건강정보-1",
+    "main_content": "건강 앱에 오늘 먹은 식단을 입력하려 합니다.\n비서에게 그 정보를 대신 입력해달라고 시킬 때, 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "오늘 언제 무엇을 먹었는지는 자유롭게 정해서 말씀해주세요.",
+    "id": 1
+  },
+
+  {
+    "service_name": "메시지",
+    "service_target": "메신저",
+    "task_name": "단문 메시지 전송",
+    "task_key": "메시지-메신저-1",
+    "main_content": "누군가에게 짧은 메시지를 전송하고 싶은데, 지금은 손을 쓸 수 없는 상황입니다.\n비서에게 메세지를 읊어주고 대신 보내달라고 하고 싶을 때, 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "누구에게 어떤 내용의 메시지를 보낼지는 자유롭게 정해서 말씀해주세요.",
+    "id": 14
+  },
+
+  {
+    "service_name": "생활",
+    "service_target": "생필품",
+    "task_name": "물건 구매",
+    "task_key": "생활-생필품-1",
+    "main_content": "필요한 생필품이 몇 가지 있습니다. \n비서에게 대신 인터넷에서 주문해달라고 시킬 때, 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "어떤 물건을 사고 싶은지, 평소처럼 편하게 말씀해주시면 됩니다.",
+    "id": 19
+  },
+
+  {
+    "service_name": "은행",
+    "service_target": "은행",
+    "task_name": "공과금 납부",
+    "task_key": "은행-은행-1",
+    "main_content": "이번 달 공과금을 내야 합니다.\n나 대신 은행 앱을 다룰 수 있는 비서에게 공과금을 납부하라고 시킬 때, 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "어떤 공과금을 내야 하는지는 자유롭게 정해서 말씀해주세요.",
+    "id": 12
+  },
+  {
+    "service_name": "의료",
+    "service_target": "병원",
+    "task_name": "주변 병원 찾기",
+    "task_key": "의료-병원-1",
+    "main_content": "우리집 주변에 어떤 병원이 있는지 궁금합니다.\n비서에게 대신 찾아보라고 시키고 싶을 때, 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "어떤 병원을 왜 찾고 싶은지 자유롭게 정해서 말씀하셔도 괜찮습니다.",
+    "id": 23
+  },
+  {
+    "service_name": "이동정보",
+    "service_target": "지도",
+    "task_name": "예상소요시간 질의",
+    "task_key": "이동정보-지도-1",
+    "main_content": "처음 가는 길이라 얼마나 걸릴지 잘 모르겠습니다.\n이동에 걸리는 시간을 대신 알아봐달라고 요청할 때, 비서에게 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "어디서 어디로 가는 길인지는 마음대로 설정해서 말씀해주세요.",
+    "id": 25
+  },
+  {
+    "service_name": "영상",
+    "service_target": "영상",
+    "task_name": "구독피드 최신영상 재생요청",
+    "task_key": "영상-영상-2",
+    "main_content": "내가 구독하고 있는 영상 채널에 올라온 가장 최신 영상을 보고 싶습니다.\n비서에게 대신 틀어달라고 시킬 때, 뭐라고 말씀하시겠어요?",
+    "detailed_instruction": "구독하고 있는 채널이나 보고 싶은 영상은 자유롭게 정해서 말씀해주세요.",
+    "id": 22
+  }
+]

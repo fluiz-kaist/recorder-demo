@@ -1,4 +1,4 @@
-// components/script/ScriptContainer.tsx - 리팩터링 버전 (상황→정형 순차 진행)
+// components/script/ScriptContainer.tsx - 작업 추적 통합 버전
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/ScriptRecording.module.css";
@@ -14,12 +14,15 @@ import { ScriptRenderer } from "@/components/script/ScriptRenderer";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { getNextServiceSlug, ServiceName } from "@/lib/serviceMapping";
 import { User, ParticipationRound, Task, TaskStatus } from "@/types/user";
+import { useTaskTracking } from "@/hooks/useTaskTracking";
+import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
+
 export interface MergedScript {
   scriptType: "situational" | "formal";
   situation?: SituationalScript;
   formal?: FormalScript[];
 }
-import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
+
 type AnyScript = SituationalScript | FormalScript;
 
 interface FlatScript {
@@ -30,6 +33,7 @@ interface FlatScript {
 interface ScriptContainerProps {
   scripts: MergedScript[];
 }
+
 export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   scripts,
 }) => {
@@ -39,6 +43,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   const [reRecordingScripts, setReRecordingScripts] = useState<Set<string>>(
     new Set()
   );
+
   const { data: authStatus } = useAuthStatusQuery();
   const { data: fullUser, isLoading: isUserLoading } = useUserQuery(
     authStatus?.userId
@@ -47,21 +52,17 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   const { data: currentRound, isLoading: isRoundLoading } =
     useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
 
-  console.log("🔍 currentRound 쿼리 키:", [
-    "currentRound",
-    authStatus?.userId,
+  // 작업 추적 훅 초기화
+  const { startTracking, endTracking, submitPendingData } = useTaskTracking(
+    authStatus?.userId || undefined,
     currentRoundNumber,
-  ]);
-
-  // 통합 로딩 상태
-  const isLoading = isUserLoading || isRoundLoading;
-
-  // fullUser 상태 확인
-  useEffect(() => {
-    console.log("🔍 fullUser 전체 구조:", {
-      fullUser: fullUser,
-    });
-  }, [fullUser]);
+    fullUser?.profile
+      ? {
+          ageGroup: fullUser.profile.ageGroup,
+          gender: fullUser.profile.gender,
+        }
+      : undefined
+  );
   const scrollToTop = useScrollToTop();
 
   const flatScriptList: FlatScript[] = useMemo(() => {
@@ -79,7 +80,70 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
   const current = flatScriptList[scriptIndex];
 
-  //  실제 tasks 배열에서 직접 상태 확인
+  //  스크립트 변경 시 추적 시작
+  // 🎯 스크립트 변경 시 추적 시작 - 디바운스 적용
+  useEffect(() => {
+    if (
+      !current ||
+      !authStatus?.userId ||
+      !currentRoundNumber ||
+      !fullUser?.profile
+    ) {
+      return;
+    }
+
+    const taskKey = String(
+      "task_key" in current.script && current.script.task_key
+        ? current.script.task_key
+        : "id" in current.script && current.script.id
+        ? current.script.id
+        : ""
+    );
+
+    if (taskKey) {
+      // 렌더링 직후가 아니라 약간의 지연 후 추적 시작
+      const timer = setTimeout(() => {
+        console.log("🎯 새 스크립트 추적 시작:", {
+          taskKey,
+          type: current.type,
+          index: scriptIndex,
+        });
+
+        startTracking(taskKey, current.type);
+      }, 100); // 100ms 지연
+
+      return () => {
+        clearTimeout(timer);
+        // 컴포넌트 언마운트 시에만 추적 종료
+      };
+    }
+  }, [
+    scriptIndex,
+    current,
+    authStatus?.userId,
+    currentRoundNumber,
+    fullUser?.profile,
+    startTracking,
+  ]);
+
+  // 페이지 이탈 시 미제출 데이터 처리
+  // useEffect(() => {
+  //   const handleRouteChange = () => {
+  //     endTracking("navigation");
+  //     // 페이지 이동 시 미제출 데이터 백그라운드 제출
+  //     submitPendingData().catch(console.error);
+  //   };
+
+  //   router.events.on("routeChangeStart", handleRouteChange);
+
+  //   return () => {
+  //     router.events.off("routeChangeStart", handleRouteChange);
+  //   };
+  // }, [router.events, endTracking, submitPendingData]);
+
+  // 통합 로딩 상태
+  const isLoading = isUserLoading || isRoundLoading;
+
   const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
     // 재녹음 모드 체크
     const taskKey = String(
@@ -95,7 +159,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       return false;
     }
 
-    // currentRound 사용
     if (!currentRound?.tasks) {
       return false;
     }
@@ -107,19 +170,10 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
     const matchedTask = tasks.find((task) => String(task.taskKey) === taskKey);
 
-    console.log("🔍 완료 상태 체크:", {
-      taskKey,
-      type,
-      tasks,
-      matchedTask,
-      status: matchedTask?.status,
-    });
-
     if (!matchedTask) {
       return false;
     }
 
-    // 신규: TaskStatus enum 사용
     const completedStatuses = [
       TaskStatus.COMPLETED,
       TaskStatus.SUBMITTED,
@@ -128,16 +182,16 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return completedStatuses.includes(matchedTask.status);
   };
 
-  // 전체 진행률 계산 (실제 tasks 배열 기반)
   const getProgressPercentage = (): number => {
-    if (!currentRound?.progress) {
+    if (flatScriptList.length === 0) {
       return 0;
     }
 
-    return Math.round(
-      (currentRound.progress.approvedTasks / currentRound.progress.totalTasks) *
-        100
-    );
+    const completedCount = flatScriptList.filter(({ script, type }) =>
+      isScriptCompleted(script, type)
+    ).length;
+
+    return Math.round((completedCount / flatScriptList.length) * 100);
   };
 
   // 로딩 상태 처리
@@ -148,8 +202,8 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       </div>
     );
   }
+
   if (!currentRound) {
-    console.log("여기임? 1", currentRound);
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingText}>
@@ -170,17 +224,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   }
 
   const completed = isScriptCompleted(current.script, current.type);
-  // 🔥 이 부분 추가 - 상태 변화 모니터링
 
-  console.log("🔍 상세 디버깅:", {
-    authStatus: authStatus,
-    "authStatus?.isAuthenticated": authStatus?.isAuthenticated,
-    "authStatus?.userId": authStatus?.userId,
-    "!!authStatus?.userId": !!authStatus?.userId,
-    "useUserQuery enabled 조건":
-      !!authStatus?.isAuthenticated && !!authStatus?.userId,
-  });
-  // 2. ✅ 함수 추가 (isScriptCompleted 함수 아래에)
   const handleStartReRecording = () => {
     const taskKey = String(
       "task_key" in current.script && current.script.task_key
@@ -212,7 +256,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     setShowRecorder(false);
   };
 
-  // 3. ✅ 재녹음 모드 확인 함수 추가
   const isInReRecordingMode = (): boolean => {
     const taskKey = String(
       "task_key" in current.script && current.script.task_key
@@ -226,14 +269,11 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return reRecordingScripts.has(scriptKey);
   };
 
-  // 다음 버튼 활성화 조건 함수
   const canGoToNext = (): boolean => {
-    // 마지막 스크립트면 항상 비활성화
     if (scriptIndex === flatScriptList.length - 1) {
       return false;
     }
 
-    // 현재 스크립트가 완료되지 않았으면 다음으로 못감
     const currentCompleted = isScriptCompleted(current.script, current.type);
 
     if (!currentCompleted) {
@@ -243,31 +283,55 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return true;
   };
 
-  // 디버깅용 로그
-  console.log("🔍 현재 스크립트 정보:", {
-    index: scriptIndex,
-    taskKey: current.script.task_key || current.script.id,
-    type: current.type,
-    completed,
-  });
-
+  // 🎯 다음 스크립트로 이동 (추적 종료 및 새 추적 시작)
   const handleNextScript = () => {
     if (scriptIndex < flatScriptList.length - 1) {
+      // 현재 추적 종료
+      endTracking("next_button");
+
+      // 다음 스크립트로 이동
       setScriptIndex((prev) => prev + 1);
       setShowRecorder(false);
       scrollToTop();
+
+      console.log("🎯 다음 스크립트로 이동:", {
+        from: scriptIndex,
+        to: scriptIndex + 1,
+      });
     }
   };
 
+  // 🎯 이전 스크립트로 이동
   const handlePrevScript = () => {
     if (scriptIndex > 0) {
+      // 현재 추적 종료
+      endTracking("prev_button");
+
+      // 이전 스크립트로 이동
       setScriptIndex((prev) => prev - 1);
       setShowRecorder(false);
       scrollToTop();
+
+      console.log("🎯 이전 스크립트로 이동:", {
+        from: scriptIndex,
+        to: scriptIndex - 1,
+      });
     }
   };
 
-  const goBack = () => router.push("/");
+  //  뒤로가기 (추적 종료 및 미제출 데이터 처리)
+  const goBack = async () => {
+    endTracking("back_button");
+
+    // 백그라운드에서 미제출 데이터 처리
+    // try {
+    //   await submitPendingData();
+    // } catch (error) {
+    //   console.error("뒤로가기 시 데이터 제출 실패:", error);
+    // }
+
+    router.push("/");
+  };
 
   return (
     <div className={styles.container}>
@@ -390,7 +454,7 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
             </button>
           </div>
 
-          {/* ✅ 마지막 스크립트이고 완료 상태일 때, 다음 주제로 바로가기 버튼 표시 */}
+          {/* 마지막 스크립트이고 완료 상태일 때, 다음 주제로 바로가기 버튼 표시 */}
           {scriptIndex === flatScriptList.length - 1 &&
             completed &&
             (() => {
@@ -401,7 +465,12 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                 <div className={styles.nextTopicWrapper}>
                   <button
                     className={styles.nextTopicButton}
-                    onClick={() => router.push(`/recording/${nextSlug}`)}
+                    onClick={() => {
+                      //  다음 주제로 이동 시 추적 종료
+                      endTracking("next_topic");
+                      // submitPendingData().catch(console.error);
+                      router.push(`/recording/${nextSlug}`);
+                    }}
                   >
                     다음 주제 녹음하러 가기
                   </button>
@@ -411,17 +480,15 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
                   <div className={styles.congratulationsMessage}>
                     <h3>모든 녹음을 완료했습니다!</h3>
                     <p>수고하셨습니다.</p>
-
                     <CompletionAllTasksBtn />
                   </div>
                 </>
-              ); // 마지막 서비스일 경우 버튼 없음
+              );
             })()}
 
-          {/*  진행 안내 메시지 추가 */}
+          {/* 진행 안내 메시지 */}
           {!completed && (
             <div className={styles.progressHint}>
-              {/* <div className={styles.hintIcon}>📝</div> */}
               <div className={styles.hintText}>
                 녹음을 완료하고 제출해야 다음으로 넘어갈 수 있습니다.
               </div>

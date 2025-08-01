@@ -316,12 +316,20 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               <p className={styles.next}>
                 계속해서 [다음] 버튼을 눌러서 진행해주세요!
               </p>
+              <p className={styles.next}>
+                <br />위 내용은 작업 중 하단의 [비서 소개] 버튼을 눌러 언제든
+                다시 볼 수 있습니다
+              </p>
             </div>
           )}
 
           {currentStep === TutorialStep.VOICE_GUIDE && (
             <div className={styles.card}>
               <VoiceGuide />
+              <p className={styles.next}>
+                위 내용은 작업 중 하단의 [음성 안내] 버튼을 눌러 언제든 다시 볼
+                수 있습니다
+              </p>
             </div>
           )}
 
@@ -363,6 +371,10 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
                 isGranted={micPermissionGranted}
                 onRequestPermission={requestMicPermission}
               />
+              <p className={styles.next}>
+                <br />위 내용은 작업 중 하단의 [마이크 사용법] 버튼을 눌러
+                언제든 다시 볼 수 있습니다
+              </p>
             </div>
           )}
 

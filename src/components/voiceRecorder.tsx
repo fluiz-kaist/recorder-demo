@@ -70,12 +70,12 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   onAllScriptsComplete,
   completedScriptsCount,
 }) => {
-  console.log("[VoiceRecorder] props:", {
-    scriptType,
-    scriptData,
-    totalScriptsCount,
-    completedScriptsCount,
-  });
+  // console.log("[VoiceRecorder] props:", {
+  //   scriptType,
+  //   scriptData,
+  //   totalScriptsCount,
+  //   completedScriptsCount,
+  // });
   // =================================
   // ========== 상태 관리 =============
   // ===================================
@@ -233,19 +233,27 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       setAudioDuration(recordingTime);
 
-      // 즉시 간단한 품질 검증 (1-5ms 완료)
-      const quality = validateAudioQualitySimple(audioBlob, recordingTime);
-      setQualityResult(quality);
+      // 품질 검증 + VAD 처리 동시 실행
+      const processAudioQuality = async () => {
+        const quality = await validateAudioQualitySimple(
+          audioBlob,
+          recordingTime
+        );
+        setQualityResult(quality);
+        // quality 결과에 VAD 처리된 오디오도 포함됨
 
-      if (quality.isGoodQuality) {
-        console.log("✅ 품질 검증 통과 - STT 진행");
-        setShowSTT(true);
-        setHasSTTStarted(true);
-      } else {
-        console.log("⚠️ 품질 검증 실패 - 사용자에게 경고 표시");
-        setShowQualityWarning(true);
-      }
-
+        // 🔥 품질 검증 결과에 따른 처리를 async 함수 안으로 이동
+        if (quality.isGoodQuality) {
+          console.log("✅ 품질 검증 통과 - STT 진행");
+          setShowSTT(true);
+          setHasSTTStarted(true);
+        } else {
+          console.log("⚠️ 품질 검증 실패 - 사용자에게 경고 표시");
+          setShowQualityWarning(true);
+        }
+      };
+      // 함수 호출
+      processAudioQuality();
       // 오디오 메타데이터 로드 (더 정확한 duration, 선택사항)
       if (url) {
         setTimeout(() => {
@@ -567,7 +575,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         taskKey: typedScript.task_key, // "건강-건강정보-1"
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
-        audioBlob,
+        audioBlob: qualityResult?.processedBlob || audioBlob, // ← 처리된 오디오 사용
 
         // === 녹음 세션 정보 (새로 추가) ===
         recordingStartedAt: recordingStartTime.toISOString(),
@@ -593,6 +601,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
         audioFormat: AudioFormat.WAV, // 오디오 포맷
         deviceInfo: navigator.userAgent, // 녹음 기기 정보
+
+        // 🔥 VAD 관련 데이터 flat하게 추가
+        vadApplied: qualityResult?.vadApplied || false,
+        originalDuration: recordingTime,
+        processedDuration: qualityResult?.processedDuration || actualDuration,
+        silenceRemoved: qualityResult?.silenceRemoved || 0,
+        compressionRatio: qualityResult?.compressionRatio || 1.0,
+        speechSegments: qualityResult?.speechSegments || 1,
+        qualityScore: qualityResult?.score || 70,
+        qualityIssues: qualityResult?.issues || [],
+        qualityRecommendations: qualityResult?.recommendations || [],
       });
       console.log("오디오 업로드 완료:", uploadResult);
 
@@ -609,7 +628,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         status: "completed", // 또는 "in_progress", "not_started"
         audioRecordId: uploadResult.recordingId,
-        recordingDuration: actualDuration
+        recordingDuration: actualDuration,
       });
       console.log("✅ completeResult:", completeResult);
 

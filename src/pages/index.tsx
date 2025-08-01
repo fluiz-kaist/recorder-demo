@@ -117,7 +117,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [userInput, setUserInput] = useState<UserInput>({
     name: "",
     socialNumber: "",
-    gender: "남성",
+    gender: "" as "남성" | "여성",
     ageGroup: "",
     hasConsented: false,
   });
@@ -126,7 +126,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [isProcessed, setIsProcessed] = useState<boolean>(false);
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
-
+  const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
   // =================================
   // ========== 함수 =============
   // =================================
@@ -592,14 +592,29 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
 
           {/* Consent Section */}
           <div className={styles.consentSection}>
-            <h2>이용약관 및 개인정보처리방침</h2>
-            <div className={styles.consentBox}>
-              <div className={styles.consentContent}>
-                {consentText.split("\n").map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))}
+            <h2
+              onClick={() => setIsConsentExpanded(!isConsentExpanded)}
+              style={{
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              이용약관 및 개인정보처리방침
+              <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                {isConsentExpanded ? "접기" : "[약관 보기]"}
+              </span>
+            </h2>
+
+            {isConsentExpanded && (
+              <div className={styles.consentBox}>
+                <div className={styles.consentContent}>
+                  {consentText.split("\n").map((line, index) => (
+                    <p key={index}>{line}</p>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <div className={styles.consentCheckbox}>
               <label className={styles.checkboxLabel}>
                 <input

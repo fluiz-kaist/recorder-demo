@@ -5,16 +5,25 @@ import { updateDocById, getDocById } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import styles from "@/styles/CompletionBtn.module.css";
 import { RoundStatus } from "@/types/user";
-
+import { useTaskTracking } from "@/hooks/useTaskTracking";
 // 생략된 import 부분 동일
 
 const CompletionAllTasksBtn = () => {
   const router = useRouter();
   const { data: user } = useUserQuery();
   const updateUserMutation = useUpdateUserMutation();
+  const { submitPendingData, manager } = useTaskTracking();
 
   const handleCompleteAndProceed = async () => {
     if (!user) return;
+
+    try {
+      const result = await submitPendingData();
+      console.log(`📤 ${result.totalCount}개 제출 완료 (로컬에서 자동 삭제)`);
+    } catch (error) {
+      console.error(error);
+      // 실패해도 조용히 넘어감
+    }
 
     const roundProgress = user.currentStatus.currentRoundProgress;
     console.log(roundProgress.completedPercentage, user.currentStatus.nextTask);
@@ -44,7 +53,7 @@ const CompletionAllTasksBtn = () => {
       console.groupEnd();
 
       if (!roundData || !roundData.tasks) {
-        alert("현재 라운드 정보를 불러오지 못했습니다.");
+        alert("현재 진행 회차 정보를 불러오지 못했습니다.");
         return;
       }
 

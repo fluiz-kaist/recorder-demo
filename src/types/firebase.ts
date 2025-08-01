@@ -3,7 +3,6 @@
 import { FieldValue, Timestamp } from "firebase/firestore";
 export enum ScriptType {
   FORMAL = "formal", // 정식/공식 (이미지에서 보이는 것)
-  QA_SCENARIO = "qaScenario", // 질의응답 시나리오
   SITUATIONAL = "situational", // 상황별 스크립트
   TUTORIAL = "tutorial",
 }

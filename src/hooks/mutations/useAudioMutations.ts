@@ -143,6 +143,16 @@ export const useUploadAudioMutation = (): UseMutationResult<
       sttTranscription,
       audioFormat = AudioFormat.WAV,
       deviceInfo,
+      // VAD 관련 파라미터
+      vadApplied = false,
+      originalDuration,
+      processedDuration,
+      silenceRemoved = 0,
+      compressionRatio = 1.0,
+      speechSegments = 1,
+      qualityScore = 70,
+      qualityIssues = [],
+      qualityRecommendations = [],
     }: AudioUploadMutationRequest): Promise<AudioUploadResponse> => {
       // 1. 고유한 recording ID 생성
       const recordingId = `${userId}_${taskKey.replace(
@@ -211,6 +221,32 @@ export const useUploadAudioMutation = (): UseMutationResult<
           audioFormat,
           deviceInfo: deviceInfo || "undefined_device",
           qualityGrade: qualityAnalysis.qualityGrade,
+
+          // VAD 처리 정보
+          vadProcessing: vadApplied
+            ? {
+                applied: true,
+                originalDuration: originalDuration || actualDuration,
+                processedDuration: processedDuration || actualDuration,
+                silenceRemoved: silenceRemoved || 0,
+                compressionRatio: compressionRatio || 1.0,
+                speechSegments: speechSegments || 1,
+                qualityImprovement: Math.max(0, qualityScore - 70),
+              }
+            : {
+                applied: false,
+                originalDuration: actualDuration,
+                processedDuration: actualDuration,
+                silenceRemoved: 0,
+                compressionRatio: 1.0,
+                speechSegments: 1,
+                qualityImprovement: 0,
+              },
+
+          // 품질 평가 결과
+          qualityScore,
+          qualityIssues,
+          qualityRecommendations,
         },
         fileName,
         verificationStatus: VerificationStatus.PENDING,
@@ -265,4 +301,3 @@ export const useUploadAudioMutation = (): UseMutationResult<
     },
   });
 };
-

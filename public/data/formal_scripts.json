@@ -3,7 +3,7 @@
     "1": [
       {
         "service_name": "건강",
-        "formal_script": "7월 21일 아침에 죽이랑 반찬 조금 먹었어, 입력해 줘",
+        "formal_script": "7월 21일 아침에 소고기 버섯죽이랑 열무김치랑 함께 먹었어. 점심에는 친구랑 삼계탕을 먹었고. 손목닥터에 입력해 줘",
         "set-id": 1,
         "service_target": "건강정보",
         "task_name": "건강정보입력(식사기록)",
@@ -14,7 +14,7 @@
     "2": [
       {
         "service_name": "건강",
-        "formal_script": "오늘 아침에 요구르트로 간식 먹었어, 기록해 줘",
+        "formal_script": "오늘 아침에 손녀가 준 요구르트랑 사과 깎아서 먹었어. 손목닥터에 이 식단을 기록해 줘",
         "set-id": 2,
         "service_target": "건강정보",
         "task_name": "건강정보입력(간식기록)",
@@ -27,7 +27,7 @@
     "1": [
       {
         "service_name": "건강",
-        "formal_script": "내가 어젯밤에 몇시간이나 잤어?",
+        "formal_script": "내가 어제 몇 시에 자기 시작해서 몇시간이나 잤어?",
         "set-id": 1,
         "service_target": "건강정보",
         "task_name": "건강 정보 확인(고정)",
@@ -38,7 +38,7 @@
     "2": [
       {
         "service_name": "건강",
-        "formal_script": "오늘 오늘 몇 걸음 걸었어?",
+        "formal_script": "오늘 하루종일 몇 걸음 걸었어? 어제는 얼마나 걸었어?",
         "set-id": 2,
         "service_target": "건강정보",
         "task_name": "건강 정보 확인(고정)",
@@ -51,7 +51,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "서울고속터미널에서 포항터미널으로 가는 고속버스 좌석 예약해 줘",
+        "formal_script": "우리 아들 집에 갈 건데, 서울고속터미널에서 포항터미널으로 가는 고속버스 좌석 하나 예약해 줘",
         "set-id": 1,
         "service_target": "고속버스",
         "task_name": "고속버스표 예매",
@@ -62,7 +62,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "주말 오전 중에 인천종합터미널에서 서울로 오는 고속버스표 표 좀 잡아 줘",
+        "formal_script": "토요일 오전 중에 인천종합터미널에서 서울로 오는 고속버스 표 두 개 잡아줘.",
         "set-id": 2,
         "service_target": "고속버스",
         "task_name": "고속버스표 예매",
@@ -75,7 +75,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "며칠전에 예약했던 고속버스 좌석 취소해 줘",
+        "formal_script": "며칠전에 예약했던 고속버스 좌석 있지, 그거 취소해 줘",
         "set-id": 1,
         "service_target": "고속버스",
         "task_name": "고속버스표 취소",
@@ -86,7 +86,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "고속버스표 잡았던 좌석 예약 취소해 줘",
+        "formal_script": "이번주 금요일에 가려고 했던 고속버스 두자리 자리 잡았던 거, 취소해 줘",
         "set-id": 2,
         "service_target": "고속버스",
         "task_name": "고속버스표 취소",
@@ -99,7 +99,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "센트럴시티에서 논산으로 가는 고속버스 예약한 티켓 보여 줘",
+        "formal_script": "버스 타야 하는데, 센트럴시티에서 논산으로 가는 고속버스 예약한 티켓을 내 핸드폰 화면에 띄워서 보여 줘.",
         "set-id": 1,
         "service_target": "고속버스",
         "task_name": "고속버스표 발권",
@@ -110,7 +110,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "서울경부에서 부산으로 가는 고속버스 예매한 좌석 찾아 줘",
+        "formal_script": "서울경부에서 부산으로 가는 고속버스 예매한 좌석 발권해서 내 핸드폰 화면에 띄워줘.",
         "set-id": 2,
         "service_target": "고속버스",
         "task_name": "고속버스표 발권",
@@ -123,7 +123,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "수서역에서 순천역으로 가는 SRT열차 예매해 줘",
+        "formal_script": "우리 손녀 보러 갈건데 수서역에서 순천역으로 가는 기차를 예매해 줘.",
         "set-id": 1,
         "service_target": "기차",
         "task_name": "기차표 예매(SRT)",
@@ -134,7 +134,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "내일 오전 8시에 수서역에서 부산역으로 가는 SRT기차 티켓 예매해 줘",
+        "formal_script": "내일 오전 8시에 수서역에서 부산역으로 가는 기차 티켓 예매해 줘",
         "set-id": 2,
         "service_target": "기차",
         "task_name": "기차표 예매(SRT)",
@@ -147,7 +147,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "SRT기차 끊었던 거 기차 예매 취소해 줘",
+        "formal_script": "SRT기차 끊었던 거, 이번주 목요일 오전에 가려고 했던 기차 예매 취소해 줘.",
         "set-id": 1,
         "service_target": "기차",
         "task_name": "기차표 취소(SRT)",
@@ -158,7 +158,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "SRT기차 예약했던 거 그 티켓 취소해 줘",
+        "formal_script": "SRT기차 예약했던 거, 저번주에 끊었던 다음주 목요일에 가려고 예약했던 티켓 취소해 줘.",
         "set-id": 2,
         "service_target": "기차",
         "task_name": "기차표 취소(SRT)",
@@ -171,7 +171,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "수서역에서 여수EXPO으로 가는 SRT열차 예매한 기차표 찾아 줘",
+        "formal_script": "수서역에서 여수EXPO으로 가는 SRT열차 저번에 예매했는데. 그거 예매한 기차표 찾아서 내 핸드폰에서 발권해줘.",
         "set-id": 1,
         "service_target": "기차",
         "task_name": "기차표 발권(SRT)",
@@ -182,7 +182,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "대구역에서 부산역으로 가는 SRT열차 기차 티켓 보여줘",
+        "formal_script": "대구역에서 부산역으로 가는 SRT열차 기차 티켓 보여줘.",
         "set-id": 2,
         "service_target": "기차",
         "task_name": "기차표 발권(SRT)",
@@ -195,7 +195,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "우리 집에서 서울대병원으로 가는 택시 오게 해줘",
+        "formal_script": "병원 가야 하니까, 우리 집에서 서울대병원으로 가는 택시 하나 불러줘.",
         "set-id": 1,
         "service_target": "택시",
         "task_name": "택시 호출",
@@ -206,7 +206,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "우리 집에서 아들 집으로 가는 택시 불러줘",
+        "formal_script": "우리 집에서 아들 집으로 가는 택시 오게 해줘.",
         "set-id": 2,
         "service_target": "택시",
         "task_name": "택시 호출",
@@ -219,7 +219,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "딸한테 걱정 안 하게 안전문자를 보내줘",
+        "formal_script": "지금 가는 길인데 늦게 가서 딸이 걱정하고 있을 거 같네. 걱정 안 하게 안전문자를 보내줘",
         "set-id": 1,
         "service_target": "택시",
         "task_name": "안전 문자 전송",
@@ -230,7 +230,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "큰아들한테 택시 탔다고 안전문자 보내줘",
+        "formal_script": "큰아들한테 택시 잘 탔다고 안전문자 보내줘.",
         "set-id": 2,
         "service_target": "택시",
         "task_name": "안전 문자 전송",
@@ -243,7 +243,7 @@
     "1": [
       {
         "service_name": "교통",
-        "formal_script": "보건소까지 택시 타고 가면 요금이 얼마나 나와?",
+        "formal_script": "너무 더운데, 여기서 보건소까지 택시를 타고 가려면 요금이 얼마나 나와?",
         "set-id": 1,
         "service_target": "택시",
         "task_name": "예상 요금",
@@ -254,7 +254,7 @@
     "2": [
       {
         "service_name": "교통",
-        "formal_script": "택시를 타고 아들 집에 가려면 얼마 내야 해?",
+        "formal_script": "지금 여기서 택시를 타고 아들 집에 가려면 얼마 내야 해?",
         "set-id": 2,
         "service_target": "택시",
         "task_name": "예상 요금",
@@ -267,7 +267,7 @@
     "1": [
       {
         "service_name": "메시지",
-        "formal_script": "카톡으로 아들한테 좋은 하루 보내 라고 보내 줘",
+        "formal_script": "카톡으로 아들한테 좋은 하루 보내 라고 보내 줘.",
         "set-id": 1,
         "service_target": "메신저",
         "task_name": "단문 메시지 전송",
@@ -278,7 +278,7 @@
     "2": [
       {
         "service_name": "메시지",
-        "formal_script": "지금 병원 진료 끝났어 라고 카톡으로 손자한테 전해 줘",
+        "formal_script": "지금 병원 진료 끝났어, 걱정하지 말라고 카톡으로 우리 막내한테 전해 줘",
         "set-id": 2,
         "service_target": "메신저",
         "task_name": "단문 메시지 전송",
@@ -291,7 +291,7 @@
     "1": [
       {
         "service_name": "메시지",
-        "formal_script": "손녀한테 카톡으로 영상통화 연결해 줘",
+        "formal_script": "우리 손녀딸 보고 싶어. 손녀한테 카톡으로 영상통화 연결해 줘",
         "set-id": 1,
         "service_target": "메신저",
         "task_name": "영상 통화 걸기",
@@ -302,7 +302,7 @@
     "2": [
       {
         "service_name": "메시지",
-        "formal_script": "큰딸한테 카톡으로 영통 걸어줘",
+        "formal_script": "얼굴 보면서 알려주는 게 좋겠다. 큰딸한테 카톡으로 영통 걸어줘",
         "set-id": 2,
         "service_target": "메신저",
         "task_name": "영상 통화 걸기",
@@ -315,7 +315,7 @@
     "1": [
       {
         "service_name": "생활",
-        "formal_script": "김치찌개 백반 1인분 시켜줘",
+        "formal_script": "배가 고픈데 근처 식당에서 김치찌개 백반 1인분 시켜줘",
         "set-id": 1,
         "service_target": "배달음식",
         "task_name": "배달음식주문",
@@ -326,7 +326,7 @@
     "2": [
       {
         "service_name": "생활",
-        "formal_script": "고등어조림 백반 1인분 시켜줘",
+        "formal_script": "우리 남편/아내가 고등어가 먹고 싶다고 하네. 고등어조림 백반 1인분 시켜줘",
         "set-id": 2,
         "service_target": "배달음식",
         "task_name": "배달음식주문",
@@ -339,7 +339,7 @@
     "1": [
       {
         "service_name": "생활",
-        "formal_script": "예전에 시켜먹은 갈비탕 1인분 다시 좀 시켜줘",
+        "formal_script": "저번주에 시켜먹었던 갈비탕이 맛있었는데, 그거 1인분 다시 좀 시켜줘",
         "set-id": 1,
         "service_target": "배달음식",
         "task_name": "배달음식재구매",
@@ -350,7 +350,7 @@
     "2": [
       {
         "service_name": "생활",
-        "formal_script": "예전에 시켜먹은 전복죽 한 그릇 예전이랑 똑같이 주문하고 싶어",
+        "formal_script": "예전에 시켜먹은 전복죽 한 그릇 예전이랑 똑같이 주문하고 싶어.",
         "set-id": 2,
         "service_target": "배달음식",
         "task_name": "배달음식재구매",
@@ -363,7 +363,7 @@
     "1": [
       {
         "service_name": "생활",
-        "formal_script": "방금 주문한 떡만두국 한 그릇, 지금 오고 있어?",
+        "formal_script": "방금 주문한 떡만두국 한 그릇, 지금 배달 오고 있어?",
         "set-id": 1,
         "service_target": "배달음식",
         "task_name": "배달한음식정보확인",
@@ -374,7 +374,7 @@
     "2": [
       {
         "service_name": "생활",
-        "formal_script": "아까 주문한 소고기죽 한 그릇, 지금 오고 있어?",
+        "formal_script": "아까 주문한 소고기죽 한 그릇, 언제 도착한대?",
         "set-id": 2,
         "service_target": "배달음식",
         "task_name": "배달한음식정보확인",
@@ -387,7 +387,7 @@
     "1": [
       {
         "service_name": "생활",
-        "formal_script": "생수 1L(리터)짜리 10개 주문해줘",
+        "formal_script": "생수 1L(리터)짜리 10개랑 비타민제 한 통 주문해줘",
         "set-id": 1,
         "service_target": "생필품",
         "task_name": "물건구매(식료품)",
@@ -398,7 +398,7 @@
     "2": [
       {
         "service_name": "생활",
-        "formal_script": "바나나 한 묶음 집으로 주문해줘",
+        "formal_script": "바나나 한 묶음이랑 두부 한 모 집으로 주문해줘",
         "set-id": 2,
         "service_target": "생필품",
         "task_name": "물건구매(식료품)",
@@ -411,7 +411,7 @@
     "1": [
       {
         "service_name": "생활",
-        "formal_script": "어제 샀던 달걀 6구, 언제 와?",
+        "formal_script": "어제 샀던 달걀 6구, 언제 집에 도착한대?",
         "set-id": 1,
         "service_target": "생필품",
         "task_name": "구매한물품확인(식료품)",
@@ -435,7 +435,7 @@
     "1": [
       {
         "service_name": "생활",
-        "formal_script": "허리 보호대 최근에 올라온 거 검색해줘",
+        "formal_script": "허리 보호대 최근에 올라온 거 검색해줘.",
         "set-id": 1,
         "service_target": "중고거래",
         "task_name": "중고물품 검색",
@@ -446,7 +446,7 @@
     "2": [
       {
         "service_name": "생활",
-        "formal_script": "실내 자전거 최근에 올라온 거 검색해줘",
+        "formal_script": "최근에 당근에 올라온 실내 자전거가 있나? 검색해줘.",
         "set-id": 2,
         "service_target": "중고거래",
         "task_name": "중고물품 검색",
@@ -459,7 +459,7 @@
     "1": [
       {
         "service_name": "영상",
-        "formal_script": "지난번에 멈춘 거 이어서 볼래. 틀어줘.",
+        "formal_script": "지난번에 멈춘 거 이어서 볼래. 가장 최근에 보다만 거 틀어줘.",
         "set-id": 1,
         "service_target": "영상",
         "task_name": "구독피드 최신영상 재생요청",
@@ -470,7 +470,7 @@
     "2": [
       {
         "service_name": "영상",
-        "formal_script": "쉬운 운동 알려주는 채널 재생해 줘",
+        "formal_script": "쉬운 운동 알려주는 채널에 올라온 영상 중에 가장 최근 거로 재생해 줘.",
         "set-id": 2,
         "service_target": "영상",
         "task_name": "구독피드 최신영상 재생요청",
@@ -507,7 +507,7 @@
     "1": [
       {
         "service_name": "은행",
-        "formal_script": "이번달 수도요금 처리해 줘",
+        "formal_script": "이번달 수도요금 은행 앱으로 대신 처리해 줘",
         "set-id": 1,
         "service_target": "은행",
         "task_name": "공과금납부",
@@ -518,7 +518,7 @@
     "2": [
       {
         "service_name": "은행",
-        "formal_script": "핸드폰 요금 납부해줘",
+        "formal_script": "이번 달에 내야 하는 핸드폰 요금을 납부해줘",
         "set-id": 2,
         "service_target": "은행",
         "task_name": "공과금납부",
@@ -531,7 +531,7 @@
     "1": [
       {
         "service_name": "의료",
-        "formal_script": "다음 주 월요일 오전에 재활의학과 진료 예약 좀 해줘",
+        "formal_script": "다음 주 월요일 오전에 재활의학과 진료 예약 좀 해줘.",
         "set-id": 1,
         "service_target": "병원",
         "task_name": "병원예약요청(시간포함)",
@@ -555,7 +555,7 @@
     "1": [
       {
         "service_name": "의료",
-        "formal_script": "제일 가까운 통증의학과 어디있어?",
+        "formal_script": "제일 가까운 통증의학과가 어디에 있어?",
         "set-id": 1,
         "service_target": "병원",
         "task_name": "주변병원찾기",
