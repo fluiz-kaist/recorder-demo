@@ -32,6 +32,7 @@ import { useAssignScriptsMutation } from "@/hooks/mutations/useScriptMutations";
 // Utils
 import { generateUserHash, generateSecureUserId } from "@/utils/hash";
 
+import { isRecordingAvailable } from "@/utils/timeCheck";
 // =================================
 // ========== 타입, 상수=============
 // ===================================
@@ -127,6 +128,8 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
+  const isAvailable = isRecordingAvailable();
+
   // =================================
   // ========== 함수 =============
   // =================================
@@ -515,7 +518,11 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
-            <p>음성 녹음은 8월 1일 낮 12시부터 참여하실 수 있습니다.</p>
+            <p>
+              {isAvailable
+                ? "지금 음성 녹음에 참여하실 수 있습니다."
+                : "음성 녹음은 평일 오후 12시~6시에 참여하실 수 있습니다."}
+            </p>
 
             <div className={styles.inputGroup}>
               <h3>이름</h3>
@@ -557,10 +564,15 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
                 disabled={
                   !userInput.name ||
                   userInput.socialNumber.length !== 6 ||
-                  isLoading
+                  isLoading ||
+                  !isAvailable
                 }
               >
-                {isLoading ? "인증 확인 중..." : "여기를 눌러주세요!"}
+                {isLoading
+                  ? "인증 확인 중..."
+                  : !isAvailable
+                  ? "현재 이용 불가 시간입니다"
+                  : "여기를 눌러주세요!"}
               </button>
             </div>
           </div>

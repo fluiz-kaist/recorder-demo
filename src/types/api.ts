@@ -41,7 +41,7 @@ export interface CompleteSubmissionRequest {
   filePath: string;
   sttText: string;
 
-  // 🆕 사용자 정보 추가 (비정규화용)
+  // 사용자 정보 추가
   userGender: "남성" | "여성";
   userAgeGroup: string;
   userAuthorizedId: string;

@@ -14,7 +14,6 @@ import { VerificationStatus } from "@/types/audio";
 import { AudioUploadResponse } from "@/types/api";
 import {
   AudioUploadMutationRequest,
-  AudioDeleteRequest,
   AudioRecording,
 } from "@/types/audio";
 
@@ -202,7 +201,7 @@ export const useUploadAudioMutation = (): UseMutationResult<
           originalScript,
           sttTranscription:
             sttTranscription ||
-            "클라이언트에서 STT 결과를 아직 보내지 않았습니다",
+            "클라이언트에서 STT 결과를 보내지 않았습니다",
           domain,
           intent,
           category,
