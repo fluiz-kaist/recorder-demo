@@ -1,4 +1,10 @@
-// 파일 크기 기반 간단한 품질 검증 (1-5ms 완료) - 개선 버전
+import {
+  removeNonSpeechSegments,
+  shouldApplyVAD,
+  type VADResult,
+} from "@/utils/lightweightVAD";
+
+// 기존 인터페이스는 그대로 유지
 export interface SimpleQualityResult {
   isGoodQuality: boolean;
   score: number; // 0-100 점수
@@ -6,12 +12,32 @@ export interface SimpleQualityResult {
   recommendations: string[];
   fileSize: number;
   fileSizeKB: number;
+
+  //  VAD 관련 필드 추가
+  vadApplied?: boolean;
+  processedBlob?: Blob; // VAD 처리된 오디오
+  compressionRatio?: number; // 압축 비율
+
+  // 🔥 VAD 관련 필드 추가
+  processedDuration?: number;
+  silenceRemoved?: number;
+  speechSegments?: number;
+  avgSegmentLength?: number;
+  longestSilenceGap?: number;
 }
 
-export const validateAudioQualitySimple = (
+// 내부적으로만 사용할 확장 인터페이스
+interface InternalEnhancedResult extends SimpleQualityResult {
+  vadApplied: boolean;
+  vadResult?: VADResult;
+}
+
+// 기존 함수를 내부 함수로 이름 변경
+const validateAudioQualitySimpleOriginal = (
   blob: Blob,
   recordingDuration: number
 ): SimpleQualityResult => {
+  // ... 기존 코드 전체 그대로 ...
   const startTime = performance.now();
 
   const fileSize = blob.size;
@@ -314,4 +340,116 @@ export const validateAudioQualitySimple = (
   );
   console.groupEnd();
   return result;
+};
+
+// VAD 결과를 반영한 품질 평가 보정 (내부 함수)
+const enhanceQualityWithVADResult = (
+  basicResult: SimpleQualityResult,
+  vadResult: VADResult
+): SimpleQualityResult => {
+  let enhancedScore = basicResult.score;
+  const issues = [...basicResult.issues];
+  const recommendations = [...basicResult.recommendations];
+
+  // VAD 성과에 따른 보정
+  if (vadResult.compressionRatio < 0.3) {
+    // 70% 이상 무음이 제거됨 = 원본에 무음이 너무 많았음
+    enhancedScore += 15; // 보너스 점수 (VAD가 품질을 개선함)
+    recommendations.push(
+      "✅ 무음 구간이 자동으로 제거되어 품질이 개선되었습니다"
+    );
+  } else if (vadResult.compressionRatio < 0.7) {
+    enhancedScore += 10;
+    recommendations.push("✅ 일부 무음 구간이 제거되었습니다");
+  }
+
+  if (vadResult.compressionRatio > 0.95) {
+    // 거의 제거된 것이 없음 = 원본이 이미 좋은 품질
+    enhancedScore += 5;
+  }
+
+  // 최종 점수 보정
+  enhancedScore = Math.min(100, enhancedScore);
+
+  return {
+    ...basicResult,
+    score: enhancedScore,
+    issues,
+    recommendations,
+    isGoodQuality: enhancedScore >= 70 && issues.length <= 2,
+  };
+};
+
+// 기존 함수명을 그대로 사용하는 래퍼 함수
+export const validateAudioQualitySimple = async (
+  blob: Blob,
+  recordingDuration: number
+): Promise<SimpleQualityResult> => {
+  // 1. 기본 품질 검증
+  const basicResult = validateAudioQualitySimpleOriginal(
+    blob,
+    recordingDuration
+  );
+
+  // 2. VAD 적용 조건 확인
+  const shouldUseVAD =
+    shouldApplyVAD(blob, recordingDuration) && basicResult.score >= 40;
+
+  if (!shouldUseVAD) {
+    return {
+      ...basicResult,
+      vadApplied: false,
+      processedBlob: blob,
+      processedDuration: recordingDuration,
+      silenceRemoved: 0,
+      compressionRatio: 1.0,
+      speechSegments: 1,
+    };
+  }
+
+  try {
+    // 3. VAD 적용
+    const vadResult = await removeNonSpeechSegments(blob, recordingDuration);
+
+    // 4. VAD 적용된 결과로 품질 재평가
+    const enhancedResult = enhanceQualityWithVADResult(basicResult, vadResult);
+
+   return {
+      ...enhancedResult,
+      vadApplied: true,
+      processedBlob: vadResult.processedBlob,
+      processedDuration: vadResult.processedDuration,
+      silenceRemoved: vadResult.silenceRemoved,
+      compressionRatio: vadResult.compressionRatio,
+      speechSegments: vadResult.speechSegments || 1
+    };
+  } catch (error) {
+    return {
+      ...basicResult,
+      vadApplied: false,
+      processedBlob: blob, // 실패 시 원본
+      compressionRatio: 1.0,
+    };
+  }
+};
+
+// 🔥 추가: VAD 처리된 오디오 블롭을 가져오는 헬퍼 함수 (필요시 사용)
+export const getProcessedAudioBlob = async (
+  blob: Blob,
+  recordingDuration: number
+): Promise<{ blob: Blob; wasProcessed: boolean }> => {
+  if (!shouldApplyVAD(blob, recordingDuration)) {
+    return { blob, wasProcessed: false };
+  }
+
+  try {
+    const vadResult = await removeNonSpeechSegments(blob, recordingDuration);
+    return {
+      blob: vadResult.processedBlob,
+      wasProcessed: vadResult.compressionRatio < 0.95,
+    };
+  } catch (error) {
+    console.warn("VAD 처리 실패:", error);
+    return { blob, wasProcessed: false };
+  }
 };

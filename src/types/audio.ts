@@ -109,6 +109,20 @@ export interface AudioRecording {
     // STT 관련 품질 지표
     sttConfidence?: number; // STT 결과 신뢰도 (0-1, 낮으면 재검토)
     speechDetected?: boolean; // 실제 음성 감지 여부
+
+    //  VAD 관련 필드
+    vadProcessing?: {
+      applied: boolean;
+      originalDuration: number;
+      processedDuration: number;
+      silenceRemoved: number;
+      compressionRatio: number;
+      speechSegments: number;
+      qualityImprovement: number;
+    };
+    qualityScore?: number;
+    qualityIssues?: string[];
+    qualityRecommendations?: string[];
   };
 }
 
@@ -146,6 +160,17 @@ export interface AudioUploadMutationRequest {
   // === 품질 평가 (즉시 측정 가능한 것만) ===
   audioFormat?: AudioFormat; // 오디오 포맷
   deviceInfo?: string; // 녹음 기기 정보 (navigator.userAgent)
+
+  // VAD 관련 필드 (flat)
+  vadApplied?: boolean;
+  originalDuration?: number;
+  processedDuration?: number;
+  silenceRemoved?: number;
+  compressionRatio?: number;
+  speechSegments?: number;
+  qualityScore?: number;
+  qualityIssues?: string[];
+  qualityRecommendations?: string[];
 }
 
 /**
