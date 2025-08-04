@@ -577,6 +577,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         // audioBlob: qualityResult?.processedBlob || audioBlob, // ← 처리된 오디오 사용
         audioBlob: audioBlob, // ← 원본 오디오 사용
+        enhancedAudioBlob: qualityResult?.processedBlob || null,
 
         // === 녹음 세션 정보 (새로 추가) ===
         recordingStartedAt: recordingStartTime.toISOString(),

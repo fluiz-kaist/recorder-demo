@@ -354,13 +354,36 @@ const enhanceQualityWithVADResult = (
   // VAD 성과에 따른 보정
   if (vadResult.compressionRatio < 0.3) {
     // 70% 이상 무음이 제거됨 = 원본에 무음이 너무 많았음
-    enhancedScore += 15; // 보너스 점수 (VAD가 품질을 개선함)
+    enhancedScore += 15;
+    issues.push(
+      `원본에 무음 구간이 ${Math.round(
+        (1 - vadResult.compressionRatio) * 100
+      )}% 포함되어 있었음`
+    );
     recommendations.push(
-      "✅ 무음 구간이 자동으로 제거되어 품질이 개선되었습니다"
+      `✅ VAD 처리: 대량 무음 제거로 품질 개선 (+15점, ${vadResult.silenceRemoved?.toFixed(
+        1
+      )}초 제거)`
     );
   } else if (vadResult.compressionRatio < 0.7) {
     enhancedScore += 10;
-    recommendations.push("✅ 일부 무음 구간이 제거되었습니다");
+    recommendations.push(
+      `✅ VAD 처리: 무음 구간 ${Math.round(
+        (1 - vadResult.compressionRatio) * 100
+      )}% 제거로 품질 개선 (+10점)`
+    );
+  } else if (vadResult.compressionRatio > 0.95) {
+    // 거의 제거된 것이 없음 = 원본이 이미 좋은 품질
+    enhancedScore += 5;
+    recommendations.push(
+      `✅ VAD 검사: 원본 품질 우수 확인 (+5점, 무음 제거 불필요)`
+    );
+  } else {
+    recommendations.push(
+      `ℹ️ VAD 처리: 소량 무음 제거 완료 (${Math.round(
+        (1 - vadResult.compressionRatio) * 100
+      )}% 제거)`
+    );
   }
 
   if (vadResult.compressionRatio > 0.95) {
@@ -396,6 +419,11 @@ export const validateAudioQualitySimple = async (
     shouldApplyVAD(blob, recordingDuration) && basicResult.score >= 40;
 
   if (!shouldUseVAD) {
+    const skipReason =
+      basicResult.score < 40
+        ? `기본 품질이 너무 낮아 VAD 건너뜀 (${basicResult.score}/100점)`
+        : "VAD 적용 조건 불충족으로 건너뜀";
+
     return {
       ...basicResult,
       vadApplied: false,
@@ -404,6 +432,7 @@ export const validateAudioQualitySimple = async (
       silenceRemoved: 0,
       compressionRatio: 1.0,
       speechSegments: 1,
+      recommendations: [...basicResult.recommendations, `ℹ️ ${skipReason}`],
     };
   }
 
@@ -414,21 +443,27 @@ export const validateAudioQualitySimple = async (
     // 4. VAD 적용된 결과로 품질 재평가
     const enhancedResult = enhanceQualityWithVADResult(basicResult, vadResult);
 
-   return {
+    return {
       ...enhancedResult,
       vadApplied: true,
       processedBlob: vadResult.processedBlob,
       processedDuration: vadResult.processedDuration,
       silenceRemoved: vadResult.silenceRemoved,
       compressionRatio: vadResult.compressionRatio,
-      speechSegments: vadResult.speechSegments || 1
+      speechSegments: vadResult.speechSegments || 1,
     };
   } catch (error) {
     return {
       ...basicResult,
       vadApplied: false,
-      processedBlob: blob, // 실패 시 원본
+      processedBlob: blob,
       compressionRatio: 1.0,
+      recommendations: [
+        ...basicResult.recommendations,
+        `❌ VAD 처리 실패: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      ],
     };
   }
 };
