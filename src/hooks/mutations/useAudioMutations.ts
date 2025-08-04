@@ -149,6 +149,8 @@ export const useUploadAudioMutation = (): UseMutationResult<
       qualityScore = 70,
       qualityIssues = [],
       qualityRecommendations = [],
+      // eh
+      enhancedAudioBlob,
     }: AudioUploadMutationRequest): Promise<AudioUploadResponse> => {
       // 1. 고유한 recording ID 생성
       const recordingId = `${userId}_${taskKey.replace(
@@ -189,12 +191,15 @@ export const useUploadAudioMutation = (): UseMutationResult<
         contentType: audioBlob.type || "audio/wav",
       });
 
-      console.log("원본 업로드 성공, eh 업로드 시작");
-      await uploadBytes(EHstorageRef, audioBlob, {
-        contentType: audioBlob.type || "audio/wav",
-      });
+      if (enhancedAudioBlob && enhancedAudioBlob instanceof Blob) {
+        console.log("원본 업로드 성공, eh 업로드 시작");
 
-      console.log("eh 업로드 종료");
+        await uploadBytes(EHstorageRef, enhancedAudioBlob, {
+          contentType: audioBlob.type || "audio/wav",
+        });
+
+        console.log("eh 업로드 종료");
+      }
 
       // 4. 다운로드 URL 생성
       const audioUrl = await getDownloadURL(uploadResult.ref);
