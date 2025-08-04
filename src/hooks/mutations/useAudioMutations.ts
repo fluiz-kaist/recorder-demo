@@ -187,22 +187,28 @@ export const useUploadAudioMutation = (): UseMutationResult<
 
       console.log("원본 업로드 시작");
 
-      const uploadResult = await uploadBytes(storageRef, audioBlob, {
-        contentType: audioBlob.type || "audio/wav",
-      });
-
-      if (enhancedAudioBlob && enhancedAudioBlob instanceof Blob) {
-        console.log("원본 업로드 성공, eh 업로드 시작");
-
-        await uploadBytes(EHstorageRef, enhancedAudioBlob, {
+      // 업로드 작업들 준비
+      const uploadTasks = [
+        uploadBytes(storageRef, audioBlob, {
           contentType: audioBlob.type || "audio/wav",
-        });
+        }),
+      ];
 
-        console.log("eh 업로드 종료");
+      // enhanced 파일이 있으면 업로드 목록에 추가 (URL은 불필요)
+      if (enhancedAudioBlob && enhancedAudioBlob instanceof Blob) {
+        uploadTasks.push(
+          uploadBytes(EHstorageRef, enhancedAudioBlob, {
+            contentType: enhancedAudioBlob.type || "audio/wav",
+          })
+        );
       }
 
-      // 4. 다운로드 URL 생성
-      const audioUrl = await getDownloadURL(uploadResult.ref);
+      // 병렬 업로드 실행
+      const uploadResults = await Promise.all(uploadTasks);
+      console.log("모든 업로드 완료");
+
+      // 4. 원본 파일만 다운로드 URL 생성
+      const audioUrl = await getDownloadURL(uploadResults[0].ref);
 
       // 5. AudioRecording 데이터 생성
       const audioRecording: AudioRecording = {
