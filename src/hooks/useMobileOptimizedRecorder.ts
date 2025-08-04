@@ -200,7 +200,7 @@ export const useMobileOptimizedRecorder = (): RecorderState &
 
   // 생성된 오디오 파일 검증
   const validateAudioFile = (blob: Blob): void => {
-    console.log("🔍 생성된 오디오 파일 정보:", {
+    console.log(" 생성된 오디오 파일 정보:", {
       type: blob.type,
       size: blob.size,
       sizeKB: Math.round(blob.size / 1024),
@@ -229,12 +229,26 @@ export const useMobileOptimizedRecorder = (): RecorderState &
       timerRef.current = null;
     }
 
-    // MediaRecorder 정리
-    if (mediaRecorderRef.current) {
-      if (mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
-      }
-      mediaRecorderRef.current = null;
+    // 마지막 청크 수집 후 MediaRecorder 중지
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      // 마지막 1초 미만의 데이터를 강제로 청크화
+      mediaRecorderRef.current.requestData();
+
+      // requestData() 완료를 위한 짧은 대기 후 중지
+      setTimeout(() => {
+        if (
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state !== "inactive"
+        ) {
+          mediaRecorderRef.current.stop();
+        }
+      }, 100);
+    } else {
+      // 이미 비활성 상태면 바로 완료
+      console.log("✅ 녹음 중지 완료");
     }
 
     // 스트림 정리
@@ -255,15 +269,15 @@ export const useMobileOptimizedRecorder = (): RecorderState &
   // 녹음기 리셋 (새로 추가)
   const resetRecorder = useCallback(() => {
     console.log("🔄 녹음기 리셋 시작");
-    
+
     // 상태 초기화
     setIsRecording(false);
     setRecordingTime(0);
     setAudioBlob(null);
-    
+
     // 리소스 정리
     cleanup();
-    
+
     console.log("✅ 녹음기 리셋 완료");
   }, [cleanup]);
 
@@ -292,7 +306,7 @@ export const useMobileOptimizedRecorder = (): RecorderState &
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
-          console.log("📦 오디오 청크 수집:", event.data.size, "bytes");
+          // console.log("📦 오디오 청크 수집:", event.data.size, "bytes");
         }
       };
 
@@ -344,7 +358,7 @@ export const useMobileOptimizedRecorder = (): RecorderState &
   }, [cleanup]);
 
   // 녹음 중지
-  const stopRecording = useCallback(async (): Promise<void> => {
+  const originalStopRecording = useCallback(async (): Promise<void> => {
     try {
       console.log("🛑 녹음 중지 시작");
 
@@ -378,6 +392,63 @@ export const useMobileOptimizedRecorder = (): RecorderState &
       cleanup();
       throw error;
     }
+  }, [cleanup]);
+
+  const stopRecording = useCallback((): Promise<void> => {
+    return new Promise((resolve) => {
+      try {
+        console.log("🛑 녹음 중지 시작");
+
+        setIsRecording(false);
+
+        // 타이머 중지
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+
+        if (
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state !== "inactive"
+        ) {
+          const mediaRecorder = mediaRecorderRef.current; // 지역 변수로 저장
+
+          // onstop 이벤트 핸들러를 먼저 설정
+          const originalOnStop = mediaRecorder.onstop;
+          mediaRecorder.onstop = (event) => {
+            if (originalOnStop) {
+              originalOnStop.call(mediaRecorder, event);
+            }
+
+            // 스트림 정리는 onstop 후에
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach((track) => {
+                track.stop();
+              });
+              streamRef.current = null;
+            }
+
+            console.log("✅ 녹음 중지 완료");
+            resolve();
+          };
+
+          // 마지막 청크 수집 후 중지
+          mediaRecorder.requestData();
+          setTimeout(() => {
+            if (mediaRecorder.state !== "inactive") {
+              mediaRecorder.stop();
+            }
+          }, 100);
+        } else {
+          // 이미 비활성 상태면 바로 완료
+          resolve();
+        }
+      } catch (error) {
+        console.error("❌ 녹음 중지 실패:", error);
+        cleanup();
+        resolve(); // throw 대신 resolve
+      }
+    });
   }, [cleanup]);
 
   return {

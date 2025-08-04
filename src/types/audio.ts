@@ -171,6 +171,9 @@ export interface AudioUploadMutationRequest {
   qualityScore?: number;
   qualityIssues?: string[];
   qualityRecommendations?: string[];
+
+  //비교를 위한 임시
+  enhancedAudioBlob?: Blob | null;
 }
 
 /**

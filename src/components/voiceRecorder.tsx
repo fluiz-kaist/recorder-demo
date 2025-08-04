@@ -575,7 +575,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         taskKey: typedScript.task_key, // "건강-건강정보-1"
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
-        audioBlob: qualityResult?.processedBlob || audioBlob, // ← 처리된 오디오 사용
+        // audioBlob: qualityResult?.processedBlob || audioBlob, // ← 처리된 오디오 사용
+        audioBlob: audioBlob, // ← 원본 오디오 사용
+        enhancedAudioBlob: qualityResult?.processedBlob || null,
 
         // === 녹음 세션 정보 (새로 추가) ===
         recordingStartedAt: recordingStartTime.toISOString(),
@@ -602,7 +604,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         audioFormat: AudioFormat.WAV, // 오디오 포맷
         deviceInfo: navigator.userAgent, // 녹음 기기 정보
 
-        // 🔥 VAD 관련 데이터 flat하게 추가
+        // VAD 관련 데이터 flat하게 전달 및 저장
         vadApplied: qualityResult?.vadApplied || false,
         originalDuration: recordingTime,
         processedDuration: qualityResult?.processedDuration || actualDuration,

@@ -12,10 +12,7 @@ import { storage, db } from "@/lib/firebase/config";
 import { AudioFormat } from "@/types/firebase";
 import { VerificationStatus } from "@/types/audio";
 import { AudioUploadResponse } from "@/types/api";
-import {
-  AudioUploadMutationRequest,
-  AudioRecording,
-} from "@/types/audio";
+import { AudioUploadMutationRequest, AudioRecording } from "@/types/audio";
 
 const audioCollectionName =
   process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
@@ -159,6 +156,7 @@ export const useUploadAudioMutation = (): UseMutationResult<
         "_"
       )}_${Date.now()}`;
       const fileName = `${recordingId}.${audioFormat}`;
+      const enhancedFileName = `${recordingId}_enhanced.${audioFormat}`;
 
       // 2. 품질 분석
       const qualityAnalysis = await analyzeAudioQuality(
@@ -171,14 +169,32 @@ export const useUploadAudioMutation = (): UseMutationResult<
       const collectionName =
         process.env.NEXT_PUBLIC_STOREAGE_RECORDING_FILES_COLLECTION ||
         "temp-recording_files";
+      const enhancedCollName =
+        process.env.NEXT_PUBLIC_STOREAGE_RECORDING_ENHANCED_FILES_COLLECTION ||
+        "temp-recording_files";
+
       const storageRef = ref(
         storage,
         `${collectionName}/${domain}/${taskKey}/${userId}/${fileName}`
       );
 
+      const EHstorageRef = ref(
+        storage,
+        `${enhancedCollName}/${enhancedFileName}`
+      );
+
+      console.log("원본 업로드 시작");
+
       const uploadResult = await uploadBytes(storageRef, audioBlob, {
         contentType: audioBlob.type || "audio/wav",
       });
+
+      console.log("원본 업로드 성공, eh 업로드 시작");
+      await uploadBytes(EHstorageRef, audioBlob, {
+        contentType: audioBlob.type || "audio/wav",
+      });
+
+      console.log("eh 업로드 종료");
 
       // 4. 다운로드 URL 생성
       const audioUrl = await getDownloadURL(uploadResult.ref);
@@ -200,8 +216,7 @@ export const useUploadAudioMutation = (): UseMutationResult<
         textData: {
           originalScript,
           sttTranscription:
-            sttTranscription ||
-            "클라이언트에서 STT 결과를 보내지 않았습니다",
+            sttTranscription || "클라이언트에서 STT 결과를 보내지 않았습니다",
           domain,
           intent,
           category,
