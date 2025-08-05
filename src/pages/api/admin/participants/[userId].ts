@@ -1,3 +1,5 @@
+// admin에서, 등록하고 참가한 사람들은 participant로 관리한다.
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { getDocByIdAdmin } from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
 import { Timestamp, FieldValue } from "firebase/firestore";

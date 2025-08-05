@@ -1065,6 +1065,180 @@
   border-color: #3b82f6;
 }
 
+/* 액션 버튼들을 위한 스타일  */
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.detailButton {
+  background: #27ae60;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.detailButton:hover {
+  background: #229954;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+/* 반응형: 모바일에서는 버튼들을 세로로 배치 */
+@media (max-width: 768px) {
+  .actionButtons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .detailButton,
+  .downloadButton {
+    width: 100%;
+    justify-content: center;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+.playButton {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.playButton:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.playButton.playing {
+  background: #f39c12;
+  animation: pulse 1.5s infinite;
+}
+
+.playButton.playing:hover {
+  background: #e67e22;
+}
+
+/* 정렬 버튼 컨테이너 */
+.sortButtons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* 정렬 버튼 기본 스타일 */
+.sortButton {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sortButton:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* 활성화된 정렬 버튼 */
+.activeSortButton {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  font-weight: 500;
+}
+
+.activeSortButton:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+/* 테이블 헤더 정렬 가능한 셀 */
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.sortableHeader:hover {
+  background-color: #f3f4f6;
+}
+
+.sortableHeader:hover::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(59, 130, 246, 0.1);
+  pointer-events: none;
+}
+
+/* 반응형 정렬 버튼 */
+@media (max-width: 768px) {
+  .sortButtons {
+    justify-content: center;
+  }
+
+  .sortButton {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+/* 정렬 상태 표시 */
+.sortIndicator {
+  margin-left: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* 테이블 헤더에 정렬 표시가 더 잘 보이게 */
+.tableHead .tableCell {
+  font-weight: 600;
+  background-color: #f9fafb;
+}
+
+.tableHead .sortableHeader {
+  background-color: #f9fafb;
+}
+
+.tableHead .sortableHeader:hover {
+  background-color: #f3f4f6;
+}
 /* ===== 반응형 디자인 ===== */
 @media (max-width: 768px) {
   .container {
@@ -1172,6 +1346,12 @@
   .tabNav {
     flex-wrap: wrap;
   }
+
+  .playButton {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1200,5 +1380,17 @@
     width: 100%;
     border: 1px solid #3b82f6;
     border-radius: 8px;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(243, 156, 18, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(243, 156, 18, 0);
   }
 }

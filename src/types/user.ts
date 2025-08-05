@@ -324,6 +324,7 @@ export interface User {
   statistics: UserStatistics;
 
   // Firebase 메타데이터
+  // userDoc 정렬용
   updatedAt: Timestamp | FieldValue | string; // 문서 최종 수정 시간 (Firebase 자동 관리)
 
   // 레거시 호환용 필드들 (기존 코드와의 호환성을 위해 유지, 점진적 제거 예정)

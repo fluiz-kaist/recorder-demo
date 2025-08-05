@@ -52,7 +52,7 @@ interface ParticipantsOverviewResponse {
 const calculateParticipantStatus = (
   user: User
 ): ParticipantOverview["status"] => {
-  console.log("여기서 user 데이터 뭐라고 나오지? ", user);
+  // console.log("여기서 user 데이터 뭐라고 나오지? ", user);
   if (!user.currentStatus.isOnboardingCompleted) return "not_started";
 
   // 현재 진행중인 라운드가 있는지 확인
@@ -109,6 +109,72 @@ const calculateOverallProgress = (user: User): number => {
 
   return totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
 };
+
+// 정렬 함수
+const sortParticipants = (
+  participants: ParticipantOverview[],
+  sortBy: string,
+  sortOrder: "asc" | "desc"
+): ParticipantOverview[] => {
+  return participants.sort((a, b) => {
+    let comparison = 0;
+
+    switch (sortBy) {
+      case "lastAccessAt":
+        // 최근 접속 시간 기준 정렬 (기본값)
+        const dateA = new Date(a.lastAccessAt).getTime();
+        const dateB = new Date(b.lastAccessAt).getTime();
+        comparison = dateA - dateB;
+        break;
+      
+      case "createdAt":
+        // 계정 생성 시간 기준 정렬
+        const createdA = new Date(a.createdAt).getTime();
+        const createdB = new Date(b.createdAt).getTime();
+        comparison = createdA - createdB;
+        break;
+      
+      case "userName":
+        // 사용자명 기준 정렬
+        const nameA = a.userName || "";
+        const nameB = b.userName || "";
+        comparison = nameA.localeCompare(nameB);
+        break;
+      
+      case "overallProgress":
+        // 전체 진행률 기준 정렬
+        comparison = a.overallProgress - b.overallProgress;
+        break;
+      
+      case "totalRecordings":
+        // 총 녹음 수 기준 정렬
+        comparison = a.totalRecordings - b.totalRecordings;
+        break;
+      
+      case "status":
+        // 상태 기준 정렬 (우선순위: completed > in_progress > not_started > inactive)
+        const statusPriority = {
+          completed: 4,
+          in_progress: 3,
+          not_started: 2,
+          inactive: 1
+        };
+        comparison = statusPriority[a.status] - statusPriority[b.status];
+        break;
+      
+      default:
+        // 기본값: 최근 접속 시간
+        const defaultDateA = new Date(a.lastAccessAt).getTime();
+        const defaultDateB = new Date(b.lastAccessAt).getTime();
+        comparison = defaultDateA - defaultDateB;
+        break;
+    }
+
+    // 내림차순이면 결과를 뒤집음
+    return sortOrder === "desc" ? -comparison : comparison;
+  });
+};
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ParticipantsOverviewResponse>
@@ -136,10 +202,8 @@ export default async function handler(
       });
     }
 
-    // 쿼리 파라미터 추출
+    // 쿼리 파라미터 추출 (정렬은 클라이언트에서 처리)
     const {
-      sortBy = "createdAt",
-      sortOrder = "desc",
       status,
       gender,
       ageGroup,
@@ -168,19 +232,10 @@ export default async function handler(
       (user) => user.currentStatus.isTutorialCompleted
     ).length;
 
-    // 2-2. 필터링된 쿼리 (페이지네이션용)
-    const filteredQuery = adminDb.collection(registeredUsersCollection);
-    // const filteredQuery = adminDb
-    //   .collection(registeredUsersCollection)
-    //   .orderBy(sortBy as string, sortOrder as "asc" | "desc");
-
-    // 필터 적용
-    // if (gender) {
-    //   filteredQuery = filteredQuery.where("profile.gender", "==", gender);
-    // }
-    // if (ageGroup) {
-    //   filteredQuery = filteredQuery.where("profile.ageGroup", "==", ageGroup);
-    // }
+    // 2-2. 생성 시간 순으로 정렬하여 조회 (클라이언트에서 추가 정렬 예정)
+    const filteredQuery = adminDb
+      .collection(registeredUsersCollection)
+      .orderBy("profile.createdAt", "desc"); // 최신 생성 순으로 기본 정렬
 
     const filteredSnapshot = await filteredQuery.get();
 
@@ -200,14 +255,32 @@ export default async function handler(
           user.profile.userId.toLowerCase().includes(searchTerm)
       );
     }
-    // 참여자 데이터 변환
 
-    console.log("filteredUsers?", filteredUsers);
-    const participants: ParticipantOverview[] = filteredUsers.map((user) => {
+    // 상태 필터 적용
+    if (status) {
+      finalUsers = finalUsers.filter((user) => {
+        const userStatus = calculateParticipantStatus(user);
+        return userStatus === status;
+      });
+    }
+
+    // 성별 필터 적용
+    if (gender) {
+      finalUsers = finalUsers.filter((user) => user.profile.gender === gender);
+    }
+
+    // 연령대 필터 적용
+    if (ageGroup) {
+      finalUsers = finalUsers.filter((user) => user.profile.ageGroup === ageGroup);
+    }
+
+    // 참여자 데이터 변환
+    // console.log("filteredUsers?", filteredUsers);
+    const participants: ParticipantOverview[] = finalUsers.map((user) => {
       const participantStatus = calculateParticipantStatus(user);
       const overallProgress = calculateOverallProgress(user);
 
-      console.log("이거 뭐야? participantStatus", participantStatus);
+      // console.log("이거 뭐야? participantStatus", participantStatus);
 
       return {
         userId: user.profile.userId,
@@ -237,11 +310,18 @@ export default async function handler(
       };
     });
 
-    console.log(
-      "totalRegisteredUsers, activeParticipants",
-      totalRegisteredUsers,
-      activeParticipants
-    );
+    // 정렬은 클라이언트에서 처리하므로 제거
+    // const sortedParticipants = sortParticipants(
+    //   participants,
+    //   sortBy as string,
+    //   sortOrder as "asc" | "desc"
+    // );
+
+    // console.log(
+    //   "totalRegisteredUsers, activeParticipants",
+    //   totalRegisteredUsers,
+    //   activeParticipants
+    // );
 
     // 전체 통계 계산
     const statistics = {
@@ -265,7 +345,7 @@ export default async function handler(
     return res.status(200).json({
       success: true,
       data: {
-        participants: participants,
+        participants: participants, // 생성 순으로 정렬된 원본 데이터
         totalCount: participants.length,
         statistics,
       },

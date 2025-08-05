@@ -74,6 +74,8 @@ export default async function handler(
     });
   }
 
+  console.log("🧧");
+
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
@@ -86,15 +88,15 @@ export default async function handler(
         message: "관리자 권한이 필요합니다.",
       });
     }
-
     // 모든 사용자 데이터 조회 (200명 이하이므로 전체 조회)
+
     const usersSnapshot = await adminDb
       .collection(userCollectionName)
-      .orderBy("createdAt", "desc")
+      .orderBy("updatedAt", "desc")
       .get();
 
     const allUsers = usersSnapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as unknown as User)
+      (doc) => ({ ...doc.data() } as unknown as User)
     );
     // 시간 기준점 설정
     const now = new Date();
@@ -151,16 +153,32 @@ export default async function handler(
       const completedTasks = user.statistics.current.completedTasks || 0;
       const approvedTasks = user.statistics.current.approvedTasks || 0;
 
-      const overallProgress =
-        totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
+      console.log(
+        user.profile.userName,
+        "🧧🧧🧧🧧🧧🧧/ totalTasks, completedTasks, approvedTasks: ",
+        totalTasks,
+        completedTasks,
+        approvedTasks
+      );
 
       // 활성 참여자 (녹음을 시작한 사람)
       if (completedTasks > 0) {
         activeParticipants++;
       }
 
-      // 완료 참여자 (현재 회차 100% 완료)
-      if (overallProgress === 100) {
+      // 모든 할당된 라운드가 완료된 사용자만 카운트
+      const totalAssignedRounds = user.roundSummaries.length;
+      const completedRounds = user.roundSummaries.filter(
+        (round) => round.status === "completed" || round.status === "approved"
+      ).length;
+
+      // 전체 진행률 = (완료된 라운드 / 전체 할당된 라운드) * 100
+      const overallProgress =
+        totalAssignedRounds > 0
+          ? Math.round((completedRounds / totalAssignedRounds) * 100)
+          : 0;
+
+      if (totalAssignedRounds > 0 && completedRounds === totalAssignedRounds) {
         completedParticipants++;
       }
       // 진행률 분포
@@ -178,19 +196,11 @@ export default async function handler(
         progressDistribution.inProgress["76-99"]++;
       }
 
-      // 세트별 진행 현황
+      // 모든 라운드의 통계를 합산
       user.roundSummaries.forEach((round) => {
-        const setKey = `set${round.roundNumber}` as keyof typeof setProgress;
-        if (setProgress[setKey]) {
-          setProgress[setKey].assigned++;
-          if (round.status === "completed" || round.status === "approved") {
-            setProgress[setKey].completed++;
-          } else if (round.progressSummary.approvedTasks > 0) {
-            setProgress[setKey].inProgress++;
-          }
-        }
+        totalRecordings += round.progressSummary.totalTasks || 0;
+        approvedRecordings += round.progressSummary.approvedTasks || 0;
       });
-
       // 최근 활동 분석
       const lastAccess = new Date(user.profile.lastAccessAt as string);
       if (lastAccess >= last24Hours) {

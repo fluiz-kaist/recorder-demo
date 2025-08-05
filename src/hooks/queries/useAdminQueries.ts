@@ -245,7 +245,7 @@ export const useAdminRecordings = (
     domain,
     taskType,
     quality,
-    sortBy = "recordedAt",
+    sortBy = "uploadedAt",
     sortOrder = "desc",
     search,
   } = params;
