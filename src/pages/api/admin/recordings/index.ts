@@ -108,13 +108,41 @@ export default async function handler(
     if (!shouldSearch) {
       queryRef = queryRef.orderBy("uploadedAt", "desc");
     }
+    // 필터 쿼리 빌더 함수
+    function buildFilterQuery(baseQuery: Query<DocumentData>) {
+      let query = baseQuery;
 
-    const smartLimit = shouldSearch
-      ? Math.min(limitNum * 10, 1000)
-      : limitNum * 3;
+      if (userId) query = query.where("userId", "==", userId);
+      if (domain) query = query.where("textData.domain", "==", domain);
+      if (taskType) query = query.where("taskType", "==", taskType);
+      if (quality) query = query.where("qualityGrade", "==", quality);
+      if (verificationStatus)
+        query = query.where("verificationStatus", "==", verificationStatus);
+      if (search && typeof search === "string") {
+        query = query.where("speakerInfo.userName", "==", search);
+      }
 
-    queryRef = queryRef.limit(smartLimit);
-    const snapshot = await queryRef.get();
+      return query;
+    }
+
+    // const smartLimit = shouldSearch
+    //   ? Math.min(limitNum * 10, 1000)
+    //   : limitNum * 3;
+
+    // queryRef = queryRef.limit(smartLimit);
+    const baseQuery = adminDb.collection(audioCollectionName);
+
+    // 1. 총 개수 구하기
+    const countQuery = buildFilterQuery(baseQuery);
+    const totalCount = (await countQuery.count().get()).data().count;
+
+    // 2. 실제 데이터 가져오기
+    const dataQuery = buildFilterQuery(baseQuery)
+      .orderBy("uploadedAt", "desc")
+      .limit(limitNum)
+      .offset((pageNum - 1) * limitNum);
+
+    const snapshot = await dataQuery.get();
 
     const allRecordings = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -159,11 +187,13 @@ export default async function handler(
       });
     }
 
-    const totalCount = allRecordings.length;
+    console.log("💕💕💕💕💕 allRecordings?", allRecordings.length);
+
     const totalPages = Math.ceil(totalCount / limitNum);
-    const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = startIndex + limitNum;
-    const paginatedRecordings = allRecordings.slice(startIndex, endIndex);
+    const paginatedRecordings = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as AudioRecording[];
 
     // 사용자 이름 조회
     const uniqueUserIds = [
@@ -193,7 +223,7 @@ export default async function handler(
       byVerificationStatus: {} as Record<string, number>,
     };
 
-    allRecordings.forEach((rec) => {
+    paginatedRecordings.forEach((rec) => {
       const domain = rec.textData?.domain || "unknown";
       stats.byDomain[domain] = (stats.byDomain[domain] || 0) + 1;
 

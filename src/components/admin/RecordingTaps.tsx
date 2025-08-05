@@ -334,6 +334,7 @@ const AdminRecordingsTab = () => {
             <span className={styles.currentShowing}>
               (현재 {recordingsData.recordings.length}개 표시)
             </span>
+            <span>(현재 페이지에서의) </span>
             <span className={styles.taskStats}>
               상황발화:{" "}
               <strong>
