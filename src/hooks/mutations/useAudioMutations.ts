@@ -65,11 +65,11 @@ const detectDeviceType = (
  */
 const DEVICE_QUALITY_STANDARDS = {
   iOS: {
-    expectedBitrate: 320, // iOS는 일반적으로 높은 품질
+    expectedBitrate: 180,
     volumeThresholds: { veryLow: 0.2, low: 0.4, medium: 0.6, high: 0.8 },
   },
   Android: {
-    expectedBitrate: 200, // Android는 기기별 편차 고려
+    expectedBitrate: 150,
     volumeThresholds: { veryLow: 0.15, low: 0.3, medium: 0.5, high: 0.7 },
   },
   Desktop: {
@@ -85,9 +85,10 @@ const analyzeAudioQuality = async (
   audioBlob: Blob,
   duration: number,
   audioFormat: AudioFormat,
-  deviceInfo?: string, // 추가
-  vadApplied?: boolean, // 추가
-  compressionRatio?: number // 추가
+  deviceInfo?: string,
+  vadApplied?: boolean,
+  compressionRatio?: number,
+  sttTranscription?: string
 ): Promise<{
   volumeLevel: number;
   hasClipping: boolean;
@@ -129,13 +130,23 @@ const analyzeAudioQuality = async (
     volumeLevel = 0.1; // 매우 낮은 품질
   }
 
-  // 4. VAD 처리 보정
-  if (vadApplied && compressionRatio && compressionRatio < 0.6) {
-    // 40% 이상 압축된 경우 품질 보정
-    const vadBoost = deviceType === "iOS" ? 1.25 : 1.15;
-    volumeLevel = Math.min(volumeLevel * vadBoost, 0.95);
-  }
+  // 4. VAD 처리 보정 (극단적인 경우 특별 처리)
+  if (vadApplied && compressionRatio !== undefined) {
+    if (compressionRatio < 0.001) {
+      // 거의 100% 무음 제거된 경우 → 실제 음성 구간은 매우 선명했을 가능성
+      console.log("극단적인 VAD 처리 감지 - 특별 보정 적용");
+      volumeLevel = Math.max(volumeLevel, 0.5); // 최소 50% 보장
 
+      // STT 성공 여부로 추가 보정
+      if (sttTranscription && sttTranscription.length > 5) {
+        volumeLevel = Math.max(volumeLevel, 0.6); // STT 성공시 최소 60%
+      }
+    } else if (compressionRatio < 0.6) {
+      // 일반적인 VAD 보정
+      const vadBoost = deviceType === "iOS" ? 1.15 : 1.1; // 보정값 감소
+      volumeLevel = Math.min(volumeLevel * vadBoost, 0.95);
+    }
+  }
   // 5. Android 저사양 기기 특별 보정
   if (deviceType === "Android" && actualBitrate < 100) {
     // 매우 낮은 비트레이트의 Android 기기에 대한 관대한 평가
@@ -243,7 +254,8 @@ export const useUploadAudioMutation = (): UseMutationResult<
         audioFormat,
         deviceInfo,
         vadApplied,
-        compressionRatio
+        compressionRatio,
+        sttTranscription
       );
 
       // 3. Firebase Storage에 업로드
