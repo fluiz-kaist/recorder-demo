@@ -28,25 +28,54 @@ const calculateQualityGrade = (qualityCheck: {
 }): "high" | "medium" | "low" => {
   const { volumeLevel, backgroundNoise, hasClipping, duration } = qualityCheck;
 
+  // 기준 완화
   if (
-    volumeLevel >= 0.7 &&
+    volumeLevel >= 0.6 && // 0.7 → 0.6
     backgroundNoise === "low" &&
     !hasClipping &&
-    duration >= 3
+    duration >= 2 // 3 → 2
   ) {
     return "high";
   }
 
   if (
-    volumeLevel < 0.4 ||
+    volumeLevel < 0.25 || // 0.4 → 0.25
     backgroundNoise === "high" ||
     hasClipping ||
-    duration < 2
+    duration < 1 // 2 → 1
   ) {
     return "low";
   }
 
   return "medium";
+};
+/**
+ * 기기 타입 감지
+ */
+const detectDeviceType = (
+  deviceInfo: string
+): "iOS" | "Android" | "Desktop" => {
+  if (/iPhone|iPad|iPod/i.test(deviceInfo)) return "iOS";
+  if (/Android/i.test(deviceInfo)) return "Android";
+  return "Desktop";
+};
+
+/**
+ * 기기별 품질 기준
+ */
+const DEVICE_QUALITY_STANDARDS = {
+  iOS: {
+    expectedBitrate: 320, // iOS는 일반적으로 높은 품질
+    volumeThresholds: { veryLow: 0.2, low: 0.4, medium: 0.6, high: 0.8 },
+  },
+  Android: {
+    expectedBitrate: 200, // Android는 기기별 편차 고려
+    volumeThresholds: { veryLow: 0.15, low: 0.3, medium: 0.5, high: 0.7 },
+  },
+  Desktop: {
+    expectedBitrate: 280,
+    volumeThresholds: { veryLow: 0.18, low: 0.35, medium: 0.55, high: 0.75 },
+  },
 };
 
 /**
@@ -55,7 +84,10 @@ const calculateQualityGrade = (qualityCheck: {
 const analyzeAudioQuality = async (
   audioBlob: Blob,
   duration: number,
-  audioFormat: AudioFormat
+  audioFormat: AudioFormat,
+  deviceInfo?: string, // 추가
+  vadApplied?: boolean, // 추가
+  compressionRatio?: number // 추가
 ): Promise<{
   volumeLevel: number;
   hasClipping: boolean;
@@ -64,32 +96,77 @@ const analyzeAudioQuality = async (
 }> => {
   const fileSize = audioBlob.size;
 
-  // 포맷별 예상 비트레이트
-  const expectedBitrates = {
-    [AudioFormat.WAV]: 1411,
-    [AudioFormat.MP3]: 128,
-    [AudioFormat.M4A]: 128,
-    [AudioFormat.WEBM]: 128,
+  // 1. 기기 타입 감지
+  const deviceType = detectDeviceType(deviceInfo || "");
+  const standards = DEVICE_QUALITY_STANDARDS[deviceType];
+
+  // 2. 기기별 기대 비트레이트 설정
+  const formatMultipliers = {
+    [AudioFormat.WAV]: 1.0, // 기준값 그대로
+    [AudioFormat.MP3]: 0.4, // 압축률 고려
+    [AudioFormat.M4A]: 0.4,
+    [AudioFormat.WEBM]: 0.35,
   };
 
-  const expectedBitrate = expectedBitrates[audioFormat] || 128;
-  const expectedFileSize = (expectedBitrate * 1000 * duration) / 8;
+  const expectedBitrate =
+    standards.expectedBitrate * (formatMultipliers[audioFormat] || 0.4);
   const actualBitrate = (fileSize * 8) / (duration * 1000);
 
-  const volumeLevel = Math.min(actualBitrate / expectedBitrate, 1);
-  const hasClipping = volumeLevel > 0.98 || fileSize > expectedFileSize * 1.5;
+  // 3. 개선된 volumeLevel 계산
+  let volumeLevel: number;
 
-  let backgroundNoise: "low" | "medium" | "high" = "low";
-  if (fileSize > expectedFileSize * 2) {
-    backgroundNoise = "high";
-  } else if (volumeLevel < 0.3) {
-    backgroundNoise = "high";
-  } else if (volumeLevel < 0.6 || fileSize > expectedFileSize * 1.3) {
-    backgroundNoise = "medium";
+  if (actualBitrate >= expectedBitrate * 1.2) {
+    volumeLevel = 0.9; // 매우 높은 품질
+  } else if (actualBitrate >= expectedBitrate) {
+    volumeLevel = 0.8; // 높은 품질
+  } else if (actualBitrate >= expectedBitrate * 0.7) {
+    volumeLevel = 0.6; // 양호한 품질
+  } else if (actualBitrate >= expectedBitrate * 0.4) {
+    volumeLevel = 0.4; // 보통 품질
+  } else if (actualBitrate >= expectedBitrate * 0.2) {
+    volumeLevel = 0.2; // 낮은 품질
+  } else {
+    volumeLevel = 0.1; // 매우 낮은 품질
   }
+
+  // 4. VAD 처리 보정
+  if (vadApplied && compressionRatio && compressionRatio < 0.6) {
+    // 40% 이상 압축된 경우 품질 보정
+    const vadBoost = deviceType === "iOS" ? 1.25 : 1.15;
+    volumeLevel = Math.min(volumeLevel * vadBoost, 0.95);
+  }
+
+  // 5. Android 저사양 기기 특별 보정
+  if (deviceType === "Android" && actualBitrate < 100) {
+    // 매우 낮은 비트레이트의 Android 기기에 대한 관대한 평가
+    volumeLevel = Math.max(volumeLevel, Math.min(actualBitrate / 120, 0.6));
+  }
+
+  // 6. 클리핑 검출 개선
+  const hasClipping = actualBitrate > expectedBitrate * 3.0;
+
+  // 7. 배경잡음 평가 개선
+  let backgroundNoise: "low" | "medium" | "high" = "low";
 
   if (duration < 1) {
     backgroundNoise = "high";
+  } else if (vadApplied && compressionRatio) {
+    if (compressionRatio < 0.3) {
+      backgroundNoise = "low"; // 70% 이상 제거 = 매우 조용한 환경
+    } else if (compressionRatio < 0.7) {
+      backgroundNoise =
+        actualBitrate < expectedBitrate * 0.5 ? "medium" : "low";
+    } else {
+      backgroundNoise =
+        actualBitrate < expectedBitrate * 0.6 ? "high" : "medium";
+    }
+  } else {
+    // VAD 미적용시 기존 로직 개선
+    if (actualBitrate < expectedBitrate * 0.3) {
+      backgroundNoise = "high";
+    } else if (actualBitrate < expectedBitrate * 0.6) {
+      backgroundNoise = "medium";
+    }
   }
 
   const qualityResult = {
@@ -97,7 +174,6 @@ const analyzeAudioQuality = async (
     hasClipping,
     backgroundNoise,
   };
-
   const qualityGrade = calculateQualityGrade({
     ...qualityResult,
     duration,
@@ -164,7 +240,10 @@ export const useUploadAudioMutation = (): UseMutationResult<
       const qualityAnalysis = await analyzeAudioQuality(
         audioBlob,
         actualDuration,
-        audioFormat
+        audioFormat,
+        deviceInfo,
+        vadApplied,
+        compressionRatio
       );
 
       // 3. Firebase Storage에 업로드

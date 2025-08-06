@@ -111,26 +111,6 @@ function RecordingDetailPage() {
         overflow: "auto",
       }}
     >
-      {/* 🔥 닫기 버튼 추가 */}
-      <button
-        onClick={() => window.close()}
-        style={{
-          position: "fixed",
-          top: "10px",
-          right: "10px",
-          background: "#e74c3c",
-          color: "white",
-          border: "none",
-          padding: "8px 12px",
-          borderRadius: "4px",
-          cursor: "pointer",
-          zIndex: 1000,
-          fontSize: "12px",
-        }}
-      >
-        ✕ 닫기
-      </button>
-
       <RecordingDetailPopup recording={recording} />
     </div>
   );
