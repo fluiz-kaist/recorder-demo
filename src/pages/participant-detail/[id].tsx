@@ -11,8 +11,6 @@ function ParticipantsDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [dataReceived, setDataReceived] = useState(false);
 
-
-
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || dataReceived) {
@@ -120,26 +118,6 @@ function ParticipantsDetailPage() {
         overflow: "auto",
       }}
     >
-      {/* 🔥 닫기 버튼 추가 */}
-      <button
-        onClick={() => window.close()}
-        style={{
-          position: "fixed",
-          top: "10px",
-          right: "10px",
-          background: "#e74c3c",
-          color: "white",
-          border: "none",
-          padding: "8px 12px",
-          borderRadius: "4px",
-          cursor: "pointer",
-          zIndex: 1000,
-          fontSize: "12px",
-        }}
-      >
-        ✕ 닫기
-      </button>
-
       <ParticipantsDetailPopup participant={participant} />
     </div>
   );
