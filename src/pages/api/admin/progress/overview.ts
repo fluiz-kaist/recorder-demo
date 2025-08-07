@@ -74,8 +74,6 @@ export default async function handler(
     });
   }
 
-  console.log("🧧");
-
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
@@ -137,51 +135,76 @@ export default async function handler(
     };
 
     // 품질 통계
-    let totalRecordings = 0;
-    let approvedRecordings = 0;
+    const totalRecordings = 0;
+    const approvedRecordings = 0;
     // let totalQualityScore = 0;
     // let usersWithQuality = 0;
 
-    // 각 사용자별 분석
+    // 진행률 분포 계산
     allUsers.forEach((user) => {
       // 등록 완료 여부
       if (user.currentStatus.isOnboardingCompleted) {
         registeredParticipants++;
       }
-      // 현재 회차 기준 진행률 계산
-      const totalTasks = user.statistics.current.totalTasks || 0;
-      const completedTasks = user.statistics.current.completedTasks || 0;
-      const approvedTasks = user.statistics.current.approvedTasks || 0;
 
-      console.log(
-        user.profile.userName,
-        "🧧🧧🧧🧧🧧🧧/ totalTasks, completedTasks, approvedTasks: ",
-        totalTasks,
-        completedTasks,
-        approvedTasks
-      );
+      // // 현재 회차 기준 진행률 계산
+      // const totalTasks = user.statistics.current.totalTasks || 0;
+      // const approvedTasks = user.statistics.current.approvedTasks || 0;
+
+      const maxRounds = 2;
+
+      // 라운드별 상태 및 진행률 계산
+      let overallProgress = 0;
+      let assignedRounds = 0;
+      let completedRounds = 0;
+
+      user.roundSummaries.forEach((round, _) => {
+        const roundWeight = 50; // 각 라운드는 50%
+
+        // console.log(
+        //   `라운드 ${round.roundNumber} 처리 전: overallProgress = ${overallProgress}`
+        // );
+
+        if (round.status === "completed" || round.status === "approved") {
+          overallProgress += roundWeight; // 완료된 라운드는 50% 전체 기여
+          completedRounds++;
+          // console.log(
+          //   `라운드 ${round.roundNumber} completed 처리 후: overallProgress = ${overallProgress}`
+          // );
+        } else if (round.status === "assigned") {
+          // 현재 진행 중인 라운드만 부분 진행률 적용
+          if (round.roundNumber === user.currentStatus.currentRoundNumber) {
+            const currentRoundProgress =
+              user.statistics.current.completedPercentage || 0;
+            // const addedProgress = (currentRoundProgress * roundWeight) / 100;
+            overallProgress += (currentRoundProgress * roundWeight) / 100;
+            // console.log(
+            //   `라운드 ${round.roundNumber} assigned 처리 후: overallProgress = ${overallProgress}, added = ${addedProgress}`
+            // );
+          }
+          assignedRounds++;
+        }
+      });
+
+      // console.log(
+      //   `최종 계산: overallProgress = ${overallProgress}, completedRounds = ${completedRounds}, assignedRounds = ${assignedRounds}`
+      // );
+
+      // 반올림
+      overallProgress = Math.round(overallProgress);
 
       // 활성 참여자 (녹음을 시작한 사람)
+      const completedTasks = user.statistics.current.completedTasks || 0;
       if (completedTasks > 0) {
         activeParticipants++;
       }
 
-      // 모든 할당된 라운드가 완료된 사용자만 카운트
-      const totalAssignedRounds = user.roundSummaries.length;
-      const completedRounds = user.roundSummaries.filter(
-        (round) => round.status === "completed" || round.status === "approved"
-      ).length;
-
-      // 전체 진행률 = (완료된 라운드 / 전체 할당된 라운드) * 100
-      const overallProgress =
-        totalAssignedRounds > 0
-          ? Math.round((completedRounds / totalAssignedRounds) * 100)
-          : 0;
-
-      if (totalAssignedRounds > 0 && completedRounds === totalAssignedRounds) {
+      // 완전히 완료된 참여자 (2라운드 모두 완료)
+      if (completedRounds === maxRounds) {
         completedParticipants++;
       }
-      // 진행률 분포
+
+      // 진행률 분포 계산
       if (overallProgress === 0) {
         progressDistribution.notStarted++;
       } else if (overallProgress === 100) {
@@ -195,28 +218,44 @@ export default async function handler(
       } else {
         progressDistribution.inProgress["76-99"]++;
       }
+      // setProgress 계산 (각 사용자의 라운드별로)
+      user.roundSummaries.forEach((round, _) => {
+        const roundWeight = 50; // 각 라운드는 50%
 
-      // 모든 라운드의 통계를 합산
-      user.roundSummaries.forEach((round) => {
-        totalRecordings += round.progressSummary.totalTasks || 0;
-        approvedRecordings += round.progressSummary.approvedTasks || 0;
+        if (round.status === "completed" || round.status === "approved") {
+          overallProgress += roundWeight;
+          completedRounds++;
+        } else if (round.status === "assigned") {
+          // 현재 라운드인지 확인
+          if (round.roundNumber === user.currentStatus.currentRoundNumber) {
+            const currentRoundProgress =
+              user.statistics.current.completedPercentage || 0;
+            overallProgress += (currentRoundProgress * roundWeight) / 100;
+          }
+          // 그냥 assigned만 카운트하고 진행률은 0으로 처리하거나
+          // 아니면 각 라운드별 개별 진행률을 계산해야 함
+          assignedRounds++;
+        }
       });
-      // 최근 활동 분석
-      const lastAccess = new Date(user.profile.lastAccessAt as string);
-      if (lastAccess >= last24Hours) {
-        recentActivity.last24Hours++;
-      }
-      if (lastAccess >= last7Days) {
-        recentActivity.last7Days++;
-      }
-      if (lastAccess >= last30Days) {
-        recentActivity.last30Days++;
-      }
+      // 모든 라운드의 통계를 합산
+      //roundSummaries 기준으로만 계산
+      // setProgress 계산 (각 사용자의 라운드별로)
+      user.roundSummaries.forEach((round) => {
+        const setKey = `set${round.formalSetId}` as keyof typeof setProgress;
 
-      // 품질 통계
-      // 품질 통계 - current 기준
-      totalRecordings += user.statistics.current.completedTasks || 0;
-      approvedRecordings += user.statistics.current.approvedTasks || 0;
+        if (setProgress[setKey]) {
+          if (round.status === "assigned") {
+            setProgress[setKey].assigned++;
+          } else if (
+            round.status === "completed" ||
+            round.status === "approved"
+          ) {
+            setProgress[setKey].completed++;
+          }
+        }
+
+        // overallProgress 계산은 제거! (이미 위에서 계산했음)
+      });
     });
 
     // 품질 통계 계산 - current에는 품질 점수가 없으므로 0으로 설정

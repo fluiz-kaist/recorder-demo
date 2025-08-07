@@ -650,7 +650,7 @@
 
 .tableRow {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 5px;
   padding: 12px 24px;
   border-bottom: 1px solid #f3f4f6;
@@ -1238,6 +1238,39 @@
 
 .tableHead .sortableHeader:hover {
   background-color: #f3f4f6;
+}
+
+/* styles/AdminDashboard.module.css */
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.badgePending {
+  background-color: #ffc107; /* 주황색 */
+}
+
+.badgeApproved {
+  background-color: #28a745; /* 녹색 */
+}
+
+.badgeRejected {
+  background-color: #dc3545; /* 빨간색 */
+}
+
+.badgeNeedsRetry {
+  background-color: #007bff; /* 파란색 */
+}
+
+.badgeUnknown {
+  background-color: #6c757d; /* 회색 */
 }
 /* ===== 반응형 디자인 ===== */
 @media (max-width: 768px) {

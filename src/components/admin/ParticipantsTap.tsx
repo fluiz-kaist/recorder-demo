@@ -85,7 +85,6 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
     order: "desc", // 기본값: 내림차순 (최신순)
   });
 
-
   console.log("participantsData?", participantsData);
 
   // 정렬된 참여자 목록 (메모이제이션으로 성능 최적화)
@@ -115,7 +114,6 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
   const isActiveSort = (field: SortField) => sortConfig.field === field;
 
   const handleShowDetail = (participant: ParticipantOverview) => {
-
     console.log("여기 participant?", participant);
     const popup = window.open(
       `/participant-detail/${participant.userId}`,
@@ -128,7 +126,7 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
         popup.postMessage(
           {
             type: "RECORDING_DATA",
-            participant: participant,//overview데이터를 새 팝업 창에 전달
+            participant: participant, //overview데이터를 새 팝업 창에 전달
           },
           window.location.origin
         );
@@ -140,7 +138,8 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (participantData: ParticipantOverview) => {
+    const { currentSetNumber, status } = participantData;
     const statusClass =
       {
         not_started: styles.statusGray,
@@ -149,13 +148,15 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
         inactive: styles.statusRed,
       }[status] || styles.statusGray;
 
-    const statusText =
+    let statusText =
       {
         not_started: "시작 안함",
         in_progress: "진행 중",
         completed: "완료",
         inactive: "비활성",
       }[status] || status;
+
+    statusText = `${currentSetNumber}회차 ${statusText}`;
 
     return (
       <span className={`${styles.statusBadge} ${statusClass}`}>
@@ -313,7 +314,7 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
                 {participant.totalRecordings}
               </div>
               <div className={styles.tableCell}>
-                {getStatusBadge(participant.status)}
+                {getStatusBadge(participant)}
               </div>
               <div className={styles.tableCell}>
                 {participant.lastAccessAt

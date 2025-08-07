@@ -109,6 +109,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   );
   const [recordingEndTime, setRecordingEndTime] = useState<Date | null>(null);
 
+  // STT 관련 상태
+  const [isAutoSTT, setIsAutoSTT] = useState(false); // 자동 STT인지 수동 STT인지 구분
+
   /** upload */
   //업로드 상태 관련
   const [uploadProgress, setUploadProgress] = useState<{
@@ -139,6 +142,31 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   // 메모리 누수 방지를 위한 Blob URL 참조 저장소
   // URL.createObjectURL()로 생성한 URL을 나중에 URL.revokeObjectURL()로 정리하기 위해 보관
   const audioUrlRef = useRef<string | null>(null);
+
+  // 헬퍼 함수
+
+  // 관리자용 메모 생성 함수 추가
+  const generateAdminNotes = (
+    qualityResult: any,
+    recordingTime: any,
+    audioBlob: any,
+    platform: any
+  ) => {
+    if (!qualityResult?.vadApplied && qualityResult?.score < 40) {
+      return `${platform} 환경에서 기본 품질이 낮아(${qualityResult.score}점) 자동 개선 미적용. 재녹음 권장.`;
+    }
+
+    if (!qualityResult?.vadApplied) {
+      return `${platform} 환경에서 이미 품질이 좋아 추가 처리 불필요.`;
+    }
+
+    if (qualityResult?.vadApplied && qualityResult?.compressionRatio < 0.7) {
+      const removed = Math.round((1 - qualityResult.compressionRatio) * 100);
+      return `${platform} 환경에서 무음 구간 ${removed}% 제거로 품질 개선됨.`;
+    }
+
+    return `${platform} 환경에서 일반적인 품질 검증 완료.`;
+  };
 
   // =================================
   // ========= 외부 훅과 쿼리 =========
@@ -242,15 +270,11 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         setQualityResult(quality);
         // quality 결과에 VAD 처리된 오디오도 포함됨
 
-        // 🔥 품질 검증 결과에 따른 처리를 async 함수 안으로 이동
-        if (quality.isGoodQuality) {
-          console.log("✅ 품질 검증 통과 - STT 진행");
-          setShowSTT(true);
-          setHasSTTStarted(true);
-        } else {
-          console.log("⚠️ 품질 검증 실패 - 사용자에게 경고 표시");
-          setShowQualityWarning(true);
-        }
+        // STT 바로 시작
+        console.log("✅ 녹음 완료 - STT 바로 시작");
+        setIsAutoSTT(true); // 자동 STT 표시
+        setShowSTT(true);
+        setHasSTTStarted(true);
       };
       // 함수 호출
       processAudioQuality();
@@ -443,8 +467,10 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   //////////// UI 인터랙션 핸들러
   // 품질 경고 무시하고 계속 진행
   const proceedDespiteQuality = () => {
+    setIsAutoSTT(false); // 수동 STT 표시
     setShowQualityWarning(false);
     setShowSTT(true);
+    setHasSTTStarted(true);
     console.warn("⚠️ 사용자가 품질 경고를 무시하고 STT 진행");
   };
 
@@ -482,6 +508,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   const handleTranscriptionComplete = (
     result: WhisperTranscriptionResult | null
   ) => {
+    setIsAutoSTT(false);
     setTranscription(result);
     if (result) {
       setTranscriptionError(null);
@@ -491,10 +518,16 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
   };
 
   const handleTranscriptionError = (error: string) => {
+    setIsAutoSTT(false);
     setTranscriptionError(error);
     setIsSTTProcessing(false);
     setTranscription(null);
+    setShowSTT(false); // STT 컴포넌트 숨김
+    setHasSTTStarted(false); // STT 시작 상태 초기화
     console.error("❌ STT 변환 실패:", error);
+    // STT 실패 시 품질 경고 화면으로 돌아가서 재녹음 유도
+    // 무조건 품질 경고 표시 (무음이나 STT 실패 시)
+    setShowQualityWarning(true);
   };
 
   ///////////// 업로드 및 처리 핸들러
@@ -535,7 +568,14 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         });
         console.log("업로드 중 STT 수행...");
         setIsSTTProcessing(true);
-        sttText = (await performSTTForUpload(audioBlob)) || "";
+        const sttResult = (await performSTTForUpload(audioBlob)) || "";
+
+        if (sttResult.success) {
+          console.log("변환 성공:", sttResult.transcription.transcript);
+          sttText = sttResult.transcription.transcript;
+        } else {
+          console.error("변환 실패 원인:", sttResult.error);
+        }
         setIsSTTProcessing(false);
       }
       // 오디오 업로드 단계
@@ -568,6 +608,45 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         service_target: string;
         task_key: string;
       };
+
+      // 관리자용 정보 생성
+      const platform = /iPhone|iPad/.test(navigator.userAgent)
+        ? "iOS"
+        : /Android/.test(navigator.userAgent)
+        ? "Android"
+        : "Desktop";
+      const score = qualityResult?.score ?? 70;
+      const vadApplied = qualityResult?.vadApplied ?? false;
+      const compressionRatio = qualityResult?.compressionRatio ?? 1.0;
+
+      const adminAnalysis = {
+        platform: platform,
+        vadSkipReason: !vadApplied
+          ? score < 40
+            ? "quality_too_low"
+            : "conditions_not_met"
+          : null,
+        fileAnalysis: {
+          expectedSize: Math.round(recordingTime * 6.5),
+          actualSize: Math.round(audioBlob.size / 1024),
+          ratio: (audioBlob.size / 1024 / (recordingTime * 6.5)).toFixed(2),
+        },
+        basicScore: vadApplied
+          ? score - (compressionRatio < 0.7 ? 10 : 5)
+          : score,
+        adminNotes: generateAdminNotes(
+          qualityResult,
+          recordingTime,
+          audioBlob,
+          platform
+        ),
+      };
+      // 사용자용 recommendations과 관리자용 정보 결합
+      const userRecommendations = qualityResult?.recommendations || [];
+      const finalRecommendations = [
+        ...userRecommendations,
+        `[ADMIN]${JSON.stringify(adminAnalysis)}`,
+      ];
 
       const uploadResult = await uploadAudioMutation.mutateAsync({
         // === 기본 정보 ===
@@ -605,15 +684,19 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         deviceInfo: navigator.userAgent, // 녹음 기기 정보
 
         // VAD 관련 데이터 flat하게 전달 및 저장
-        vadApplied: qualityResult?.vadApplied || false,
+
         originalDuration: recordingTime,
-        processedDuration: qualityResult?.processedDuration || actualDuration,
-        silenceRemoved: qualityResult?.silenceRemoved || 0,
-        compressionRatio: qualityResult?.compressionRatio || 1.0,
-        speechSegments: qualityResult?.speechSegments || 1,
+
         qualityScore: qualityResult?.score || 70,
         qualityIssues: qualityResult?.issues || [],
-        qualityRecommendations: qualityResult?.recommendations || [],
+        qualityRecommendations: finalRecommendations, // 사용자+관리자 정보 포함
+
+        // 기존 VAD 필드들
+        vadApplied: qualityResult?.vadApplied || false,
+        compressionRatio: qualityResult?.compressionRatio || 1.0,
+        processedDuration: qualityResult?.processedDuration || actualDuration,
+        silenceRemoved: qualityResult?.silenceRemoved || 0,
+        speechSegments: qualityResult?.speechSegments || 1,
       });
       console.log("오디오 업로드 완료:", uploadResult);
 
@@ -698,6 +781,8 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
     setIsSTTProcessing(false);
     setHasSTTStarted(false);
 
+    setTranscriptionError(null); // stt에러 상태 초기화
+
     setCountdown(null);
     setIsCountingDown(false);
     scrollToTop();
@@ -766,7 +851,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       )}
 
       {/* 녹음 결과가 없을 때만 메인 녹음 버튼 표시 */}
-      {!audioUrl && (
+      {!audioUrl && !isSTTProcessing && (
         <button
           className={`${styles.recordButton} ${getButtonStyle()} ${
             isRecording && !canStopRecording ? styles.recordingDisabled : ""
@@ -777,7 +862,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           }
         >
           <div className={styles.recordButtonTextWrapper}>
-            {isCountingDown ? (
+            {isSTTProcessing && isAutoSTT ? (
+              // 자동 STT 중
+              <>
+                <span className={styles.recordMainText}>
+                  음성 녹음이 잘 되었는지
+                </span>
+                <span className={styles.recordMainText}>
+                  확인하고 있습니다...
+                </span>
+              </>
+            ) : isCountingDown ? (
               // 카운트다운 중 표시
               <>
                 <span className={styles.recordIcon}>⏳</span>
@@ -819,6 +914,17 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         </button>
       )}
 
+      {/* STT 처리 중일 때 전용 UI */}
+      {isSTTProcessing && !audioUrl && (
+        <div className={styles.sttProcessingMain}>
+          <div className={styles.processingIcon}>🔄</div>
+          <h3>음성 녹음이 잘 되었는지 확인하고 있습니다...</h3>
+          <p className={styles.processingText}>
+            잠시만 기다려주세요. 곧 결과를 보여드릴게요.
+          </p>
+        </div>
+      )}
+
       {isRecording && (
         <div className={styles.recordingNotice}>
           🎤{" "}
@@ -829,26 +935,55 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         </div>
       )}
 
-      {/* 🎯 품질 경고 표시 */}
-      {showQualityWarning && qualityResult && (
+      {/* 품질 경고 표시 */}
+      {showQualityWarning && qualityResult && transcriptionError && (
         <div className={styles.qualityWarning}>
-          <h4>⚠️ 녹음된 음성의 품질이 좋지 않습니다</h4>
+          <h4>
+            {transcriptionError
+              ? "❌ 말씀하신 내용을 글자로 바꾸는 데 실패했습니다. 다시 한 번 녹음해 주시겠어요?"
+              : "⚠️ 녹음된 음성의 품질이 좋지 않습니다"}
+          </h4>
+          {/* STT 에러가 있으면 에러 메시지도 표시 */}
+          {transcriptionError && (
+            <div className={styles.sttError}>
+              <p>{transcriptionError}</p>
+            </div>
+          )}
           {audioUrl ? (
-            <div className={styles.audioPreview}>
-              <p>🔉 녹음된 음성 확인하기:</p>
-              <audio className={styles.audioPlayer} src={audioUrl} controls />
+            <div className={styles.customAudioPlayer}>
+              <audio
+                ref={setAudioRef}
+                src={audioUrl}
+                preload="none"
+                playsInline
+                onError={() => setIsPlaying(false)}
+                onCanPlayThrough={() => console.log("Audio ready")}
+                style={{ display: "none" }}
+                onEnded={() => {
+                  setTimeout(() => {
+                    setIsPlaying(false);
+                  }, 1500);
+                }}
+              />
+              <button
+                className={styles.playButton}
+                onClick={togglePlayback}
+                disabled={!audioUrl}
+              >
+                {isPlaying ? "⏸️ 재생 멈추기" : "▶️ 녹음한 음성 확인하기"}
+              </button>
             </div>
           ) : (
             <div className={styles.audioError}>
               ❌ 음성 파일을 불러올 수 없습니다. 다시 녹음해 주세요.
             </div>
           )}
-          <div className={styles.qualityScore}>
+          {/* <div className={styles.qualityScore}>
             품질 점수: {qualityResult.score}/100 점
           </div>
           <div className={styles.fileSizeInfo}>
             파일 크기: {qualityResult.fileSizeKB}KB
-          </div>
+          </div> */}
 
           {qualityResult.issues.length > 0 && (
             <div className={styles.qualityIssues}>
@@ -873,6 +1008,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           )}
 
           <div className={styles.qualityActions}>
+            {isTutorial ? (
+              <p className={styles.guidanceBox}>
+                다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
+              </p>
+            ) : (
+              <></>
+            )}
             <button
               className={styles.retryRecordingButton}
               onClick={handleNewRecording}
@@ -885,10 +1027,73 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             >
               그대로 진행하기
             </button>
+            {/* STT 에러가 없을 때만 "그대로 진행하기" 버튼 표시 */}
+            {!transcriptionError && (
+              <button
+                className={styles.proceedButton}
+                onClick={proceedDespiteQuality}
+              >
+                그대로 진행하기
+              </button>
+            )}
           </div>
         </div>
       )}
+      {isTutorial ? (
+        <p className={styles.guidanceBox}>
+          녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요.
+        </p>
+      ) : (
+        <></>
+      )}
 
+      {/* STT 변환 결과 */}
+      {transcription && (
+        <div className={styles.sttResultSection}>
+          {/* <div className={styles.sttHeader}>
+                  <h4> 녹음한 음성이 글자로 바뀐 결과</h4>
+                </div> */}
+
+          {isTutorial ? (
+            <p className={styles.guidanceBox}>
+              녹음한 음성을 자동으로 글자로 바꾸어 보여줍니다. 만약 이상한
+              내용이 나온다면 음성 녹음을 다시 진행해주세요.
+            </p>
+          ) : (
+            <></>
+          )}
+
+          <div className={styles.sttResultBox}>
+            <div className={styles.sttLabel}>
+              <span className={styles.sttIcon}>💬</span>
+              <span>내가 말한 내용이 맞나요?</span>
+            </div>
+            <div className={styles.transcriptionText}>
+              <p className={styles.transcriptContent}>
+                {transcription.transcript}
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.sttGuidance}>
+            <div className={styles.guidanceBox}>
+              <p className={styles.guidanceText}>
+                위에 나온 문장이 방금 말씀하신 내용과 같은지 확인해 주세요.
+              </p>
+              <p className={styles.guidanceText}>
+                만약 내용이 완전히 틀리거나 이상하게 나온다면, 아래에 있는
+                <br />
+                <span className={styles.retryButtonRef}>새로 녹음하기</span>
+                버튼을 눌러서 다시 녹음해 주세요.
+              </p>
+              <p className={styles.guidanceSubText}>
+                💡 조용한 곳에서 전화하듯이 말씀하시면 정확하게 인식할 수
+                있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 오디오 섹션 (품질 통과 시) */}
       {audioUrl && !showQualityWarning && (
         <div className={styles.audioSection}>
@@ -900,36 +1105,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               </span>
             )}
           </div>
-          <div className={styles.customAudioPlayer}>
-            <audio
-              ref={setAudioRef}
-              src={audioUrl}
-              preload="none"
-              playsInline
-              onError={() => setIsPlaying(false)}
-              onCanPlayThrough={() => console.log("Audio ready")}
-              style={{ display: "none" }}
-              onEnded={() => {
-                setTimeout(() => {
-                  setIsPlaying(false);
-                }, 1500);
-              }}
-            />
-            <button
-              className={styles.playButton}
-              onClick={togglePlayback}
-              disabled={!audioUrl}
-            >
-              {isPlaying ? "⏸️ 재생 멈추기" : "▶️ 녹음한 음성 확인하기"}
-            </button>
-          </div>
-          {isTutorial ? (
-            <p className={styles.tutorialDetailedInstruction}>
-              녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요
-            </p>
-          ) : (
-            <></>
-          )}
+
           <div className={styles.actionButtons}>
             {audioBlob && (
               <button
@@ -938,7 +1114,8 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 disabled={
                   isUploading ||
                   isSTTProcessing ||
-                  uploadProgress.step !== "idle"
+                  uploadProgress.step !== "idle" ||
+                  !transcription
                 }
               >
                 {uploadProgress.step !== "idle"
@@ -1095,28 +1272,18 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 )}
               </div>
             )}
-            {isTutorial ? (
-              <p className={styles.tutorialDetailedInstruction}>
-                녹음한 음성은 제출하기 버튼을 눌러서 제출해주세요
-              </p>
-            ) : (
-              <></>
-            )}
 
             <button
-              className={styles.newRecordingButton}
+              className={`${styles.newRecordingButton} ${
+                transcription ? styles.retryEmphasis : ""
+              }`}
               onClick={handleNewRecording}
-              disabled={isUploading || isSTTProcessing}
+              disabled={isUploading || (isSTTProcessing && !transcriptionError)}
             >
-              {isSTTProcessing ? "분석 중..." : "새로 녹음하기"}
+              {isSTTProcessing && !transcriptionError
+                ? "분석 중..."
+                : "🔄 새로 녹음하기"}
             </button>
-            {isTutorial ? (
-              <p className={styles.tutorialDetailedInstruction}>
-                다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
-              </p>
-            ) : (
-              <></>
-            )}
 
             {/* STT 컴포넌트 */}
             {showSTT && (
@@ -1125,7 +1292,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 onTranscriptionComplete={handleTranscriptionComplete}
                 onError={handleTranscriptionError}
                 onTranscribingStateChange={handleSTTStateChange}
-                autoTranscribe={false}
+                autoTranscribe={true}
               />
             )}
 
@@ -1137,25 +1304,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                   음성 변환에 실패했습니다. 새로 녹음해주세요.
                 </p>
               </div>
-            )}
-
-            {/* STT 변환 결과 */}
-            {transcription && (
-              <div className={styles.GoogleTranscriptionResult}>
-                <div className={styles.transcriptionText}>
-                  <p className={styles.transcriptContent}>
-                    {transcription.transcript}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {isTutorial ? (
-              <p className={styles.tutorialDetailedInstruction}>
-                녹음한 음성을 글자로 바꿔보고 싶으시다면, 여기를 눌러보세요
-              </p>
-            ) : (
-              <></>
             )}
           </div>
 

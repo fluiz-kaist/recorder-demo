@@ -1,6 +1,6 @@
 // src/lib/firebase/firestoreAdmin.ts - Admin SDK용 CRUD 유틸
 import { adminDb } from "./admin";
-import { DocumentData } from "firebase-admin/firestore";
+import { DocumentData, WriteBatch } from "firebase-admin/firestore";
 
 // 🔹 Create or Update (with specific id)
 export async function saveDocAdmin(
@@ -150,4 +150,120 @@ export async function getAllDocsTypedAdmin<T>(
 ): Promise<Array<T & { id: string }>> {
   const data = await getAllDocsAdmin(colName);
   return data as Array<T & { id: string }>;
+}
+
+// ===== 배치 업데이트 함수들 =====
+
+/**
+ * 배치 업데이트용 인터페이스
+ */
+export interface BatchUpdateItem {
+  recordingId: string;
+  updates: Partial<DocumentData>;
+}
+
+/**
+ * 단일 문서 업데이트 (기존 updateDocByIdAdmin와 동일하지만 배치용 래퍼)
+ */
+export async function updateSingleRecording(
+  colName: string,
+  recordingId: string,
+  updates: Partial<DocumentData>
+): Promise<void> {
+  return updateDocByIdAdmin(colName, recordingId, updates);
+}
+
+/**
+ * 배치 업데이트 - Firebase Batch 사용 (최대 500개)
+ */
+export async function updateRecordingsBatch(
+  colName: string,
+  updates: BatchUpdateItem[]
+): Promise<void> {
+  if (updates.length === 0) {
+    console.log("⚠️ 업데이트할 항목이 없습니다.");
+    return;
+  }
+
+  if (updates.length > 500) {
+    throw new Error("Firebase Batch는 최대 500개 문서까지만 처리 가능합니다. updateRecordingsBatchChunked를 사용하세요.");
+  }
+
+  try {
+    const batch: WriteBatch = adminDb.batch();
+
+    updates.forEach(({ recordingId, updates: updateData }) => {
+      const docRef = adminDb.collection(colName).doc(recordingId);
+      batch.update(docRef, updateData);
+    });
+
+    await batch.commit();
+    console.log(`✅ 배치 업데이트 완료: ${updates.length}개 문서`);
+  } catch (err) {
+    console.error("❌ 배치 업데이트 실패:", err);
+    throw err;
+  }
+}
+
+/**
+ * 대용량 배치 업데이트 - 500개씩 청크로 나누어 처리
+ */
+export async function updateRecordingsBatchChunked(
+  colName: string,
+  updates: BatchUpdateItem[]
+): Promise<void> {
+  if (updates.length === 0) {
+    console.log("⚠️ 업데이트할 항목이 없습니다.");
+    return;
+  }
+
+  const BATCH_SIZE = 500;
+  const chunks = [];
+  
+  // 500개씩 청크로 나누기
+  for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+    chunks.push(updates.slice(i, i + BATCH_SIZE));
+  }
+
+  console.log(`🔄 ${updates.length}개 문서를 ${chunks.length}개 배치로 나누어 업데이트 시작`);
+
+  try {
+    // 각 청크를 순차적으로 처리
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      console.log(`📦 배치 ${i + 1}/${chunks.length} 처리 중... (${chunk.length}개 문서)`);
+      
+      await updateRecordingsBatch(colName, chunk);
+      
+      // 배치 간 잠시 대기 (rate limiting 방지)
+      if (i < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    console.log(`✅ 전체 배치 업데이트 완료: ${updates.length}개 문서`);
+  } catch (err) {
+    console.error("❌ 청크 배치 업데이트 실패:", err);
+    throw err;
+  }
+}
+
+/**
+ * 범용 레코딩 업데이트 함수 - 단일/배치 자동 판단
+ */
+export async function updateRecordings(
+  colName: string,
+  updates: BatchUpdateItem | BatchUpdateItem[]
+): Promise<void> {
+  // 단일 업데이트인 경우
+  if (!Array.isArray(updates)) {
+    return updateSingleRecording(colName, updates.recordingId, updates.updates);
+  }
+
+  // 배치 업데이트인 경우
+  if (updates.length <= 500) {
+    return updateRecordingsBatch(colName, updates);
+  } else {
+    return updateRecordingsBatchChunked(colName, updates);
+  }
 }
