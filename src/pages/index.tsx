@@ -130,8 +130,18 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
   // const isAvailable = isRecordingAvailable();
   // Temporarily hardcoded for the test period (4 PM to 10 PM)
-  const now = new Date();
-  const currentHour = now.getHours();
+
+  // 현재 시간을 한국 시간으로 가져오는 함수
+  const getKoreanTime = () => {
+    const now = new Date();
+    // 'Asia/Seoul' 타임존을 명시하여 한국 시간으로 변환
+    const nowKST = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+    );
+    return nowKST.getHours();
+  };
+
+  const currentHour = getKoreanTime();
   const isAvailable = currentHour >= 16 && currentHour < 22; // 4시(16)부터 10시(22)까지
 
   // =================================
