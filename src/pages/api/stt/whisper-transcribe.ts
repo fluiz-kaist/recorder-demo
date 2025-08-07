@@ -296,7 +296,7 @@ export default async function handler(
     const filename = `audio.${audioFormat}`;
 
     const prompt =
-      "이 음성은 앱을 실행하거나 정보를 입력하거나 요청하는 실용적인 목적의 발화입니다.";
+      "이 음성은 앱을 실행하거나 정보를 입력하거나 요청하는 실용적인 목적의 발화입니다. 영상 제작과 관련된 텍스트는 잘못된 텍스트입니다.";
 
     // OpenAI Whisper API 호출
     const whisperResponse = await callWhisperAPI(

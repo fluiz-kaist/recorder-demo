@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import styles from "@/styles/SttCompo.module.css";
 import ErrorPopup from "@/components/ErrorPopup";
-
+import { performSTTForUpload } from "@/utils/sttUpload";
 // Whisper API 응답 타입 정의
 export interface WhisperTranscriptionResult {
   transcript: string;
@@ -129,54 +129,27 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
     setIsTranscribing(true);
     setHasTranscribed(true);
 
+    // AbortController 생성 (컴포넌트에서 관리)
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // 요청 타임아웃 설정 (45초)
+    const timeoutId = setTimeout(() => {
+      controller.abort(); // 타임아웃 시 요청 취소
+    }, 45000);
+
     try {
       console.log("Whisper 음성 텍스트 변환 시작");
+      const result = await performSTTForUpload(audioBlob, controller.signal);
 
-      // 이전 요청이 있다면 취소
-      if (
-        abortControllerRef.current &&
-        !abortControllerRef.current.signal.aborted
-      ) {
-        abortControllerRef.current.abort();
-      }
-
-      // FormData 생성 및 파일 추가
-      const formData = new FormData();
-      formData.append("file", audioBlob, "recording.webm");
-      formData.append("model", "whisper-1");
-      formData.append("language", "ko");
-      formData.append("response_format", "json");
-
-      // AbortController 생성
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-
-      // 요청 타임아웃 설정 (45초)
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 45000);
-
-      // OpenAI Whisper API 호출
-      const response = await fetch("/api/stt/whisper-transcribe", {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      // HTTP 응답 상태 확인
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: WhisperSTTResponse = await response.json();
+      clearTimeout(timeoutId); // 요청 완료 후 타임아웃 해제
 
       // 변환 성공 처리
-      if (result.success && result.transcription) {
+      if (result.success) {
         onTranscriptionComplete(result.transcription);
         console.log("Whisper 음성 텍스트 변환 성공:", result.transcription);
       } else {
+        // API 라우트에서 success: false로 에러를 보냈을 경우
         throw new Error(result.error || "음성 변환에 실패했습니다.");
       }
     } catch (error) {
@@ -185,7 +158,8 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
       let errorMessage: string;
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          errorMessage = "요청이 취소되었습니다.";
+          // AbortError는 타임아웃 또는 수동 취소로 인한 것
+          errorMessage = "요청 시간이 초과되었습니다. 다시 시도해주세요.";
         } else {
           errorMessage = formatErrorMessage(error);
         }
@@ -199,7 +173,7 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
       // 실행 상태 플래그 해제
       transcribeRef.current = false;
       setIsTranscribing(false);
-      abortControllerRef.current = null;
+      abortControllerRef.current = null; // AbortController 참조 해제
     }
   }, [
     audioBlob,

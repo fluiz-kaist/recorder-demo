@@ -85,29 +85,28 @@ const calculateParticipantStatus = (
 
 // 전체 진행률 계산 함수
 const calculateOverallProgress = (user: User): number => {
-  // roundSummaries와 현재 진행률을 모두 고려
-  const completedRounds = user.roundSummaries.filter(
-    (round) =>
+  const maxRounds = 2;
+  let overallProgress = 0;
+
+  user.roundSummaries.forEach((round) => {
+    const roundWeight = 50; // 각 라운드는 50%
+
+    if (
       round.status === RoundStatus.COMPLETED ||
       round.status === RoundStatus.APPROVED
-  );
+    ) {
+      overallProgress += roundWeight; // 완료된 라운드는 50% 추가
+    } else if (round.status === RoundStatus.ASSIGNED) {
+      // 현재 진행 중인 라운드만 부분 진행률 적용
+      if (round.roundNumber === user.currentStatus.currentRoundNumber) {
+        const currentRoundProgress =
+          user.statistics.current.completedPercentage || 0;
+        overallProgress += (currentRoundProgress * roundWeight) / 100;
+      }
+    }
+  });
 
-  if (
-    completedRounds.length === 0 &&
-    user.currentStatus.currentRoundNumber === 0
-  ) {
-    return 0;
-  }
-
-  // statistics.overall이 있으면 사용, 없으면 current 사용
-  const totalTasks =
-    user.statistics.overall?.totalTasksCompleted ||
-    user.statistics.current.completedTasks;
-  const approvedTasks =
-    user.statistics.overall?.totalTasksApproved ||
-    user.statistics.current.approvedTasks;
-
-  return totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
+  return Math.round(overallProgress);
 };
 
 // 정렬 함수
@@ -126,42 +125,42 @@ const sortParticipants = (
         const dateB = new Date(b.lastAccessAt).getTime();
         comparison = dateA - dateB;
         break;
-      
+
       case "createdAt":
         // 계정 생성 시간 기준 정렬
         const createdA = new Date(a.createdAt).getTime();
         const createdB = new Date(b.createdAt).getTime();
         comparison = createdA - createdB;
         break;
-      
+
       case "userName":
         // 사용자명 기준 정렬
         const nameA = a.userName || "";
         const nameB = b.userName || "";
         comparison = nameA.localeCompare(nameB);
         break;
-      
+
       case "overallProgress":
         // 전체 진행률 기준 정렬
         comparison = a.overallProgress - b.overallProgress;
         break;
-      
+
       case "totalRecordings":
         // 총 녹음 수 기준 정렬
         comparison = a.totalRecordings - b.totalRecordings;
         break;
-      
+
       case "status":
         // 상태 기준 정렬 (우선순위: completed > in_progress > not_started > inactive)
         const statusPriority = {
           completed: 4,
           in_progress: 3,
           not_started: 2,
-          inactive: 1
+          inactive: 1,
         };
         comparison = statusPriority[a.status] - statusPriority[b.status];
         break;
-      
+
       default:
         // 기본값: 최근 접속 시간
         const defaultDateA = new Date(a.lastAccessAt).getTime();
@@ -203,12 +202,7 @@ export default async function handler(
     }
 
     // 쿼리 파라미터 추출 (정렬은 클라이언트에서 처리)
-    const {
-      status,
-      gender,
-      ageGroup,
-      search,
-    } = req.query;
+    const { status, gender, ageGroup, search } = req.query;
 
     //TODO: 관리자 제대로 패스 해주기 필요
     // 1. 참가 신청자 수 조회 (화이트리스트)
@@ -271,7 +265,9 @@ export default async function handler(
 
     // 연령대 필터 적용
     if (ageGroup) {
-      finalUsers = finalUsers.filter((user) => user.profile.ageGroup === ageGroup);
+      finalUsers = finalUsers.filter(
+        (user) => user.profile.ageGroup === ageGroup
+      );
     }
 
     // 참여자 데이터 변환

@@ -26,11 +26,15 @@ export interface SimpleQualityResult {
   longestSilenceGap?: number;
 }
 
+import { getEnv } from "@/utils/envConfig";
+
 // 내부적으로만 사용할 확장 인터페이스
 interface InternalEnhancedResult extends SimpleQualityResult {
   vadApplied: boolean;
   vadResult?: VADResult;
 }
+
+const { isPreview, isDev } = getEnv();
 
 // 기존 함수를 내부 함수로 이름 변경
 const validateAudioQualitySimpleOriginal = (
@@ -180,28 +184,27 @@ const validateAudioQualitySimpleOriginal = (
   if (!analyzeQualityByDuration(recordingDuration, fileSizeKB)) {
     if (sizeRatio < 0.05) {
       score -= 45;
-      issues.push("거의 무음 상태입니다");
+      issues.push("녹음된 소리가 거의 들리지 않아요.");
       recommendations.push(
-        "마이크 권한을 확인하고 조용한 곳에서 다시 녹음해 주세요"
+        "마이크 사용이 허용되어 있는지 확인해 주시고, 조용한 곳에서 다시 말씀해 주세요."
       );
     } else if (sizeRatio < 0.2) {
       score -= 35;
-      issues.push("음성이 매우 작습니다");
+      issues.push("녹음된 소리가 너무 작아요.");
       recommendations.push(
-        "디바이스를 입에서 15-20cm 거리에 두고 더 크게 말씀해 주세요"
+        "말씀하실 때, 핸드폰을 입에서 15~20cm 정도 거리로 가까이 두고, 조금 더 크게 말씀해 주세요."
       );
     } else if (sizeRatio < minRatio) {
       score -= 20;
-      issues.push("음성이 작게 녹음되었습니다");
-      recommendations.push("조금 더 크게 말씀해 주세요");
+      issues.push("소리가 작게 녹음되었어요.");
+      recommendations.push("조금 더 크게 말씀해 주시면 좋아요.");
     }
   }
-
   if (sizeRatio > 2.0) {
     score -= 15;
-    issues.push("과도한 배경 소음이나 왜곡이 있을 수 있습니다");
+    issues.push("주변 소음이 너무 크거나 소리가 뭉개졌을 수 있어요.");
     recommendations.push(
-      "조용한 환경에서 마이크에서 조금 멀어져서 녹음해 주세요"
+      "조용한 곳에서 핸드폰과 약간 거리를 두고 다시 녹음해 보세요."
     );
   }
 
@@ -210,12 +213,12 @@ const validateAudioQualitySimpleOriginal = (
     const avgSizePerSec = sizeKB / duration;
 
     if (avgSizePerSec < 2 && duration > 5) {
-      return "지속적 무음 구간이 많습니다";
+      return "녹음 중에 조용한 시간이 너무 길게 이어졌어요.";
     }
 
     const expectedVariation = Math.log(duration) * 1.2;
     if (avgSizePerSec < expectedVariation && duration > 3) {
-      return "중간에 무음 구간이 있습니다";
+      return "녹음 도중에 조용한 구간이 있었던 것 같아요.";
     }
 
     return null;
@@ -353,77 +356,47 @@ const enhanceQualityWithVADResult = (
 
   // VAD 성과에 따른 보정
   if (vadResult.compressionRatio < 0.3) {
-    // 70% 이상 무음이 제거됨 = 원본에 무음이 너무 많았음
     enhancedScore += 15;
     issues.push(
       `원본에 무음 구간이 ${Math.round(
         (1 - vadResult.compressionRatio) * 100
       )}% 포함되어 있었음`
     );
-    recommendations.push(
-      `✅ VAD 처리: 대량 무음 제거로 품질 개선 (+15점, ${vadResult.silenceRemoved?.toFixed(
-        1
-      )}초 제거)`
-    );
+    // 기술적 메시지 제거하고 친화적으로 변경
+    if (isDev && isPreview) {
+      recommendations.push("녹음이 자동으로 깔끔하게 정리되었습니다");
+    }
   } else if (vadResult.compressionRatio < 0.7) {
     enhancedScore += 10;
-    recommendations.push(
-      `✅ VAD 처리: 무음 구간 ${Math.round(
-        (1 - vadResult.compressionRatio) * 100
-      )}% 제거로 품질 개선 (+10점)`
-    );
+    recommendations.push("녹음이 잘 되었습니다");
   } else if (vadResult.compressionRatio > 0.95) {
-    // 거의 제거된 것이 없음 = 원본이 이미 좋은 품질
     enhancedScore += 5;
-    recommendations.push(
-      `✅ VAD 검사: 원본 품질 우수 확인 (+5점, 무음 제거 불필요)`
-    );
-  } else {
-    recommendations.push(
-      `ℹ️ VAD 처리: 소량 무음 제거 완료 (${Math.round(
-        (1 - vadResult.compressionRatio) * 100
-      )}% 제거)`
-    );
+    recommendations.push("녹음 품질이 좋습니다");
   }
 
-  if (vadResult.compressionRatio > 0.95) {
-    // 거의 제거된 것이 없음 = 원본이 이미 좋은 품질
-    enhancedScore += 5;
-  }
-
-  // 최종 점수 보정
   enhancedScore = Math.min(100, enhancedScore);
 
   return {
     ...basicResult,
     score: enhancedScore,
     issues,
-    recommendations,
+    recommendations, // 사용자 친화적 메시지만
     isGoodQuality: enhancedScore >= 70 && issues.length <= 2,
   };
 };
-
 // 기존 함수명을 그대로 사용하는 래퍼 함수
 export const validateAudioQualitySimple = async (
   blob: Blob,
   recordingDuration: number
 ): Promise<SimpleQualityResult> => {
-  // 1. 기본 품질 검증
   const basicResult = validateAudioQualitySimpleOriginal(
     blob,
     recordingDuration
   );
-
-  // 2. VAD 적용 조건 확인
   const shouldUseVAD =
     shouldApplyVAD(blob, recordingDuration) && basicResult.score >= 40;
 
   if (!shouldUseVAD) {
-    const skipReason =
-      basicResult.score < 40
-        ? `기본 품질이 너무 낮아 VAD 건너뜀 (${basicResult.score}/100점)`
-        : "VAD 적용 조건 불충족으로 건너뜀";
-
     return {
       ...basicResult,
       vadApplied: false,
@@ -432,15 +405,12 @@ export const validateAudioQualitySimple = async (
       silenceRemoved: 0,
       compressionRatio: 1.0,
       speechSegments: 1,
-      recommendations: [...basicResult.recommendations, `ℹ️ ${skipReason}`],
+      // 기술적 메시지 제거 - 이 부분은 그대로 두고 나중에 관리자 정보 추가
     };
   }
 
   try {
-    // 3. VAD 적용
     const vadResult = await removeNonSpeechSegments(blob, recordingDuration);
-
-    // 4. VAD 적용된 결과로 품질 재평가
     const enhancedResult = enhanceQualityWithVADResult(basicResult, vadResult);
 
     return {
@@ -458,16 +428,9 @@ export const validateAudioQualitySimple = async (
       vadApplied: false,
       processedBlob: blob,
       compressionRatio: 1.0,
-      recommendations: [
-        ...basicResult.recommendations,
-        `❌ VAD 처리 실패: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      ],
     };
   }
 };
-
 // 🔥 추가: VAD 처리된 오디오 블롭을 가져오는 헬퍼 함수 (필요시 사용)
 export const getProcessedAudioBlob = async (
   blob: Blob,

@@ -365,6 +365,7 @@ const AdminRecordingsTab = () => {
           <div className={styles.tableHead}>
             <div className={styles.tableRow}>
               <div className={styles.tableCell}>사용자</div>
+              <div className={styles.tableCell}>회차</div>
               <div className={styles.tableCell}>태스크</div>
               <div className={styles.tableCell}>타입</div>
               <div className={styles.tableCell}>도메인</div>
@@ -389,6 +390,9 @@ const AdminRecordingsTab = () => {
                     <span className={styles.userId}>
                       {recording.speakerInfo?.userName || "이름 없음"}
                     </span>
+                  </div>
+                    <div className={styles.tableCell}>
+                    <span className={styles.taskKey}>{recording.taskKey}</span>
                   </div>
                   <div className={styles.tableCell}>
                     <span className={styles.taskKey}>{recording.taskKey}</span>
