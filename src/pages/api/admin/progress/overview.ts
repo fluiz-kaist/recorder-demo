@@ -74,8 +74,6 @@ export default async function handler(
     });
   }
 
-  console.log("🧧");
-
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
@@ -163,34 +161,34 @@ export default async function handler(
       user.roundSummaries.forEach((round, _) => {
         const roundWeight = 50; // 각 라운드는 50%
 
-        console.log(
-          `라운드 ${round.roundNumber} 처리 전: overallProgress = ${overallProgress}`
-        );
+        // console.log(
+        //   `라운드 ${round.roundNumber} 처리 전: overallProgress = ${overallProgress}`
+        // );
 
         if (round.status === "completed" || round.status === "approved") {
           overallProgress += roundWeight; // 완료된 라운드는 50% 전체 기여
           completedRounds++;
-          console.log(
-            `라운드 ${round.roundNumber} completed 처리 후: overallProgress = ${overallProgress}`
-          );
+          // console.log(
+          //   `라운드 ${round.roundNumber} completed 처리 후: overallProgress = ${overallProgress}`
+          // );
         } else if (round.status === "assigned") {
           // 현재 진행 중인 라운드만 부분 진행률 적용
           if (round.roundNumber === user.currentStatus.currentRoundNumber) {
             const currentRoundProgress =
               user.statistics.current.completedPercentage || 0;
-            const addedProgress = (currentRoundProgress * roundWeight) / 100;
+            // const addedProgress = (currentRoundProgress * roundWeight) / 100;
             overallProgress += (currentRoundProgress * roundWeight) / 100;
-            console.log(
-              `라운드 ${round.roundNumber} assigned 처리 후: overallProgress = ${overallProgress}, added = ${addedProgress}`
-            );
+            // console.log(
+            //   `라운드 ${round.roundNumber} assigned 처리 후: overallProgress = ${overallProgress}, added = ${addedProgress}`
+            // );
           }
           assignedRounds++;
         }
       });
 
-      console.log(
-        `최종 계산: overallProgress = ${overallProgress}, completedRounds = ${completedRounds}, assignedRounds = ${assignedRounds}`
-      );
+      // console.log(
+      //   `최종 계산: overallProgress = ${overallProgress}, completedRounds = ${completedRounds}, assignedRounds = ${assignedRounds}`
+      // );
 
       // 반올림
       overallProgress = Math.round(overallProgress);

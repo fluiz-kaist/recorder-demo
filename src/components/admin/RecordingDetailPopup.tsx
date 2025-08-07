@@ -288,7 +288,7 @@ const RecordingDetailPopup = ({ recording }: RecordingDetailPopupProps) => {
   };
 
   return (
-    <div style={popupStyles.popupContainer}>
+    <div>
       {/* 헤더 */}
       <div style={popupStyles.popupHeader}>
         <div style={popupStyles.headerLeft}>

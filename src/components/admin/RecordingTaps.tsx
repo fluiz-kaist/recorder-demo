@@ -3,7 +3,7 @@ import styles from "@/styles/AdminDashboard.module.css";
 import { formatFirestoreTimestampKST } from "@/utils/time";
 import { useAdminRecordings } from "@/hooks/queries/useAdminQueries";
 import RecordingTabSearchFilters from "@/components/admin/RecordingTabSeach";
-import { AudioRecording } from "@/types/audio";
+import { AudioRecording, VerificationStatus } from "@/types/audio";
 
 // 페이지네이션 컴포넌트
 const Pagination = ({
@@ -258,6 +258,40 @@ const AdminRecordingsTab = () => {
     };
   }, [audioElements]);
 
+  // `AdminRecordingsTab` 컴포넌트 내부에 추가
+  const VerificationStatusBadge = ({
+    status,
+  }: {
+    status: VerificationStatus;
+  }) => {
+    let badgeText = "";
+    let badgeStyle = "";
+
+    switch (status) {
+      case VerificationStatus.PENDING:
+        badgeText = "검증 대기";
+        badgeStyle = styles.badgePending;
+        break;
+      case VerificationStatus.APPROVED:
+        badgeText = "검증 통과";
+        badgeStyle = styles.badgeApproved;
+        break;
+      case VerificationStatus.REJECTED:
+        badgeText = "검증 반려";
+        badgeStyle = styles.badgeRejected;
+        break;
+      case VerificationStatus.NEEDS_RETRY:
+        badgeText = "재시도 필요";
+        badgeStyle = styles.badgeNeedsRetry;
+        break;
+      default:
+        badgeText = "알 수 없음";
+        badgeStyle = styles.badgeUnknown;
+    }
+
+    return <span className={`${styles.badge} ${badgeStyle}`}>{badgeText}</span>;
+  };
+
   // 유틸리티 함수들
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 B";
@@ -365,7 +399,7 @@ const AdminRecordingsTab = () => {
           <div className={styles.tableHead}>
             <div className={styles.tableRow}>
               <div className={styles.tableCell}>사용자</div>
-              <div className={styles.tableCell}>회차</div>
+
               <div className={styles.tableCell}>태스크</div>
               <div className={styles.tableCell}>타입</div>
               <div className={styles.tableCell}>도메인</div>
@@ -373,6 +407,7 @@ const AdminRecordingsTab = () => {
               <div className={styles.tableCell}>크기</div>
               <div className={styles.tableCell}>품질</div>
               <div className={styles.tableCell}>녹음일</div>
+              <div className={styles.tableCell}>검증 상태</div>
               <div className={styles.tableCell}>액션</div>
             </div>
           </div>
@@ -387,13 +422,19 @@ const AdminRecordingsTab = () => {
               recordingsData.recordings.map((recording: AudioRecording) => (
                 <div key={recording.id} className={styles.tableRow}>
                   <div className={styles.tableCell}>
+                    {/* 1. 새로운 함수 `checkSttIssue`를 호출하여 STT 이슈 여부를 확인합니다.
+        2. 그 결과에 따라 CSS 클래스를 동적으로 적용합니다.
+      */}
                     <span className={styles.userId}>
                       {recording.speakerInfo?.userName || "이름 없음"}
+                      {checkSttIssue(recording.textData.sttTranscription) && (
+                        <span className={styles.sttIssueIcon} title="STT 이슈">
+                          ⚠️
+                        </span>
+                      )}
                     </span>
                   </div>
-                    <div className={styles.tableCell}>
-                    <span className={styles.taskKey}>{recording.taskKey}</span>
-                  </div>
+
                   <div className={styles.tableCell}>
                     <span className={styles.taskKey}>{recording.taskKey}</span>
                   </div>
@@ -440,6 +481,11 @@ const AdminRecordingsTab = () => {
                     <span className={styles.timestamp}>
                       {formatFirestoreTimestampKST(recording.uploadedAt)}
                     </span>
+                  </div>
+                  <div className={styles.tableCell}>
+                    <VerificationStatusBadge
+                      status={recording.verificationStatus}
+                    />
                   </div>
                   {/* 액션 버튼들 (상세보기 + 다운로드) */}
                   <div className={styles.tableCell}>
@@ -504,3 +550,10 @@ const AdminRecordingsTab = () => {
 };
 
 export default AdminRecordingsTab;
+
+function checkSttIssue(sttText: string) {
+  // 'sttText'가 특정 문자열과 일치하는지 확인하고 true/false를 반환합니다.
+  const isDefault = sttText === "클라이언트에서 STT 결과를 보내지 않았습니다";
+  // 조건에 따라 '🧧' 또는 '👌'를 반환하는 대신, 불리언(true/false)을 반환합니다.
+  return isDefault;
+}

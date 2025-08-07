@@ -74,6 +74,8 @@ export default async function handler(
       search,
     } = req.query;
 
+    console.log("💕💕💕💕💕여기서 req.query? ", req.query);
+
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(queryLimit as string, 10);
 
@@ -90,7 +92,15 @@ export default async function handler(
 
       // 검색 조건 추가
       if (search && typeof search === "string") {
-        query = query.where("speakerInfo.userName", "==", search);
+        const searchField = req.query.searchField as string;
+
+        if (searchField === "userName") {
+          query = query.where("speakerInfo.userName", "==", search);
+        } else if (searchField === "taskKey") {
+          query = query.where("taskKey", "==", search);
+        } else if (searchField === "domain") {
+          query = query.where("textData.domain", "==", search);
+        }
       }
 
       return query;
