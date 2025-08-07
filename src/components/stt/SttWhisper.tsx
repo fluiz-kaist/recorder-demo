@@ -153,7 +153,7 @@ const SttWhisper: React.FC<SttWhisperProps> = ({
         throw new Error(result.error || "음성 변환에 실패했습니다.");
       }
     } catch (error) {
-      console.error("Whisper 음성 텍스트 변환 실패:", error);
+      // console.error("Whisper 음성 텍스트 변환 실패:", error);
 
       let errorMessage: string;
       if (error instanceof Error) {

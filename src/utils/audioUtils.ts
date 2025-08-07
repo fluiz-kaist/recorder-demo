@@ -263,9 +263,7 @@ const validateAudioQualitySimpleOriginal = (
       navigator.userAgent
     );
   if (isMobile && score < 70) {
-    recommendations.push(
-      "📱 스마트폰 하단 마이크 구멍이 막히지 않았는지 확인해 주세요"
-    );
+    recommendations.push("핸드폰 마이크 구멍이 막히지 않았는지 확인해 주세요");
 
     // iOS Safari 특별 처리
     if (
@@ -368,10 +366,14 @@ const enhanceQualityWithVADResult = (
     }
   } else if (vadResult.compressionRatio < 0.7) {
     enhancedScore += 10;
-    recommendations.push("녹음이 잘 되었습니다");
+    if (isDev && isPreview) {
+      recommendations.push("녹음이 자동으로 깔끔하게 정리되었습니다");
+    }
   } else if (vadResult.compressionRatio > 0.95) {
     enhancedScore += 5;
-    recommendations.push("녹음 품질이 좋습니다");
+    if (isDev && isPreview) {
+      recommendations.push("녹음이 자동으로 깔끔하게 정리되었습니다");
+    }
   }
 
   enhancedScore = Math.min(100, enhancedScore);

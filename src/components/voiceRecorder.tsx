@@ -940,31 +940,50 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
         <div className={styles.qualityWarning}>
           <h4>
             {transcriptionError
-              ? "❌ 음성을 텍스트로 변환하지 못했습니다"
+              ? "❌ 말씀하신 내용을 글자로 바꾸는 데 실패했습니다. 다시 한 번 녹음해 주시겠어요?"
               : "⚠️ 녹음된 음성의 품질이 좋지 않습니다"}
           </h4>
           {/* STT 에러가 있으면 에러 메시지도 표시 */}
           {transcriptionError && (
             <div className={styles.sttError}>
-              <p>변환 실패 원인: {transcriptionError}</p>
+              <p>{transcriptionError}</p>
             </div>
           )}
           {audioUrl ? (
-            <div className={styles.audioPreview}>
-              <p>🔉 녹음된 음성 확인하기:</p>
-              <audio className={styles.audioPlayer} src={audioUrl} controls />
+            <div className={styles.customAudioPlayer}>
+              <audio
+                ref={setAudioRef}
+                src={audioUrl}
+                preload="none"
+                playsInline
+                onError={() => setIsPlaying(false)}
+                onCanPlayThrough={() => console.log("Audio ready")}
+                style={{ display: "none" }}
+                onEnded={() => {
+                  setTimeout(() => {
+                    setIsPlaying(false);
+                  }, 1500);
+                }}
+              />
+              <button
+                className={styles.playButton}
+                onClick={togglePlayback}
+                disabled={!audioUrl}
+              >
+                {isPlaying ? "⏸️ 재생 멈추기" : "▶️ 녹음한 음성 확인하기"}
+              </button>
             </div>
           ) : (
             <div className={styles.audioError}>
               ❌ 음성 파일을 불러올 수 없습니다. 다시 녹음해 주세요.
             </div>
           )}
-          <div className={styles.qualityScore}>
+          {/* <div className={styles.qualityScore}>
             품질 점수: {qualityResult.score}/100 점
           </div>
           <div className={styles.fileSizeInfo}>
             파일 크기: {qualityResult.fileSizeKB}KB
-          </div>
+          </div> */}
 
           {qualityResult.issues.length > 0 && (
             <div className={styles.qualityIssues}>
@@ -989,6 +1008,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           )}
 
           <div className={styles.qualityActions}>
+            {isTutorial ? (
+              <p className={styles.guidanceBox}>
+                다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
+              </p>
+            ) : (
+              <></>
+            )}
             <button
               className={styles.retryRecordingButton}
               onClick={handleNewRecording}
@@ -1013,7 +1039,61 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           </div>
         </div>
       )}
+      {isTutorial ? (
+        <p className={styles.guidanceBox}>
+          녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요.
+        </p>
+      ) : (
+        <></>
+      )}
 
+      {/* STT 변환 결과 */}
+      {transcription && (
+        <div className={styles.sttResultSection}>
+          {/* <div className={styles.sttHeader}>
+                  <h4> 녹음한 음성이 글자로 바뀐 결과</h4>
+                </div> */}
+
+          {isTutorial ? (
+            <p className={styles.guidanceBox}>
+              녹음한 음성을 자동으로 글자로 바꾸어 보여줍니다. 만약 이상한
+              내용이 나온다면 음성 녹음을 다시 진행해주세요.
+            </p>
+          ) : (
+            <></>
+          )}
+
+          <div className={styles.sttResultBox}>
+            <div className={styles.sttLabel}>
+              <span className={styles.sttIcon}>💬</span>
+              <span>내가 말한 내용이 맞나요?</span>
+            </div>
+            <div className={styles.transcriptionText}>
+              <p className={styles.transcriptContent}>
+                {transcription.transcript}
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.sttGuidance}>
+            <div className={styles.guidanceBox}>
+              <p className={styles.guidanceText}>
+                위에 나온 문장이 방금 말씀하신 내용과 같은지 확인해 주세요.
+              </p>
+              <p className={styles.guidanceText}>
+                만약 내용이 완전히 틀리거나 이상하게 나온다면, 아래에 있는
+                <br />
+                <span className={styles.retryButtonRef}>새로 녹음하기</span>
+                버튼을 눌러서 다시 녹음해 주세요.
+              </p>
+              <p className={styles.guidanceSubText}>
+                💡 조용한 곳에서 전화하듯이 말씀하시면 정확하게 인식할 수
+                있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 오디오 섹션 (품질 통과 시) */}
       {audioUrl && !showQualityWarning && (
         <div className={styles.audioSection}>
@@ -1025,36 +1105,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
               </span>
             )}
           </div>
-          <div className={styles.customAudioPlayer}>
-            <audio
-              ref={setAudioRef}
-              src={audioUrl}
-              preload="none"
-              playsInline
-              onError={() => setIsPlaying(false)}
-              onCanPlayThrough={() => console.log("Audio ready")}
-              style={{ display: "none" }}
-              onEnded={() => {
-                setTimeout(() => {
-                  setIsPlaying(false);
-                }, 1500);
-              }}
-            />
-            <button
-              className={styles.playButton}
-              onClick={togglePlayback}
-              disabled={!audioUrl}
-            >
-              {isPlaying ? "⏸️ 재생 멈추기" : "▶️ 녹음한 음성 확인하기"}
-            </button>
-          </div>
-          {isTutorial ? (
-            <p className={styles.guidanceBox}>
-              녹음한 음성을 제출하기 전에, 잘 녹음 되었는지 확인해주세요
-            </p>
-          ) : (
-            <></>
-          )}
+
           <div className={styles.actionButtons}>
             {audioBlob && (
               <button
@@ -1221,13 +1272,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 )}
               </div>
             )}
-            {isTutorial ? (
-              <p className={styles.guidanceBox}>
-                녹음한 음성은 제출하기 버튼을 눌러서 제출해주세요
-              </p>
-            ) : (
-              <></>
-            )}
 
             <button
               className={`${styles.newRecordingButton} ${
@@ -1240,34 +1284,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 ? "분석 중..."
                 : "🔄 새로 녹음하기"}
             </button>
-
-            {/* 새로 녹음하기 버튼 아래 안내 */}
-            {transcription && (
-              <p className={styles.retryGuidance}>
-                변환된 내용이 말씀하신 것과 다르면 위 버튼을 눌러주세요
-              </p>
-            )}
-
-            {isSTTProcessing && !isAutoSTT && (
-              <div className={styles.sttProcessing}>
-                <div className={styles.processingIcon}>🔄</div>
-                <h4>음성을 글자로 바꾸고 있습니다</h4>
-                <p className={styles.processingText}>
-                  잠시만 기다려주세요. 곧 결과를 보여드릴게요.
-                </p>
-                <p className={styles.processingSubText}>
-                  결과가 나오면 내용을 꼭 확인해주세요!
-                </p>
-              </div>
-            )}
-
-            {isTutorial ? (
-              <p className={styles.guidanceBox}>
-                다시 녹음을 하려면 새로 녹음하기 버튼을 눌러서 녹음해주세요
-              </p>
-            ) : (
-              <></>
-            )}
 
             {/* STT 컴포넌트 */}
             {showSTT && (
@@ -1288,58 +1304,6 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                   음성 변환에 실패했습니다. 새로 녹음해주세요.
                 </p>
               </div>
-            )}
-
-            {/* STT 변환 결과 */}
-            {transcription && (
-              <div className={styles.sttResultSection}>
-                <div className={styles.sttHeader}>
-                  <h4>🎯 녹음한 음성이 글자로 바뀐 결과</h4>
-                </div>
-
-                <div className={styles.sttResultBox}>
-                  <div className={styles.sttLabel}>
-                    <span className={styles.sttIcon}>💬</span>
-                    <span>변환된 내용:</span>
-                  </div>
-                  <div className={styles.transcriptionText}>
-                    <p className={styles.transcriptContent}>
-                      {transcription.transcript}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={styles.sttGuidance}>
-                  <div className={styles.guidanceBox}>
-                    <h5>📢</h5>
-                    <p className={styles.guidanceText}>
-                      위에 표시된 글자가{" "}
-                      <strong>실제로 말씀하신 내용과 같은지</strong> 꼭
-                      확인해주세요.
-                    </p>
-                    <p className={styles.guidanceText}>
-                      만약 <strong>내용이 많이 다르거나 이상하다면</strong>,
-                      아래{" "}
-                      <span className={styles.retryButtonRef}>
-                        새로 녹음하기
-                      </span>{" "}
-                      버튼을 눌러서 다시 녹음해주세요.
-                    </p>
-                    <p className={styles.guidanceSubText}>
-                      💡 더 정확한 변환을 위해서는 조용한 곳에서 전화하듯이
-                      핸드폰을 가까이 두고 말씀해 주세요.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isTutorial ? (
-              <p className={styles.guidanceBox}>
-                녹음한 음성을 글자로 바꿔보고 싶으시다면, 여기를 눌러보세요
-              </p>
-            ) : (
-              <></>
             )}
           </div>
 
