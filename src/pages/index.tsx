@@ -128,7 +128,11 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
-  const isAvailable = isRecordingAvailable();
+  // const isAvailable = isRecordingAvailable();
+  // Temporarily hardcoded for the test period (4 PM to 10 PM)
+  const now = new Date();
+  const currentHour = now.getHours();
+  const isAvailable = currentHour >= 16 && currentHour < 22; // 4시(16)부터 10시(22)까지
 
   // =================================
   // ========== 함수 =============
@@ -518,10 +522,16 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
-            <p>
+            {/* <p>
               {isAvailable
                 ? "지금 음성 녹음에 참여하실 수 있습니다."
                 : "음성 녹음은 평일 오후 12시~6시에 참여하실 수 있습니다."}
+            </p> */}
+
+            <p>
+              {isAvailable
+                ? "지금 음성 녹음에 참여하실 수 있습니다."
+                : "오늘(8월 7일) 녹음은 오후 4시부터 밤 10시까지 참여하실 수 있습니다. 이용에 참고 부탁드립니다."}
             </p>
 
             <div className={styles.inputGroup}>
