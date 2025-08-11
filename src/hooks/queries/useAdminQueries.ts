@@ -267,6 +267,8 @@ export const useAdminRecordings = (
       if (quality) queryParams.append("quality", quality);
       if (search) queryParams.append("search", search);
 
+      console.log("여기 검색 파람?", queryParams);
+
       const response = await fetch(
         `/api/admin/recordings?${queryParams.toString()}`
       );
@@ -280,7 +282,7 @@ export const useAdminRecordings = (
 
       return data.data;
     },
-    staleTime: 3 * 60 * 1000, // 3분간 캐시 유지
+    // staleTime: search ? 0 : 3 * 60 * 1000, // 검색 시에는 캐시 무시
     retry: 1,
   });
 };
