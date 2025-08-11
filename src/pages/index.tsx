@@ -128,8 +128,9 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
-  const isAvailable = isRecordingAvailable();
+  // const isAvailable = isRecordingAvailable();
   // Temporarily hardcoded for the test period (4 PM to 10 PM)
+  const isAvailable = false;
 
   // 현재 시간을 한국 시간으로 가져오는 함수
   const getKoreanTime = () => {
@@ -538,10 +539,16 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
                 : "음성 녹음은 평일 오후 12시~6시에 참여하실 수 있습니다."}
             </p> */}
 
-            <p>
+            {/* <p>
               {isAvailable
                 ? "지금 음성 녹음에 참여하실 수 있습니다."
                 : "오늘(8월 7일) 녹음은 오후 4시부터 밤 10시까지 참여하실 수 있습니다. 이용에 참고 부탁드립니다."}
+            </p> */}
+
+            <p>
+              {isAvailable
+                ? "지금 음성 녹음에 참여하실 수 있습니다."
+                : "현재 음성 녹음에 참여할 수 없습니다."}
             </p>
 
             <div className={styles.inputGroup}>
