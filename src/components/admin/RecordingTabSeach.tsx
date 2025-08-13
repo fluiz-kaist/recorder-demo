@@ -8,6 +8,7 @@ interface SearchFiltersProps {
     domain: string;
     quality?: "high" | "medium" | "low" | "";
     verificationStatus?: string;
+    searchField: "userName" | "taskKey" | "domain";
   }) => void;
 }
 
@@ -21,9 +22,9 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
 
   // 🎯 검색 모드 및 상태 관리
   const [isSearching, setIsSearching] = useState(false);
-  const [searchMode, setSearchMode] = useState<"userName" | "userId">(
-    "userName"
-  );
+  const [searchMode, setSearchMode] = useState<
+    "userName" | "taskKey" | "domain"
+  >("userName");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // 🔄 디바운스를 위한 타이머
@@ -45,6 +46,7 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
     setIsSearching(true);
     onFiltersChange({
       search: searchInput.trim(),
+      searchField: searchMode === "userName" ? "userName" : "taskKey",
       taskType,
       domain,
       quality,
@@ -72,6 +74,7 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
   const handleFilterChange = (filterType: string, value: any) => {
     const newFilters = {
       search: searchInput.trim(),
+      searchField: searchMode === "userName" ? "userName" : "taskKey",
       taskType,
       domain,
       quality,
@@ -107,6 +110,7 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
     setVerificationStatus("");
 
     onFiltersChange({
+      searchField: "userName",
       search: "",
       taskType: "",
       domain: "",
@@ -118,12 +122,14 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
     searchInputRef.current?.focus();
   };
 
-  // 🎯 검색 모드 토글
   const toggleSearchMode = () => {
-    setSearchMode((prev) => (prev === "userName" ? "userId" : "userName"));
+    setSearchMode((prev) => {
+      if (prev === "userName") return "taskKey";
+      if (prev === "taskKey") return "domain";
+      return "userName";
+    });
     setSearchInput(""); // 검색어 초기화
   };
-
   // 활성 필터 개수 계산
   const activeFiltersCount = [
     searchInput.trim(),
@@ -153,10 +159,18 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
             onClick={toggleSearchMode}
             className={styles.searchModeToggle}
             title={`현재: ${
-              searchMode === "userName" ? "사용자명" : "사용자ID"
+              searchMode === "userName"
+                ? "사용자명"
+                : searchMode === "taskKey"
+                ? "태스크키"
+                : "도메인"
             } 검색`}
           >
-            {searchMode === "userName" ? "👤" : "🆔"}
+            {searchMode === "userName"
+              ? "👤"
+              : searchMode === "taskKey"
+              ? "🔑"
+              : "🏷️"}
           </button>
 
           {/* 검색 입력창 */}
@@ -164,7 +178,11 @@ const RecordingTabSearchFilters = ({ onFiltersChange }: SearchFiltersProps) => {
             ref={searchInputRef}
             type="text"
             placeholder={`${
-              searchMode === "userName" ? "사용자명" : "사용자 ID"
+              searchMode === "userName"
+                ? "사용자명"
+                : searchMode === "taskKey"
+                ? "태스크키"
+                : "도메인"
             }으로 검색...`}
             value={searchInput}
             onChange={(e) => handleSearchInputChange(e.target.value)}

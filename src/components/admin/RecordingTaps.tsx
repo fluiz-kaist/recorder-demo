@@ -132,6 +132,7 @@ const AdminRecordingsTab = () => {
     search: "",
     taskType: "" as "" | "situational" | "formal",
     domain: "",
+    searchField: "userName",
   });
 
   // 오디오 재생 상태
@@ -147,6 +148,7 @@ const AdminRecordingsTab = () => {
     search: appliedFilters.search || undefined,
     taskType: appliedFilters.taskType || undefined,
     domain: appliedFilters.domain || undefined,
+    searchField: appliedFilters.searchField || undefined, // 이 줄 추가
   });
 
   const recordingsData = recordingsQuery.data;

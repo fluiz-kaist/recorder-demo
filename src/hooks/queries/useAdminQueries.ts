@@ -233,6 +233,7 @@ interface UseAdminRecordingsParams {
   search?: string;
   targetUserId?: string; //검색대상유저아이디
   targetUserName?: string;
+  searchField?:string
 }
 
 export const useAdminRecordings = (
