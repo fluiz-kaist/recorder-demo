@@ -60,7 +60,7 @@ const LLMValidationTestPage = ({ adminToken }: { adminToken: string }) => {
         });
 
         const response = await fetch(
-          `/api/admin/recordings/llm-validation?${queryParams.toString()}`,
+          `/api/admin/recordings/llm-validation/get?${queryParams.toString()}`,
           {
             method: "GET",
             headers: {

@@ -30,7 +30,7 @@ interface UpdateResponse {
 }
 
 /**
- * 범용 AudioRecording 업데이트 함수 - 다른 API에서 import 가능
+ * 범용 AudioRecording 업데이트 함수
  */
 export async function updateAudioRecordings(
   updates: BatchUpdateItem | BatchUpdateItem[]

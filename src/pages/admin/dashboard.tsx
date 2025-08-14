@@ -12,6 +12,7 @@ import AdminRecordingsTab from "@/components/admin/RecordingTaps";
 
 import ApplicantsTab from "@/components/admin/ApplicantsTabs";
 import ParticipantsTab from "@/components/admin/ParticipantsTap";
+import AdminLLMValidationTab from "@/components/admin/ValidationTap";
 // 로그아웃 버튼 컴포넌트
 export const AdminLogoutButton = () => {
   const router = useRouter();
@@ -60,6 +61,7 @@ const AdminDashboard = () => {
     | "applicants"
     | "participants"
     | "recordings"
+    | "validation"
     | "upload"
     | "test-task-manager"
   >("overview");
@@ -128,6 +130,14 @@ const AdminDashboard = () => {
           </button>
           <button
             className={`${styles.tabButton} ${
+              activeTab === "validation" ? styles.active : ""
+            }`}
+            onClick={() => setActiveTab("validation")}
+          >
+            녹음 데이터 검증
+          </button>
+          <button
+            className={`${styles.tabButton} ${
               activeTab === "upload" ? styles.active : ""
             }`}
             onClick={() => router.push("upload")}
@@ -156,6 +166,7 @@ const AdminDashboard = () => {
           {activeTab === "participants" && (
             <ParticipantsTab participantsData={participants.data} />
           )}
+          {activeTab === "validation" && <AdminLLMValidationTab />}
           {activeTab === "recordings" && <AdminRecordingsTab />}
         </main>
       </div>
@@ -380,7 +391,5 @@ const OverviewTab = ({
     </div>
   );
 };
-
-
 
 export default AdminDashboard;
