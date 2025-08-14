@@ -193,28 +193,28 @@ export const useAdminProgressOverview = (): UseQueryResult<
 /**
  * 특정 사용자 진행 상황 상세 조회 훅
  */
-export const useAdminUserProgress = (
-  userId: string
-): UseQueryResult<ParticipantDetail, Error> => {
-  return useQuery({
-    queryKey: ["adminUserProgress", userId],
-    queryFn: async (): Promise<ParticipantDetail> => {
-      const response = await fetch(`/api/admin/progress/${userId}`);
-      const data = await response.json();
+// export const useAdminUserProgress = (
+//   userId: string
+// ): UseQueryResult<ParticipantDetail, Error> => {
+//   return useQuery({
+//     queryKey: ["adminUserProgress", userId],
+//     queryFn: async (): Promise<ParticipantDetail> => {
+//       const response = await fetch(`/api/admin/progress/${userId}`);
+//       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "사용자 진행 상황 조회에 실패했습니다."
-        );
-      }
+//       if (!response.ok) {
+//         throw new Error(
+//           data.message || "사용자 진행 상황 조회에 실패했습니다."
+//         );
+//       }
 
-      return data.data;
-    },
-    enabled: !!userId,
-    staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
-    retry: 1,
-  });
-};
+//       return data.data;
+//     },
+//     enabled: !!userId,
+//     staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
+//     retry: 1,
+//   });
+// };
 
 // ===== 녹음 데이터 관리 훅 =====
 
@@ -233,7 +233,7 @@ interface UseAdminRecordingsParams {
   search?: string;
   targetUserId?: string; //검색대상유저아이디
   targetUserName?: string;
-  searchField?:string
+  searchField?: string;
 }
 
 export const useAdminRecordings = (

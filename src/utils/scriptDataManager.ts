@@ -1,24 +1,28 @@
-//utils/scriptDataManager.ts - 스크립트 데이터 전담
+//utils/scriptDataManager.ts - 수정된 스크립트 데이터 전담
 
 import { SituationalScript, FormalScript } from "@/types/firebase";
 import { getKoreanTimeISO } from "@/utils/time";
+
 interface LocalScriptData {
   version: string;
   loadedAt: string;
   userId: string;
   setNumber: number;
-  setId: number; // formalSetId → setId (이제 상황발화 세트 ID)
+  setId: number;
 
-  // API에서 받은 스크립트 데이터
+  // API에서 받은 스크립트 데이터 (평면 배열)
   situationalScripts: SituationalScript[];
   formalScripts: FormalScript[];
 
-  // 간단한 인덱스만 유지
+  // 🔄 수정된 인덱스 - 배열 지원
   indexes: {
-    situationalByTaskKey: Record<string, SituationalScript>;
-    formalByTaskKey: Record<string, FormalScript>;
+    // task_key별로 배열 저장 (JSON 파일 구조와 일치)
+    situationalByTaskKey: Record<string, SituationalScript[]>;
+    formalByTaskKey: Record<string, FormalScript[]>;
+
     // 서비스별 태스크 키 목록
     taskKeysByService: Record<string, string[]>;
+
     // 서비스별 통계
     serviceStats: Record<
       string,
@@ -38,8 +42,8 @@ export class ScriptDataManager {
   // API에서 받은 데이터 저장
   static saveScriptData(
     userId: string,
-    roundNumber: number, // setNumber → roundNumber (의미 명확화)
-    setId: number, // formalSetId → setId (이제 상황발화 세트 ID)
+    roundNumber: number,
+    setId: number,
     scripts: {
       situational: SituationalScript[];
       formal: FormalScript[];
@@ -51,23 +55,23 @@ export class ScriptDataManager {
       version: "1.0",
       loadedAt: now,
       userId,
-      setNumber: roundNumber, // 내부적으로는 기존 필드명 유지
-      setId: setId, // 새로운 구조에서는 상황발화 세트 ID
+      setNumber: roundNumber,
+      setId: setId,
       situationalScripts: scripts.situational,
       formalScripts: scripts.formal,
-      indexes: this.createSimpleIndexes(scripts.situational, scripts.formal),
+      indexes: this.createArrayIndexes(scripts.situational, scripts.formal),
     };
 
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(scriptData));
   }
 
-  // 간단한 인덱스 생성
-  private static createSimpleIndexes(
+  // 🔄 수정된 인덱스 생성 - 배열 지원
+  private static createArrayIndexes(
     situational: SituationalScript[],
     formal: FormalScript[]
   ) {
-    const situationalByTaskKey: Record<string, SituationalScript> = {};
-    const formalByTaskKey: Record<string, FormalScript> = {};
+    const situationalByTaskKey: Record<string, SituationalScript[]> = {};
+    const formalByTaskKey: Record<string, FormalScript[]> = {};
     const taskKeysByService: Record<string, string[]> = {};
     const serviceStats: Record<
       string,
@@ -78,15 +82,21 @@ export class ScriptDataManager {
       }
     > = {};
 
-    // 상황발화 인덱싱
+    // 상황발화 인덱싱 - task_key별 배열로 그룹화
     situational.forEach((script) => {
-      situationalByTaskKey[script.task_key] = script;
+      // 배열로 그룹화
+      if (!situationalByTaskKey[script.task_key]) {
+        situationalByTaskKey[script.task_key] = [];
+      }
+      situationalByTaskKey[script.task_key].push(script);
 
       // 서비스별 태스크 키 목록 생성
       if (!taskKeysByService[script.service_name]) {
         taskKeysByService[script.service_name] = [];
       }
-      taskKeysByService[script.service_name].push(script.task_key);
+      if (!taskKeysByService[script.service_name].includes(script.task_key)) {
+        taskKeysByService[script.service_name].push(script.task_key);
+      }
 
       // 서비스별 통계 생성
       if (!serviceStats[script.service_name]) {
@@ -99,9 +109,15 @@ export class ScriptDataManager {
       serviceStats[script.service_name].situationalCount++;
     });
 
-    // 정형발화 인덱싱
+    console.log("여기서 foraml?❤️❤️❤️❤️", formal);
+
+    // 정형발화 인덱싱 - task_key별 배열로 그룹화
     formal.forEach((script) => {
-      formalByTaskKey[script.task_key] = script;
+      // 배열로 그룹화
+      if (!formalByTaskKey[script.task_key]) {
+        formalByTaskKey[script.task_key] = [];
+      }
+      formalByTaskKey[script.task_key].push(script);
 
       // 서비스별 태스크 키 목록에 추가
       if (!taskKeysByService[script.service_name]) {
@@ -157,18 +173,35 @@ export class ScriptDataManager {
     return data?.indexes.taskKeysByService[serviceName] || [];
   }
 
-  // 특정 태스크의 스크립트 조회
-  static getScriptByTaskKey(taskKey: string, type: "situational" | "formal") {
-    if (typeof window === "undefined") return null; // SSR 체크
+  // 🔄 수정된 메서드 - 배열 반환
+  static getScriptsByTaskKey(
+    taskKey: string,
+    type: "situational" | "formal"
+  ): any[] {
+    if (typeof window === "undefined") return []; // SSR 체크
 
     const data = this.getScriptData();
-    if (!data) return null;
+    if (!data) return [];
 
     if (type === "situational") {
-      return data.indexes.situationalByTaskKey[taskKey] || null;
+      return data.indexes.situationalByTaskKey[taskKey] || [];
     } else {
-      return data.indexes.formalByTaskKey[taskKey] || null;
+      return data.indexes.formalByTaskKey[taskKey] || [];
     }
+  }
+
+  // 🆕 특정 task_key의 첫 번째 스크립트만 반환 (기존 호환성)
+  static getScriptByTaskKey(taskKey: string, type: "situational" | "formal") {
+    const scripts = this.getScriptsByTaskKey(taskKey, type);
+    return scripts.length > 0 ? scripts[0] : null;
+  }
+
+  // 🆕 특정 task_key의 모든 스크립트 반환
+  static getAllScriptsByTaskKey(
+    taskKey: string,
+    type: "situational" | "formal"
+  ): any[] {
+    return this.getScriptsByTaskKey(taskKey, type);
   }
 
   // 서비스별 총 태스크 수 조회
@@ -201,6 +234,22 @@ export class ScriptDataManager {
       setNumber: data.setNumber,
       setId: data.setId,
       loadedAt: data.loadedAt,
+    };
+  }
+
+  // 🆕 JSON 파일과 같은 구조로 데이터 반환 (디버깅/호환성용)
+  static getScriptDataAsOriginalFormat(): {
+    formalScript: Record<string, FormalScript[]>;
+    situScript: Record<string, SituationalScript[]>;
+  } | null {
+    if (typeof window === "undefined") return null;
+
+    const data = this.getScriptData();
+    if (!data) return null;
+
+    return {
+      formalScript: data.indexes.formalByTaskKey,
+      situScript: data.indexes.situationalByTaskKey,
     };
   }
 

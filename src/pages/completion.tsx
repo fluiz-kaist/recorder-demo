@@ -16,15 +16,16 @@ const CompletionPage: React.FC = () => {
   const getRoundMessage = () => {
     if (round === "1") {
       return {
-        title: "1라운드가 완료되었습니다!",
-        mainMessage: "첫 번째 라운드를 성공적으로 완료하셨습니다.",
-        subMessage:
-          "다음 라운드가 배정될 때까지 기다려 주세요. 관리자 승인 후 2라운드가 시작됩니다.",
+        title: "1회차 작업이 완료되었습니다!",
+        mainMessage:
+          "상단의 [작업 종료하기]를 눌러 작업을 정상적으로 종료해주세요",
+        subMessage: "관리자 승인 후 2회차 작업을 시작할 수 있습니다.",
       };
     } else if (round === "2") {
       return {
-        title: "2라운드가 완료되었습니다!",
-        mainMessage: "모든 라운드를 성공적으로 완료하셨습니다.",
+        title: "2회차 작업이 완료되었습니다!",
+        mainMessage:
+          "상단의 [작업 종료하기]를 눌러 작업을 정상적으로 종료해주세요.",
         subMessage: "전체 과정이 완료되었습니다. 참여해 주셔서 감사합니다.",
       };
     } else {

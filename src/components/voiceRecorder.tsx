@@ -29,7 +29,7 @@ import {
   validateAudioQualitySimple,
   SimpleQualityResult,
 } from "@/utils/audioUtils";
-
+import { getUniqueKey } from "@/utils/createUniqKeyForTaskKey";
 // =================================
 // ========== 타입, 상수=============
 // ===================================
@@ -48,6 +48,7 @@ const WARNING_START_TIME =
 
 /** interfaces */
 type AnyScript = SituationalScript | FormalScript | TutorialScript;
+type OnlyTwoAvType = SituationalScript | FormalScript;
 
 interface VoiceRecorderProps {
   scriptType: ScriptType;
@@ -544,6 +545,10 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       return;
     }
 
+    if (scriptType === ScriptType.TUTORIAL) return;
+
+    const uniqueTaskKey = getUniqueKey(scriptData as OnlyTwoAvType, scriptType);
+
     if (!recordingStartTime || !recordingEndTime) {
       console.error("녹음 시간 정보가 없습니다.");
       return;
@@ -708,7 +713,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       const completeResult = await completeUserScriptMutation.mutateAsync({
         userId: fullUser.profile.userId,
-        taskKey: typedScript.task_key,
+        taskKey: uniqueTaskKey, //  고유키 사용
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         status: "completed", // 또는 "in_progress", "not_started"

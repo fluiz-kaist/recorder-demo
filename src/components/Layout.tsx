@@ -46,7 +46,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   useEffect(() => {
     if (!isLoading && user && userStatus) {
-      const isOnCompletionPage = router.pathname === "/completion";
+      const isOnCompletionPage = router.asPath.startsWith("/completion"); // ← asPath 사용
       const isAdminRoute = router.pathname.includes("/admin");
       const isIndexPage = router.pathname === "/";
 

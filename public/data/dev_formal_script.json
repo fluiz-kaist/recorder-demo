@@ -121,7 +121,7 @@
   ],
   "은행-은행-1": [
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "formal_script": "국민은행 앱으로 지방세를 납부해줘. 내 납부 번호는  12345-1-12-12-12345678이야.",
       "set-id": null,
       "service_target": "은행",
@@ -130,7 +130,7 @@
       "id": "7-high"
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "formal_script": "12345-1-12-12-12345678가 내 납부번호인데, 이거로 신한은행 앱을 사용해서 상하수도 요금을 바로 결제해줘.",
       "set-id": null,
       "service_target": "은행",
@@ -141,7 +141,7 @@
   ],
   "은행-은행-2": [
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "formal_script": "우리은행 앱으로 홍길동에게 25만원을 송금해줘. 메모는 '병원비' 로 해두고. 자주쓰는 계좌에 홍길동이 있을 거야.",
       "set-id": null,
       "service_target": "은행",
@@ -150,7 +150,7 @@
       "id": "8-high"
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "formal_script": "하나은행에 내가 우리 아파트 관리비 내는 계좌를 아파트관리실로 설정해뒀거든? 거기로 이번달 관리비 30만원 송금해줘.",
       "set-id": null,
       "service_target": "은행",
