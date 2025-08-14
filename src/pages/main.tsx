@@ -35,7 +35,7 @@ const MainSelectionPage = () => {
     useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
 
-  // console.log("fullUser?", fullUser);
+  console.log("fullUser?", fullUser);
   // console.log("🔍 완전한 상태 체크:", {
   //   "1. authStatus": authStatus,
   //   "2. authLoading": authLoading,

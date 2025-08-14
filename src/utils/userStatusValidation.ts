@@ -6,14 +6,14 @@ import { User, RoundStatus } from "@/types/user";
  */
 export enum UserAccessStatus {
   // 시작 화면 접근 가능한 상태들
-  NEW_USER = "new_user",                    // 새로 시작하는 사람
+  NEW_USER = "new_user", // 새로 시작하는 사람
   CAN_START_NEXT_ROUND = "can_start_next_round", // 허락 받아서 다음 단계를 할 수 있는 사람
-  IN_PROGRESS = "in_progress",              // 현재 진행 중인 사람
-  
+  IN_PROGRESS = "in_progress", // 현재 진행 중인 사람
+  TUTORIAL_REQUIRED = "tutorial_required",
   // 시작 화면 접근 불가능한 상태들
   WAITING_FOR_APPROVAL = "waiting_for_approval", // 승인 대기 중인 사람
-  ALL_COMPLETED = "all_completed",          // 모든 라운드 완료한 사람
-  BLOCKED = "blocked",                      // 차단된 사용자
+  ALL_COMPLETED = "all_completed", // 모든 라운드 완료한 사람
+  BLOCKED = "blocked", // 차단된 사용자
 }
 
 /**
@@ -31,7 +31,9 @@ export interface UserStatusAnalysis {
 /**
  * 사용자의 현재 상태를 분석하는 메인 함수
  */
-export function analyzeUserStatus(user: User | null | undefined): UserStatusAnalysis {
+export function analyzeUserStatus(
+  user: User | null | undefined
+): UserStatusAnalysis {
   // 사용자 정보가 없는 경우
   if (!user) {
     return {
@@ -39,7 +41,7 @@ export function analyzeUserStatus(user: User | null | undefined): UserStatusAnal
       canAccessStartPage: true,
       currentRound: 0,
       maxAllowedRounds: 0,
-      reason: "사용자 정보 없음"
+      reason: "사용자 정보 없음",
     };
   }
 
@@ -47,8 +49,20 @@ export function analyzeUserStatus(user: User | null | undefined): UserStatusAnal
   const maxRounds = user.settings.maxAllowedRounds || 2; // 기본값 2
   const canStartRecording = user.currentStatus.canStartRecording;
   const canStartNextRound = user.currentStatus.canStartNextRound;
-  const completedPercentage = user.currentStatus.currentRoundProgress?.completedPercentage || 0;
+  const completedPercentage =
+    user.currentStatus.currentRoundProgress?.completedPercentage || 0;
   const hasPendingApproval = user.currentStatus.hasPendingApproval;
+
+  // 분석 로직에서 튜토리얼 상태 확인
+  if (currentRound > 0 && !user.currentStatus.isTutorialCompleted) {
+    return {
+      status: UserAccessStatus.TUTORIAL_REQUIRED,
+      canAccessStartPage: true, // 튜토리얼을 위해 접근은 가능
+      currentRound,
+      maxAllowedRounds: maxRounds,
+      reason: "튜토리얼 완료 필요",
+    };
+  }
 
   // 1. 모든 라운드를 완료한 사용자
   if (currentRound > maxRounds) {
@@ -58,7 +72,7 @@ export function analyzeUserStatus(user: User | null | undefined): UserStatusAnal
       currentRound,
       maxAllowedRounds: maxRounds,
       reason: "모든 라운드 완료",
-      redirectPath: "/completion"
+      redirectPath: "/completion",
     };
   }
 
@@ -80,7 +94,7 @@ export function analyzeUserStatus(user: User | null | undefined): UserStatusAnal
       currentRound,
       maxAllowedRounds: maxRounds,
       reason: "관리자 승인 대기 중",
-      redirectPath: "/completion"
+      redirectPath: "/completion",
     };
   }
 
@@ -111,7 +125,7 @@ export function analyzeUserStatus(user: User | null | undefined): UserStatusAnal
     currentRound,
     maxAllowedRounds: maxRounds,
     reason: "접근 권한 없음",
-    redirectPath: "/completion"
+    redirectPath: "/completion",
   };
 }
 
@@ -126,26 +140,35 @@ export function canAccessStartPage(user: User | null | undefined): boolean {
 /**
  * 특정 라운드 시작 가능 여부 확인
  */
-export function canStartRound(user: User | null | undefined, roundNumber: number): boolean {
+export function canStartRound(
+  user: User | null | undefined,
+  roundNumber: number
+): boolean {
   if (!user) return roundNumber === 1; // 새 사용자는 1라운드만 시작 가능
 
   const analysis = analyzeUserStatus(user);
-  
+
   // 접근 불가능한 상태면 라운드 시작 불가
   if (!analysis.canAccessStartPage) return false;
-  
+
   // 요청한 라운드가 현재 라운드와 일치하는지 확인
-  return analysis.currentRound === roundNumber || 
-         (analysis.currentRound === 0 && roundNumber === 1);
+  return (
+    analysis.currentRound === roundNumber ||
+    (analysis.currentRound === 0 && roundNumber === 1)
+  );
 }
 
 /**
  * 완료 페이지 접근 권한 확인
  */
-export function shouldRedirectToCompletion(user: User | null | undefined): boolean {
+export function shouldRedirectToCompletion(
+  user: User | null | undefined
+): boolean {
   const analysis = analyzeUserStatus(user);
-  return analysis.status === UserAccessStatus.WAITING_FOR_APPROVAL || 
-         analysis.status === UserAccessStatus.ALL_COMPLETED;
+  return (
+    analysis.status === UserAccessStatus.WAITING_FOR_APPROVAL ||
+    analysis.status === UserAccessStatus.ALL_COMPLETED
+  );
 }
 
 /**
@@ -161,26 +184,28 @@ export function getRedirectPath(user: User | null | undefined): string | null {
  */
 export function getUserStatusMessage(user: User | null | undefined): string {
   const analysis = analyzeUserStatus(user);
-  
+
   switch (analysis.status) {
     case UserAccessStatus.NEW_USER:
       return "새로운 사용자입니다. 첫 번째 라운드를 시작할 수 있습니다.";
-    
+
     case UserAccessStatus.CAN_START_NEXT_ROUND:
       return `${analysis.currentRound}라운드를 시작할 수 있습니다.`;
-    
+
     case UserAccessStatus.IN_PROGRESS:
       return `${analysis.currentRound}라운드가 진행 중입니다. (${analysis.currentRound}/${analysis.maxAllowedRounds})`;
-    
+
     case UserAccessStatus.WAITING_FOR_APPROVAL:
-      return `${analysis.currentRound - 1}라운드 완료. 관리자 승인을 기다리는 중입니다.`;
-    
+      return `${
+        analysis.currentRound - 1
+      }라운드 완료. 관리자 승인을 기다리는 중입니다.`;
+
     case UserAccessStatus.ALL_COMPLETED:
       return "모든 라운드를 완료했습니다.";
-    
+
     case UserAccessStatus.BLOCKED:
       return "현재 접근할 수 없는 상태입니다.";
-    
+
     default:
       return "상태를 확인할 수 없습니다.";
   }
@@ -191,7 +216,7 @@ export function getUserStatusMessage(user: User | null | undefined): string {
  */
 export function useUserStatusValidation(user: User | null | undefined) {
   const analysis = analyzeUserStatus(user);
-  
+
   return {
     ...analysis,
     // 편의 함수들
@@ -200,7 +225,8 @@ export function useUserStatusValidation(user: User | null | undefined) {
     statusMessage: getUserStatusMessage(user),
     isNewUser: analysis.status === UserAccessStatus.NEW_USER,
     isInProgress: analysis.status === UserAccessStatus.IN_PROGRESS,
-    isWaitingApproval: analysis.status === UserAccessStatus.WAITING_FOR_APPROVAL,
+    isWaitingApproval:
+      analysis.status === UserAccessStatus.WAITING_FOR_APPROVAL,
     isCompleted: analysis.status === UserAccessStatus.ALL_COMPLETED,
   };
 }

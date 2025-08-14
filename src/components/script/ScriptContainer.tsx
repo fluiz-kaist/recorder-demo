@@ -37,6 +37,7 @@ interface ScriptContainerProps {
 export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   scripts,
 }) => {
+  console.log("컨테이너에서 받은 스크립트", scripts);
   const router = useRouter();
   const [scriptIndex, setScriptIndex] = useState(0);
   const [showRecorder, setShowRecorder] = useState(false);
@@ -92,29 +93,21 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       return;
     }
 
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
+    const uniqueKey = getUniqueKey(current.script);
 
-    if (taskKey) {
-      // 렌더링 직후가 아니라 약간의 지연 후 추적 시작
+    if (uniqueKey) {
       const timer = setTimeout(() => {
         console.log("🎯 새 스크립트 추적 시작:", {
-          taskKey,
+          uniqueKey,
           type: current.type,
           index: scriptIndex,
         });
 
-        startTracking(taskKey, current.type);
-      }, 100); // 100ms 지연
+        startTracking(uniqueKey, current.type);
+      }, 100);
 
       return () => {
         clearTimeout(timer);
-        // 컴포넌트 언마운트 시에만 추적 종료
       };
     }
   }, [
@@ -125,7 +118,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     fullUser?.profile,
     startTracking,
   ]);
-
   // 페이지 이탈 시 미제출 데이터 처리
   // useEffect(() => {
   //   const handleRouteChange = () => {
@@ -144,17 +136,25 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   // 통합 로딩 상태
   const isLoading = isUserLoading || isRoundLoading;
 
-  const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
-    // 재녹음 모드 체크
-    const taskKey = String(
-      "task_key" in script && script.task_key
-        ? script.task_key
-        : "id" in script && script.id
-        ? script.id
-        : ""
-    );
+  // 고유 키 생성 함수
+  const getUniqueKey = (script: AnyScript): string => {
+    const taskKey =
+      "task_key" in script && script.task_key ? script.task_key : "";
+    const id = "id" in script && script.id ? script.id : "";
 
-    const scriptKey = `${type}-${taskKey}`;
+    // task_key가 있고 id가 있으면 조합, 아니면 기존 방식
+    if (taskKey && id) {
+      return `${taskKey}-${id}`;
+    }
+
+    return taskKey || String(id) || "";
+  };
+
+  const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
+    const uniqueKey = getUniqueKey(script);
+
+    // 재녹음 모드 체크
+    const scriptKey = `${type}-${uniqueKey}`;
     if (reRecordingScripts.has(scriptKey)) {
       return false;
     }
@@ -168,7 +168,10 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
         ? currentRound.tasks.situational || []
         : currentRound.tasks.formal || [];
 
-    const matchedTask = tasks.find((task) => String(task.taskKey) === taskKey);
+    // uniqueKey로 매칭
+    const matchedTask = tasks.find(
+      (task) => String(task.taskKey) === uniqueKey
+    );
 
     if (!matchedTask) {
       return false;
@@ -226,28 +229,14 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   const completed = isScriptCompleted(current.script, current.type);
 
   const handleStartReRecording = () => {
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
-
-    const scriptKey = `${current.type}-${taskKey}`;
+    const uniqueKey = getUniqueKey(current.script);
+    const scriptKey = `${current.type}-${uniqueKey}`;
     setReRecordingScripts((prev) => new Set(prev.add(scriptKey)));
   };
 
   const handleRecordingComplete = () => {
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
-
-    const scriptKey = `${current.type}-${taskKey}`;
+    const uniqueKey = getUniqueKey(current.script);
+    const scriptKey = `${current.type}-${uniqueKey}`;
     setReRecordingScripts((prev) => {
       const newSet = new Set(prev);
       newSet.delete(scriptKey);
@@ -257,15 +246,8 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   };
 
   const isInReRecordingMode = (): boolean => {
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
-
-    const scriptKey = `${current.type}-${taskKey}`;
+    const uniqueKey = getUniqueKey(current.script);
+    const scriptKey = `${current.type}-${uniqueKey}`;
     return reRecordingScripts.has(scriptKey);
   };
 

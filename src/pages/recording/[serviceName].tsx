@@ -31,6 +31,8 @@ const mergeScriptsByTaskKey = (
   situational: SituationalScript[],
   formal: FormalScript[]
 ): MergedScript[] => {
+  console.log("여기서 받은 foraml ", formal);
+  console.log("여기서 받은 situ", situational);
   const formalMap = formal.reduce<Record<string, FormalScript[]>>(
     (acc, item) => {
       if (!acc[item.task_key]) acc[item.task_key] = [];

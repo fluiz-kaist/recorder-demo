@@ -315,10 +315,10 @@ async function loadScriptData(setId: number): Promise<{
   const isDevMode = isPreview || isDev;
 
   const situationScriptPath = isDevMode
-    ? "public/data/prod_situational_script.json"
+    ? "public/data/dev_situ_script.json"
     : "public/data/prod_situational_script.json";
   const formalScriptPath = isDevMode
-    ? "public/data/prod_formal_script.json"
+    ? "public/data/dev_formal_script.json"
     : "public/data/prod_formal_script.json";
 
   try {
