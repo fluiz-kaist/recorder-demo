@@ -2,6 +2,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { User } from "@/types/user";
 import { adminDb } from "@/lib/firebase/admin";
+import { getDisplaySetId } from "@/utils/converter";
 
 export interface ProgressOverview {
   // 전체 통계
@@ -241,7 +242,8 @@ export default async function handler(
       //roundSummaries 기준으로만 계산
       // setProgress 계산 (각 사용자의 라운드별로)
       user.roundSummaries.forEach((round) => {
-        const setKey = `set${round.formalSetId}` as keyof typeof setProgress;
+        const displayedId = getDisplaySetId(round);
+        const setKey = `set${displayedId}` as keyof typeof setProgress;
 
         if (setProgress[setKey]) {
           if (round.status === "assigned") {

@@ -3,29 +3,61 @@ import { useRouter } from "next/router";
 import styles from "@/styles/FinalStepPage.module.css";
 import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useLogoutUserMutation } from "@/hooks/mutations/useUserMutations";
-import SimpleVoiceRecorder from "@/components/SimpleVoiceRecorder";
+import {
+  useUserStatusValidation,
+  UserAccessStatus,
+} from "@/utils/userStatusValidation";
+
 const CompletionPage: React.FC = () => {
   const router = useRouter();
+  const { round } = router.query; // URL에서 round 파라미터 추출
+
+  // 라운드별 메시지 설정
+  const getRoundMessage = () => {
+    if (round === "1") {
+      return {
+        title: "1라운드가 완료되었습니다!",
+        mainMessage: "첫 번째 라운드를 성공적으로 완료하셨습니다.",
+        subMessage:
+          "다음 라운드가 배정될 때까지 기다려 주세요. 관리자 승인 후 2라운드가 시작됩니다.",
+      };
+    } else if (round === "2") {
+      return {
+        title: "2라운드가 완료되었습니다!",
+        mainMessage: "모든 라운드를 성공적으로 완료하셨습니다.",
+        subMessage: "전체 과정이 완료되었습니다. 참여해 주셔서 감사합니다.",
+      };
+    } else {
+      return {
+        title: "모든 작업이 완료되었습니다!",
+        mainMessage: "수고하셨습니다.",
+        subMessage: "관리자에 의해 승인될 때까지 기다려 주세요.",
+      };
+    }
+  };
+
+  const roundMessage = getRoundMessage();
+
   const logoutMutation = useLogoutUserMutation();
   // React Query를 사용하여 사용자 정보 가져오기
   const { data: user, isLoading, error } = useUserQuery();
-  const isFinishedUser =
-    (user?.currentStatus.currentRoundNumber ?? 0) >
-    (user?.settings.maxAllowedRounds ?? Infinity);
-
+  // 유틸 함수로 사용자 상태 분석
+  const userStatus = useUserStatusValidation(user);
+  const isFinishedUser = userStatus.status === UserAccessStatus.ALL_COMPLETED;
   const isWaitingForAdminApproval =
-    // user?.currentStatus.nextTask === null &&
-    // user?.currentStatus.canStartNextRound === false;
-    user?.currentStatus.canStartNextRound === false;
+    userStatus.status === UserAccessStatus.WAITING_FOR_APPROVAL;
 
-  const isAllTasksCompleted =
-    user?.currentStatus.currentRoundProgress?.completedPercentage === 100;
   // 구글 폼 URL (실제 URL로 변경 필요)
-  const googleFormUrl = "https://forms.gle/FHkLvP67rapjfFAu5";
+  const googleFormUrlForRound1 = "https://forms.gle/FHkLvP67rapjfFAu5";
+  const googleFormUrlForRound2 = "https://forms.gle/FHkLvP67rapjfFAu5";
 
   // 구글 폼으로 이동
   const handleGoToFeedbackForm = () => {
-    window.open(googleFormUrl, "_blank", "noopener,noreferrer");
+    window.open(
+      round === "2" ? googleFormUrlForRound2 : googleFormUrlForRound1,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   // 홈으로 돌아가기
@@ -72,6 +104,15 @@ const CompletionPage: React.FC = () => {
     );
   }
 
+  // 완료 페이지 접근 권한이 없는 경우 리다이렉트
+  if (!userStatus.isWaitingApproval && !userStatus.isCompleted && user) {
+    // 진행 중이거나 새 사용자인 경우 시작 페이지로
+    if (userStatus.canAccessStart) {
+      router.push("/"); // 또는 시작 페이지 경로
+      return <div>시작 페이지로 이동 중...</div>;
+    }
+  }
+
   // 사용자가 참여 가능한 모든 라운드에서의 모든 작업이 끝난 상태인 경우
   if (isFinishedUser) {
     return (
@@ -113,17 +154,14 @@ const CompletionPage: React.FC = () => {
             <div className={styles.successIcon}>✅</div>
           </div>
 
-          <h1 className={styles.title}>모든 작업이 완료되었습니다!</h1>
+          <h1 className={styles.title}>{roundMessage.title}</h1>
 
           <div className={styles.messageContainer}>
             <p className={styles.message}>
               {user?.profile.userName ? `${user.profile.userName}님, ` : ""}
-              수고하셨습니다.
+              {roundMessage.mainMessage}
             </p>
-            <p>
-              모든 작업을 완료했습니다. 관리자에 의해 승인될 때까지 기다려
-              주세요.
-            </p>
+            <p>{roundMessage.subMessage}</p>
             <p className={styles.message}>
               작업 중 불편했던 점이나 개선사항이 있으시면 피드백을 남겨주세요.
             </p>
@@ -142,14 +180,15 @@ const CompletionPage: React.FC = () => {
           </div> */}
 
           <div className={styles.formSection}>
-            <h2 className={styles.sectionTitle}>설문 조사 작성하기</h2>
-            {/* <p className={styles.sectionDescription}>설문조사를 작성해주세요.</p> */}
+            <h2 className={styles.sectionTitle}>
+              {round === "2" ? "최종 설문 조사 작성하기" : "설문 조사 작성하기"}
+            </h2>
 
             <button
               className={styles.primaryButton}
               onClick={handleGoToFeedbackForm}
             >
-              구글 폼 열기
+              {round === "2" ? "최종 설문 작성하기" : "구글 폼 열기"}
             </button>
           </div>
         </div>

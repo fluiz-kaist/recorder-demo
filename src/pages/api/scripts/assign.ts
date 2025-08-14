@@ -4,6 +4,7 @@ import {
   SituationalScript,
   FormalScript,
   FormalScriptSets,
+  SituationalScriptSets,
 } from "@/types/firebase";
 import path from "path";
 import fs from "fs";
@@ -17,7 +18,7 @@ import {
   CurrentUserStatus,
   ProgressMode,
 } from "@/types/user";
-
+import { getDisplaySetId } from "@/utils/converter";
 import {
   getDocByIdTypedAdmin,
   updateDocByIdAdmin,
@@ -117,7 +118,7 @@ export default async function handler(
     const existingRound = userData.roundSummaries?.find(
       (summary) => summary.roundNumber === setNumber
     );
-
+    // 기존 라운드 확인 시 (기존 저장된 데이터를 읽어야 하므로 getDisplaySetId 사용)
     if (existingRound) {
       // 기존 회차가 있으면 항상 서브컬렉션도 있어야 함
       // 서브컬렉션 문서 존재 여부만 먼저 확인
@@ -129,9 +130,10 @@ export default async function handler(
       if (!roundExists) {
         // 이는 서브컬렉션이 생성되지 않은 상황 → 새로 생성해야 함
         console.log("🔄 [assign] 서브컬렉션 생성:", { userId, setNumber });
-
+        // 기존 요약 정보로 서브컬렉션 생성 - 기존 데이터이므로 getDisplaySetId 사용
+        const currentSetId = getDisplaySetId(existingRound);
         // 기존 요약 정보로 서브컬렉션 생성
-        const scripts = await loadScriptData(existingRound.formalSetId);
+        const scripts = await loadScriptData(currentSetId);
         const newRoundDetail = recreateParticipationRound(
           userId,
           existingRound,
@@ -196,7 +198,8 @@ export default async function handler(
     const newParticipationRound: ParticipationRound = {
       userId,
       roundNumber: setNumber,
-      formalSetId: setId,
+      setId: setId, // 새로운 구조는 setId만 사용
+      // formalSetId는 설정하지 않음
       progressMode,
       status: RoundStatus.ASSIGNED,
       assignedAt: now,
@@ -233,7 +236,8 @@ export default async function handler(
     // 5. 사용자 데이터 업데이트
     const newRoundSummary: RoundSummary = {
       roundNumber: setNumber,
-      formalSetId: setId,
+      setId: setId, // 새로운 구조는 setId만 사용
+      // formalSetId는 설정하지 않음
       status: RoundStatus.ASSIGNED,
       assignedAt: now,
       progressSummary: {
@@ -309,38 +313,50 @@ async function loadScriptData(setId: number): Promise<{
 }> {
   const { isPreview, isDev } = getEnv();
   const isDevMode = isPreview || isDev;
+
   const situationScriptPath = isDevMode
-    ? "public/data/dev_situ_script.json"
-    : "public/data/situational_scripts.json";
+    ? "public/data/prod_situational_script.json"
+    : "public/data/prod_situational_script.json";
   const formalScriptPath = isDevMode
-    ? "public/data/dev_formal_script.json"
-    : "public/data/formal_scripts.json";
+    ? "public/data/prod_formal_script.json"
+    : "public/data/prod_formal_script.json";
 
   try {
-    // 서버에서 파일 시스템 직접 접근
     const situationalPath = path.join(process.cwd(), situationScriptPath);
     const formalPath = path.join(process.cwd(), formalScriptPath);
 
+    // 새로운 구조: { "1": [...], "2": [...] }
     const situationalData = JSON.parse(
       fs.readFileSync(situationalPath, "utf8")
-    ) as SituationalScript[];
+    ) as SituationalScriptSets;
 
+    // 새로운 구조: { "task_key": [...] } (setId 없음)
     const formalData = JSON.parse(
       fs.readFileSync(formalPath, "utf8")
     ) as FormalScriptSets;
 
-    // 현재 세트의 정형발화만 필터링
-    const currentSetFormalScripts = filterFormalScriptsBySet(formalData, setId);
+    // setId에 해당하는 상황발화 추출
+    const situationalScripts = situationalData[setId.toString()] || [];
+
+    // 상황발화의 task_key들만 추출
+    const taskKeys = situationalScripts.map((script) => script.task_key);
+
+    // 해당 task_key에 맞는 정형발화만 필터링
+    const formalScripts: FormalScript[] = [];
+    taskKeys.forEach((taskKey) => {
+      const scripts = formalData[taskKey] || [];
+      formalScripts.push(...scripts);
+    });
 
     console.log("📂 [loadScriptData] 스크립트 로드 완료:", {
-      situational: situationalData.length,
-      formal: currentSetFormalScripts.length,
+      situational: situationalScripts.length,
+      formal: formalScripts.length,
       setId,
     });
 
     return {
-      situational: situationalData,
-      formal: currentSetFormalScripts,
+      situational: situationalScripts,
+      formal: formalScripts,
     };
   } catch (error) {
     console.error("❌ [loadScriptData] 스크립트 로드 실패:", error);
@@ -348,21 +364,8 @@ async function loadScriptData(setId: number): Promise<{
   }
 }
 
-// 현재 세트의 정형발화만 필터링
-function filterFormalScriptsBySet(
-  formalData: FormalScriptSets,
-  setId: number
-): FormalScript[] {
-  const filtered: FormalScript[] = [];
-
-  Object.entries(formalData).forEach(([taskKey, sets]) => {
-    const setData = sets[setId.toString()];
-    if (setData && Array.isArray(setData)) {
-      filtered.push(...setData);
-    }
-  });
-
-  return filtered;
+function getAllFormalScripts(formalData: FormalScriptSets): FormalScript[] {
+  return Object.values(formalData).flat();
 }
 
 // 상황발화 태스크 생성
@@ -397,9 +400,11 @@ async function getScriptsForSet(
   situational: SituationalScript[];
   formal: FormalScript[];
 }> {
-  const scripts = await loadScriptData(participationRound.formalSetId); // setId → formalSetId
+  // setId 대신 roundNumber를 사용하여 상황발화 로드
+  // 기존 저장된 데이터이므로 formalSetId 우선, 없으면 setId 사용
+  const currentSetId = getDisplaySetId(participationRound);
+  const scripts = await loadScriptData(currentSetId);
 
-  // 나머지 로직은 동일
   const situationalTaskKeys = participationRound.tasks.situational.map(
     (task) => task.taskKey
   );
@@ -416,6 +421,7 @@ async function getScriptsForSet(
     ),
   };
 }
+
 /**
  * [assign.ts 설명]
  *
@@ -444,7 +450,11 @@ function recreateParticipationRound(
   const baseRound: ParticipationRound = {
     userId: userId,
     roundNumber: existingRound.roundNumber,
-    formalSetId: existingRound.formalSetId,
+    // 기존 데이터 구조 그대로 유지
+    ...(existingRound.formalSetId && {
+      formalSetId: existingRound.formalSetId,
+    }),
+    ...(existingRound.setId && { setId: existingRound.setId }),
     progressMode: ProgressMode.MIXED, // 기본값
     status: existingRound.status,
     assignedAt: existingRound.assignedAt,

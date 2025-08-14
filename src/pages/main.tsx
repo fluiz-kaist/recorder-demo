@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/MainSelectionPage.module.css";
 import Head from "next/head";
@@ -11,11 +11,9 @@ import {
 } from "@/hooks/queries/useUserQueries";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
 import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
+import { SERVICE_ORDER } from "@/lib/serviceMapping";
 const LOCK_ICON =
   "M12,17A1.5,1.5 0 0,0 13.5,15.5A1.5,1.5 0 0,0 12,14A1.5,1.5 0 0,0 10.5,15.5A1.5,1.5 0 0,0 12,17M17,8H16V6.5C16,4.57 14.43,3 12.5,3A3.5,3.5 0 0,0 9,6.5V8H8A2,2 0 0,0 6,10V20A2,2 0 0,0 8,22H17A2,2 0 0,0 19,20V10A2,2 0 0,0 17,8M11,6.5C11,5.67 11.67,5 12.5,5A1.5,1.5 0 0,1 14,6.5V8H11V6.5Z";
-
-// 서비스 순서 정의
-const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
 
 const MainSelectionPage = () => {
   const router = useRouter();

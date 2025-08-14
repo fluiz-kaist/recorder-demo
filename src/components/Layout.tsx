@@ -8,6 +8,8 @@ import VoiceGuide from "@/components/guide/VoiceGuide";
 import MicPermission from "@/components/guide/MicPermission";
 import { useUserQuery } from "@/hooks/queries/useUserQueries";
 import { useTaskTracking } from "@/hooks/useTaskTracking";
+import { useUserStatusValidation } from "@/utils/userStatusValidation";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -39,22 +41,30 @@ const Layout = ({ children }: LayoutProps) => {
 
   const { submitPendingData, endTracking, clearAllTrackingData } =
     useTaskTracking();
+  // 사용자 상태 분석
+  const userStatus = useUserStatusValidation(user);
 
   useEffect(() => {
-    if (!isLoading && user) {
-      const isInWaitingState = user.currentStatus?.canStartNextRound === false;
-      // user.currentStatus?.nextTask === null &&
-      // user.currentStatus?.canStartNextRound === false;
-
+    if (!isLoading && user && userStatus) {
       const isOnCompletionPage = router.pathname === "/completion";
-
       const isAdminRoute = router.pathname.includes("/admin");
+      const isIndexPage = router.pathname === "/";
 
-      if (!isAdminRoute && isInWaitingState && !isOnCompletionPage) {
-        router.replace("/completion");
+      // 관리자 페이지, 완료 페이지, 인덱스 페이지는 제외
+      if (isAdminRoute || isOnCompletionPage || isIndexPage) {
+        return;
+      }
+
+      // 시작 페이지 접근 불가능한 사용자는 리다이렉트
+      if (!userStatus.canAccessStart && userStatus.shouldRedirect) {
+        console.log(
+          `사용자 상태(${userStatus.status})에 따라 리다이렉트:`,
+          userStatus.redirectPath
+        );
+        router.replace(userStatus.redirectPath!);
       }
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, userStatus, router]);
 
   useEffect(() => {
     const checkAdminCookie = () => {

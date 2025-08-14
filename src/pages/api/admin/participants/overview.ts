@@ -2,6 +2,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { adminDb } from "@/lib/firebase/admin";
 import { User, RoundStatus } from "@/types/user";
+import { analyzeUserStatus } from "@/utils/userStatusValidation";
 
 export interface ParticipantOverview {
   userId: string;
@@ -49,64 +50,73 @@ interface ParticipantsOverviewResponse {
 }
 
 // 참여자 상태 계산 함수
-const calculateParticipantStatus = (
-  user: User
-): ParticipantOverview["status"] => {
-  // console.log("여기서 user 데이터 뭐라고 나오지? ", user);
-  if (!user.currentStatus.isOnboardingCompleted) return "not_started";
+const calculateParticipantStatus = (user: User) => {
+  // 유틸 함수로 정확한 상태 분석
+  const userStatusAnalysis = analyzeUserStatus(user);
 
-  // 현재 진행중인 라운드가 있는지 확인
-  if (user.currentStatus.currentRoundNumber === 0) return "not_started";
+  // 관리자용 간단한 상태로 매핑
+  let simpleStatus: ParticipantOverview["status"];
 
-  // 전체 완료 여부 확인 - statistics.current 또는 overall 사용
-  const totalApprovedTasks =
-    user.statistics.overall?.totalTasksApproved ||
-    user.statistics.current.approvedTasks;
-  const totalCompletedTasks =
-    user.statistics.overall?.totalTasksCompleted ||
-    user.statistics.current.completedTasks;
-
-  if (
-    totalApprovedTasks > 0 &&
-    user.currentStatus.currentRoundProgress.approvedPercentage === 100
-  ) {
-    return "completed";
+  switch (userStatusAnalysis.status) {
+    case "new_user":
+      simpleStatus = "not_started";
+      break;
+    case "in_progress":
+    case "can_start_next_round":
+      simpleStatus = "in_progress";
+      break;
+    case "waiting_for_approval":
+      simpleStatus = "completed"; // 또는 새로운 상태 추가
+      break;
+    case "all_completed":
+      simpleStatus = "completed";
+      break;
+    default:
+      // 7일 이상 비활성화 체크 (기존 로직 유지)
+      const lastAccess = new Date(user.profile.lastAccessAt as string);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      simpleStatus = lastAccess < sevenDaysAgo ? "inactive" : "not_started";
+      break;
   }
 
-  if (totalCompletedTasks > 0) return "in_progress";
-
-  // 7일 이상 비활성화 체크
-  const lastAccess = new Date(user.profile.lastAccessAt as string);
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  if (lastAccess < sevenDaysAgo) return "inactive";
-
-  return "not_started";
+  return simpleStatus;
 };
-
 // 전체 진행률 계산 함수
 const calculateOverallProgress = (user: User): number => {
-  const maxRounds = 2;
+  const maxRounds = user.settings.maxAllowedRounds || 2;
+  const roundWeight = 100 / maxRounds; // 라운드당 비율 (2라운드면 50%씩)
   let overallProgress = 0;
 
-  user.roundSummaries.forEach((round) => {
-    const roundWeight = 50; // 각 라운드는 50%
-
-    if (
+  // 1. 완료된 라운드들은 각각 roundWeight% 추가
+  const completedRounds = user.roundSummaries.filter(
+    (round) =>
       round.status === RoundStatus.COMPLETED ||
       round.status === RoundStatus.APPROVED
-    ) {
-      overallProgress += roundWeight; // 완료된 라운드는 50% 추가
-    } else if (round.status === RoundStatus.ASSIGNED) {
-      // 현재 진행 중인 라운드만 부분 진행률 적용
-      if (round.roundNumber === user.currentStatus.currentRoundNumber) {
-        const currentRoundProgress =
-          user.statistics.current.completedPercentage || 0;
-        overallProgress += (currentRoundProgress * roundWeight) / 100;
-      }
-    }
-  });
+  );
 
-  return Math.round(overallProgress);
+  overallProgress += completedRounds.length * roundWeight;
+
+  // 2. 현재 진행 중인 라운드의 부분 진행률 추가
+  const currentRoundNumber = user.currentStatus.currentRoundNumber;
+
+  if (currentRoundNumber > 0 && currentRoundNumber <= maxRounds) {
+    // 현재 라운드가 이미 완료된 경우는 제외
+    const currentRoundSummary = user.roundSummaries.find(
+      (round) => round.roundNumber === currentRoundNumber
+    );
+
+    const isCurrentRoundCompleted =
+      currentRoundSummary?.status === RoundStatus.COMPLETED ||
+      currentRoundSummary?.status === RoundStatus.APPROVED;
+
+    if (!isCurrentRoundCompleted) {
+      const currentRoundProgress =
+        user.currentStatus.currentRoundProgress.completedPercentage || 0;
+      overallProgress += (currentRoundProgress * roundWeight) / 100;
+    }
+  }
+
+  return Math.round(Math.min(overallProgress, 100)); // 100% 초과 방지
 };
 
 // 정렬 함수

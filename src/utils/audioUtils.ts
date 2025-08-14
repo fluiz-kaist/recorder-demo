@@ -150,20 +150,13 @@ const validateAudioQualitySimpleOriginal = (
   const minExpectedSize = Math.max(2, recordingDuration * 3); // 최소 3KB/초
   const maxExpectedSize = recordingDuration * 15; // 최대 15KB/초
 
-  if (fileSizeKB < minExpectedSize) {
-    const severity = fileSizeKB < minExpectedSize * 0.3 ? 50 : 30;
-    score -= severity;
-    if (severity >= 50) {
-      issues.push("거의 무음상태로 녹음되었습니다");
-      recommendations.push(
-        "조용한 곳에서 마이크에 가까이 대고 다시 녹음해 주세요"
-      );
-    } else {
-      issues.push("음성이 너무 작게 녹음되었습니다");
-      recommendations.push(
-        "스마트폰을 입에서 15cm 거리에 두고 더 크게 말씀해 주세요"
-      );
-    }
+  if (fileSizeKB < minExpectedSize * 0.1) {
+    // 거의 완전 무음일 때만 처리
+    score -= 50;
+    issues.push("거의 무음상태로 녹음되었습니다");
+    recommendations.push(
+      "조용한 곳에서 마이크에 가까이 대고 다시 녹음해 주세요"
+    );
   }
 
   if (fileSizeKB > maxExpectedSize) {
@@ -182,13 +175,15 @@ const validateAudioQualitySimpleOriginal = (
   );
 
   if (!analyzeQualityByDuration(recordingDuration, fileSizeKB)) {
-    if (sizeRatio < 0.05) {
+    if (sizeRatio < 0.01) {
+      // 기존: 0.05를 0.01로 변경 (거의 완전 무음)
       score -= 45;
       issues.push("녹음된 소리가 거의 들리지 않아요.");
       recommendations.push(
         "마이크 사용이 허용되어 있는지 확인해 주시고, 조용한 곳에서 다시 말씀해 주세요."
       );
-    } else if (sizeRatio < 0.2) {
+    } else if (sizeRatio < 0.05) {
+      // 기존: 0.2를 0.05로 변경
       score -= 35;
       issues.push("녹음된 소리가 너무 작아요.");
       recommendations.push(
@@ -212,18 +207,21 @@ const validateAudioQualitySimpleOriginal = (
   const detectSilencePattern = (duration: number, sizeKB: number) => {
     const avgSizePerSec = sizeKB / duration;
 
-    if (avgSizePerSec < 2 && duration > 5) {
+    // 이 부분을 더 관대하게 수정 - 완전 무음일 때만 문제로 판단
+    if (avgSizePerSec < 0.5 && duration > 5) {
+      // 기존: 2
       return "녹음 중에 조용한 시간이 너무 길게 이어졌어요.";
     }
 
-    const expectedVariation = Math.log(duration) * 1.2;
-    if (avgSizePerSec < expectedVariation && duration > 3) {
+    // 이 부분도 더 엄격한 기준으로 변경
+    const expectedVariation = Math.log(duration) * 0.5; // 기존: 1.2
+    if (avgSizePerSec < expectedVariation && duration > 10) {
+      // 기존: 3
       return "녹음 도중에 조용한 구간이 있었던 것 같아요.";
     }
 
     return null;
   };
-
   const silenceIssue = detectSilencePattern(recordingDuration, fileSizeKB);
   if (silenceIssue) {
     score -= 15;
@@ -251,8 +249,9 @@ const validateAudioQualitySimpleOriginal = (
     score = 0;
     issues.unshift("녹음 오류가 발생했습니다");
     recommendations.unshift("페이지를 새로고침하고 다시 녹음해 주세요");
-  } else if (avgSizePerSecond < 0.5 && recordingDuration > 3) {
-    score -= 25;
+  } else if (avgSizePerSecond < 0.2 && recordingDuration > 5) {
+    // 기존: 0.5, 3을 0.2, 5로 변경
+    score -= 15; // 기존: 25를 15로 감점 완화
     issues.push("네트워크 연결이 불안정했을 수 있습니다");
     recommendations.push("안정한 네트워크 연결에서 다시 시도해 주세요");
   }

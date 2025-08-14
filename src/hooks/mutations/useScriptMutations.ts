@@ -11,7 +11,8 @@ import {
   SituationalScript,
   ParticipationSet,
 } from "@/types/firebase";
-
+import { ParticipationRound } from "@/types/user";
+import { getDisplaySetId } from "@/utils/converter";
 // 타입 정의
 interface InitializeScriptsParams {
   userId: string;
@@ -22,7 +23,7 @@ interface InitializeScriptsParams {
 interface InitializeScriptsResponse {
   success: boolean;
   message?: string;
-  participationSet?: any;
+  participationRound?: ParticipationRound;
   scripts: {
     situational: any[];
     formal: any[];
@@ -43,7 +44,7 @@ interface AssignScriptsRequest {
 interface AssignScriptsResponse {
   success: boolean;
   message?: string;
-  participationSet?: ParticipationSet;
+  participationRound?: ParticipationRound;
   scripts: {
     formal: FormalScript[];
     situational: SituationalScript[];
@@ -92,16 +93,19 @@ export const useInitializeScriptsMutation = () => {
       //   setId: variables.setId,
       // });
 
-      // participationSet이 있으면 localStorage에 스크립트 저장
-      if (data.participationSet && data.scripts) {
-        // ScriptDataManager 사용
+      // participationRound가 있으면 localStorage에 스크립트 저장
+  if (data.participationRound && data.scripts) {
+        // 안전한 setId 가져오기
+        const safeSetId = getDisplaySetId(data.participationRound);
+        
         ScriptDataManager.saveScriptData(
           variables.userId,
-          data.participationSet.setNumber,
-          data.participationSet.setId,
+          data.participationRound.roundNumber,
+          safeSetId, // undefined 방지
           data.scripts
         );
       }
+
 
       // 🔥 사용자 쿼리 무효화 (participation.sets 업데이트됨)
       queryClient.invalidateQueries({
@@ -156,17 +160,15 @@ export const useAssignScriptsMutation = (): UseMutationResult<
         throw new Error(data.message || "스크립트 할당에 실패했습니다.");
       }
 
-      // localStorage에 저장
+      // localStorage에 저장 - 새로운 구조에 맞게 수정
       if (data.participationRound) {
-        // participationSet → participationRound
         ScriptDataManager.saveScriptData(
           userId,
           data.participationRound.roundNumber, // setNumber → roundNumber
-          data.participationRound.formalSetId, // setId → formalSetId
+          data.participationRound.setId, // formalSetId → setId (새로운 구조)
           data.scripts
         );
       }
-
       return data as AssignScriptsResponse;
     },
     onSuccess: (data, variables) => {

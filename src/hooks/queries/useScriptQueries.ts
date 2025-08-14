@@ -258,9 +258,7 @@ export const useAllScriptsByServiceQuery = (
   setNumber: number,
   setId: number = 1
 ) => {
-  // console.log("저기?-7");
   const scriptDataQuery = useScriptDataQuery(setNumber, setId);
-  // console.log("scriptDataQuery?", scriptDataQuery);
 
   return useQuery({
     queryKey: ["allScriptsByService", serviceName, setNumber, setId],
@@ -269,18 +267,40 @@ export const useAllScriptsByServiceQuery = (
       formal: FormalScript[];
     } => {
       const scriptData = scriptDataQuery.data;
-      if (!scriptData) return { situational: [], formal: [] };
+
+      // scriptDataQuery에서 null이 반환되면 빈 배열 반환
+      if (!scriptData) {
+        console.log("❌ [useAllScriptsByServiceQuery] scriptData가 없습니다.");
+        return { situational: [], formal: [] };
+      }
+
+      console.log("🔍 [useAllScriptsByServiceQuery] 서비스 필터링:", {
+        serviceName,
+        totalSituational: scriptData.situationalScripts.length,
+        totalFormal: scriptData.formalScripts.length,
+      });
+
+      // 해당 서비스의 스크립트들만 필터링
+      const serviceSituational = scriptData.situationalScripts.filter(
+        (script) => script.service_name === serviceName
+      );
+
+      const serviceFormal = scriptData.formalScripts.filter(
+        (script) => script.service_name === serviceName
+      );
+
+      console.log("✅ [useAllScriptsByServiceQuery] 필터링 결과:", {
+        serviceName,
+        situationalCount: serviceSituational.length,
+        formalCount: serviceFormal.length,
+      });
 
       return {
-        situational: scriptData.situationalScripts.filter(
-          (script) => script.service_name === serviceName
-        ),
-        formal: scriptData.formalScripts.filter(
-          (script) => script.service_name === serviceName
-        ),
+        situational: serviceSituational,
+        formal: serviceFormal,
       };
     },
-    enabled: !!scriptDataQuery.data && !!serviceName,
+    enabled: !!scriptDataQuery.data && !!serviceName, // scriptData가 있을 때만 실행
     staleTime: 10 * 60 * 1000, // 10분간 캐시
   });
 };

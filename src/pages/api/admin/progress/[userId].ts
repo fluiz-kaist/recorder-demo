@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getDocByIdAdmin } from "@/lib/firebase/firestoreAdmin"; // Admin SDK 추가
 import { Timestamp } from "firebase-admin/firestore"; // Admin SDK로 변경
 import { User, ParticipationRound } from "@/types/user";
+import { getDisplaySetId } from "@/utils/converter";
 interface UserProgressDetail {
   userId: string;
   userName?: string;
@@ -196,6 +197,7 @@ export default async function handler(
           roundDetails.push({
             roundNumber: roundSummary.roundNumber,
             formalSetId: roundSummary.formalSetId,
+            setId: getDisplaySetId(roundSummary),
             status: roundSummary.status,
             // 간단하게 현재 시간 사용 (실제 값이 있으면 그대로, 없으면 현재 시간)
             assignedAt: roundSummary.assignedAt

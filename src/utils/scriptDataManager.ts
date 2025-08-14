@@ -7,7 +7,7 @@ interface LocalScriptData {
   loadedAt: string;
   userId: string;
   setNumber: number;
-  setId: number;
+  setId: number; // formalSetId → setId (이제 상황발화 세트 ID)
 
   // API에서 받은 스크립트 데이터
   situationalScripts: SituationalScript[];
@@ -39,7 +39,7 @@ export class ScriptDataManager {
   static saveScriptData(
     userId: string,
     roundNumber: number, // setNumber → roundNumber (의미 명확화)
-    formalSetId: number, // setId → formalSetId (의미 명확화)
+    setId: number, // formalSetId → setId (이제 상황발화 세트 ID)
     scripts: {
       situational: SituationalScript[];
       formal: FormalScript[];
@@ -52,7 +52,7 @@ export class ScriptDataManager {
       loadedAt: now,
       userId,
       setNumber: roundNumber, // 내부적으로는 기존 필드명 유지
-      setId: formalSetId, // 내부적으로는 기존 필드명 유지,
+      setId: setId, // 새로운 구조에서는 상황발화 세트 ID
       situationalScripts: scripts.situational,
       formalScripts: scripts.formal,
       indexes: this.createSimpleIndexes(scripts.situational, scripts.formal),
@@ -137,9 +137,11 @@ export class ScriptDataManager {
 
   // localStorage에서 스크립트 데이터 조회
   static getScriptData(): LocalScriptData | null {
+    console.log("콜?");
     if (typeof window === "undefined") return null; // SSR 체크
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
+      console.log("🧧🧧지금 여기 데이터?", data);
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error("스크립트 데이터 조회 실패:", error);

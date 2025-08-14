@@ -32,16 +32,18 @@ const CompletionAllTasksBtn = () => {
     //   user.currentStatus.nextTask === null;
     const isRoundCompleted = roundProgress.completedPercentage === 100;
 
-    if (!isRoundCompleted) {
-      alert("모든 작업을 완료한 후에만 진행할 수 있습니다.");
-      return;
-    }
-
     const userId = user.profile.userId;
     const currentRoundNumber = user.currentStatus.currentRoundNumber || 1;
     const collectionName =
       process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
     const now = Timestamp.now();
+
+    if (!isRoundCompleted) {
+      alert(
+        `${currentRoundNumber}라운드의 모든 작업을 완료한 후에만 진행할 수 있습니다.`
+      );
+      return;
+    }
 
     try {
       console.group("1. 현재 ParticipationRound 데이터 조회");
@@ -143,13 +145,15 @@ const CompletionAllTasksBtn = () => {
       const userUpdates = {
         currentStatus: {
           ...user.currentStatus,
-
-          canStartNextRound: false, // 🔒 관리자 허가 대기
+          currentRoundNumber: currentRoundNumber + 1, // 회차 번호 1 증가
+          canStartRecording: false, // 녹음 시작 불가로 변경
+          canStartNextRound: false, //  관리자 허가 대기
           nextTask: null,
           hasPendingApproval: submittedExists,
           currentRoundProgress: {
-            ...user.currentStatus.currentRoundProgress,
-            completedPercentage: 100,
+            completedPercentage: 0,
+            submittedPercentage: 0,
+            approvedPercentage: 0,
           },
         },
         statistics: {
@@ -176,7 +180,15 @@ const CompletionAllTasksBtn = () => {
       console.groupEnd();
 
       console.log("작업 완료, 페이지 이동 시작");
-      router.push("/completion");
+      console.log("작업 완료, 페이지 이동 시작");
+      // 라운드별로 다른 페이지나 메시지 처리
+      if (currentRoundNumber === 1) {
+        router.push("/completion?round=1");
+      } else if (currentRoundNumber === 2) {
+        router.push("/completion?round=2");
+      } else {
+        router.push("/completion");
+      }
     } catch (error) {
       console.error("완료 처리 실패:", error);
       alert("작업 완료 처리 중 오류가 발생했습니다.");

@@ -128,9 +128,9 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
-  // const isAvailable = isRecordingAvailable();
+  const isAvailable = isRecordingAvailable();
   // Temporarily hardcoded for the test period (4 PM to 10 PM)
-  const isAvailable = false;
+  // const isAvailable = false;
 
   // 현재 시간을 한국 시간으로 가져오는 함수
   const getKoreanTime = () => {

@@ -66,7 +66,8 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
     isError,
   } = useAllScriptsByServiceQuery(
     serviceName,
-    currentSetId // setNumber 제거, setId만 사용
+    currentRoundNumber, // setNumber (라운드 번호)
+    currentRoundNumber // setId (상황발화 세트 ID, 라운드번호와 동일)
   );
 
   if (router.isFallback) {
@@ -89,13 +90,19 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
     );
   }
 
-  if (!allScripts)
+  // allScripts가 없거나 빈 경우 (localStorage에 데이터가 없거나 일치하지 않는 경우)
+  if (
+    !allScripts ||
+    (allScripts.situational.length === 0 && allScripts.formal.length === 0)
+  ) {
     return (
       <>
-        <div>해당 스크립트 없음</div>
+        <div>현재 진행 중인 라운드가 없습니다</div>
         <ReAssignScript />
       </>
     );
+  }
+
   console.log("allScripts?", allScripts);
 
   const mergedScripts = mergeScriptsByTaskKey(
