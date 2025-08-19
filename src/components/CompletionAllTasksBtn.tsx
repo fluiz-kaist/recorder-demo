@@ -6,7 +6,7 @@ import { Timestamp } from "firebase/firestore";
 import styles from "@/styles/CompletionBtn.module.css";
 import { RoundStatus } from "@/types/user";
 import { useTaskTracking } from "@/hooks/useTaskTracking";
-// 생략된 import 부분 동일
+import { ScriptDataManager } from "@/utils/scriptDataManager";
 
 const CompletionAllTasksBtn = () => {
   const router = useRouter();
@@ -177,6 +177,17 @@ const CompletionAllTasksBtn = () => {
         updates: userUpdates,
       });
       console.log("사용자 문서 업데이트 완료");
+      console.groupEnd();
+
+      // 로컬 스토리지의 스크립트 데이터 삭제
+      console.group("5. 로컬 스토리지 스크립트 데이터 삭제");
+      try {
+        ScriptDataManager.clearData();
+        console.log("✅ 로컬 스토리지 스크립트 데이터 삭제 완료");
+      } catch (error) {
+        console.error("❌ 스크립트 데이터 삭제 실패:", error);
+        // 로컬 스토리지 삭제 실패는 전체 플로우를 막지 않음
+      }
       console.groupEnd();
 
       console.log("작업 완료, 페이지 이동 시작");

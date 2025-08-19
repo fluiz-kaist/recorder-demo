@@ -249,7 +249,8 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingText}>
-          현재 진행 중인 라운드가 없습니다.
+          현재 작업 중인 회차가 없습니다. (작업 종료하기를 눌렀을 때 잠시 보일
+          수 있습니다)
         </div>
       </div>
     );
@@ -268,7 +269,9 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   if (!current) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.loadingText}>스크립트 초기화 중...</div>
+        <div className={styles.loadingText}>
+          할당받은 과제를 초기화 하는 중...
+        </div>
       </div>
     );
   }
