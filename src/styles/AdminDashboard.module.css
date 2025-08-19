@@ -721,6 +721,10 @@
   background: #fee2e2;
   color: #dc2626;
 }
+.statusYellow {
+  background: #fef3c7;
+  color: #d97706;
+}
 
 .typeBadge {
   padding: 2px 6px;

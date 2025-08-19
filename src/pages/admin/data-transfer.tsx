@@ -11,6 +11,15 @@ const DataTransferPage: React.FC = () => {
   const { isDev, isProduction, isPreview } = getEnv();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  const [includeSubcollections, setIncludeSubcollections] =
+    useState<boolean>(false);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  const [applyCompletionLogic, setApplyCompletionLogic] =
+    useState<boolean>(false);
+  const [excludeUserName, setExcludeUserName] = useState<string>("");
+
   const envText = isDev
     ? "development"
     : isProduction
@@ -35,6 +44,9 @@ const DataTransferPage: React.FC = () => {
     await exportData({
       collectionName: exportCollectionName,
       limit: exportLimit,
+      includeSubcollections, // 추가
+      startDate: startDate || undefined, // 추가
+      endDate: endDate || undefined, // 추가
     });
   };
 
@@ -50,6 +62,8 @@ const DataTransferPage: React.FC = () => {
       collectionName: importCollectionName,
       data: dataToImport,
       overwrite: overwriteMode,
+      applyCompletionLogic, // 추가
+      excludeUserName: excludeUserName.trim(), // 추가
     });
   };
 
@@ -187,6 +201,73 @@ const DataTransferPage: React.FC = () => {
             max={1000}
             style={{
               width: "200px",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "14px",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <input
+              type="checkbox"
+              checked={includeSubcollections}
+              onChange={(e) => setIncludeSubcollections(e.target.checked)}
+            />
+            <span style={{ fontSize: "14px", color: "#333" }}>
+              하위 컬렉션 포함 (느려질 수 있음)
+            </span>
+          </label>
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#333",
+              marginBottom: "8px",
+            }}
+          >
+            시작 날짜 (선택사항)
+          </label>
+          <input
+            type="datetime-local"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "14px",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#333",
+              marginBottom: "8px",
+            }}
+          >
+            종료 날짜 (선택사항)
+          </label>
+          <input
+            type="datetime-local"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{
+              width: "100%",
               padding: "10px",
               border: "1px solid #ddd",
               borderRadius: "4px",
@@ -372,6 +453,47 @@ const DataTransferPage: React.FC = () => {
               📁 파일 로드
             </button>
           )}
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <input
+              type="checkbox"
+              checked={applyCompletionLogic}
+              onChange={(e) => setApplyCompletionLogic(e.target.checked)}
+            />
+            <span style={{ fontSize: "14px", color: "#333" }}>
+              새로운 완료 로직 적용
+            </span>
+          </label>
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#333",
+              marginBottom: "8px",
+            }}
+          >
+            제외할 사용자명 (완료 로직 적용 안함)
+          </label>
+          <input
+            type="text"
+            value={excludeUserName}
+            onChange={(e) => setExcludeUserName(e.target.value)}
+            placeholder="예: 최영례"
+            style={{
+              width: "100%",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "14px",
+              boxSizing: "border-box",
+            }}
+          />
         </div>
 
         <button

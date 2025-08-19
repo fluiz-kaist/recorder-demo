@@ -10,12 +10,18 @@ interface DocumentData {
 interface ExportParams {
   collectionName: string;
   limit?: number;
+  includeSubcollections?: boolean; // 추가
+  startDate?: string; // 추가
+  endDate?: string; // 추가
 }
 
 interface ImportParams {
   collectionName: string;
   data: DocumentData[];
   overwrite?: boolean;
+
+  applyCompletionLogic?: boolean; // 추가
+  excludeUserName?: string; // 추가
 }
 
 interface ExportResult {
@@ -63,7 +69,13 @@ export const useDataTransfer = (): UseDataTransferReturn => {
   const [uploadedData, setUploadedData] = useState<DocumentData[] | null>(null);
 
   const exportData = async (params: ExportParams): Promise<ExportResult> => {
-    const { collectionName, limit = 100 } = params;
+    const {
+      collectionName,
+      limit = 100,
+      includeSubcollections = false, // 추가
+      startDate, // 추가
+      endDate, // 추가
+    } = params;
 
     if (!collectionName.trim()) {
       const errorResult = {
@@ -89,6 +101,9 @@ export const useDataTransfer = (): UseDataTransferReturn => {
         body: JSON.stringify({
           collectionName: collectionName.trim(),
           limit,
+          includeSubcollections, // 추가
+          startDate, // 추가
+          endDate, // 추가
         }),
       });
 
@@ -127,8 +142,15 @@ export const useDataTransfer = (): UseDataTransferReturn => {
   };
 
   const importData = async (params: ImportParams): Promise<ImportResult> => {
-    const { collectionName, data, overwrite = true } = params;
+    const {
+      collectionName,
+      data,
+      overwrite = true,
+      applyCompletionLogic = false,
+      excludeUserName = "",
+    } = params;
 
+    // 기본 유효성 검사
     if (!collectionName.trim()) {
       const errorResult = {
         success: false,
@@ -154,39 +176,25 @@ export const useDataTransfer = (): UseDataTransferReturn => {
     setError(null);
 
     try {
-      const response = await fetch("/api/test/import-collection", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // 데이터 크기에 따라 처리 방식 결정
+      if (data.length > 1000) {
+        // 큰 데이터는 스트리밍 방식 사용
+        return await handleStreamingImport({
           collectionName: collectionName.trim(),
           data,
           overwrite,
-        }),
-      });
-
-      const responseData = await response.json();
-
-      if (response.ok) {
-        const successResult = {
-          success: true,
-          message:
-            responseData.message || "데이터를 성공적으로 Import했습니다!",
-          importedCount: responseData.importedCount,
-          skippedCount: responseData.skippedCount,
-          importedDocuments: responseData.importedDocuments,
-        };
-        setImportResult(successResult);
-        return successResult;
+          applyCompletionLogic,
+          excludeUserName,
+        });
       } else {
-        const errorResult = {
-          success: false,
-          message: responseData.error || "Import 중 오류가 발생했습니다.",
-        };
-        setImportResult(errorResult);
-        setError(errorResult.message);
-        return errorResult;
+        // 작은 데이터는 기존 방식 사용
+        return await handleBatchImport({
+          collectionName: collectionName.trim(),
+          data,
+          overwrite,
+          applyCompletionLogic,
+          excludeUserName,
+        });
       }
     } catch (err: any) {
       const errorResult = {
@@ -200,6 +208,123 @@ export const useDataTransfer = (): UseDataTransferReturn => {
       setIsImporting(false);
     }
   };
+
+  // 기존 배치 처리 방식
+  async function handleBatchImport(params: {
+    collectionName: string;
+    data: DocumentData[];
+    overwrite: boolean;
+    applyCompletionLogic: boolean;
+    excludeUserName: string;
+  }): Promise<ImportResult> {
+    const response = await fetch("/api/test/import-collection", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        collectionName: params.collectionName,
+        data: params.data,
+        overwrite: params.overwrite,
+        applyCompletionLogic: params.applyCompletionLogic,
+        excludeUserName: params.excludeUserName,
+        useStreaming: false, // 기존 방식
+      }),
+    });
+
+    const responseData = await response.json();
+
+    if (response.ok) {
+      const successResult = {
+        success: true,
+        message: responseData.message || "데이터를 성공적으로 Import했습니다!",
+        importedCount: responseData.importedCount,
+        skippedCount: responseData.skippedCount,
+        importedDocuments: responseData.importedDocuments,
+      };
+      setImportResult(successResult);
+      return successResult;
+    } else {
+      const errorResult = {
+        success: false,
+        message: responseData.error || "Import 중 오류가 발생했습니다.",
+      };
+      setImportResult(errorResult);
+      setError(errorResult.message);
+      return errorResult;
+    }
+  }
+
+  // 새로운 스트리밍 처리 방식
+  async function handleStreamingImport(params: {
+    collectionName: string;
+    data: DocumentData[];
+    overwrite: boolean;
+    applyCompletionLogic: boolean;
+    excludeUserName: string;
+  }): Promise<ImportResult> {
+    console.log(`큰 데이터 감지 (${params.data.length}개), 청크 단위 처리`);
+
+    const CHUNK_SIZE = 100; // 100개씩 나누어 처리
+    let totalImported = 0;
+    let totalSkipped = 0;
+
+    // 데이터를 청크로 나누기
+    for (let i = 0; i < params.data.length; i += CHUNK_SIZE) {
+      const chunk = params.data.slice(i, i + CHUNK_SIZE);
+
+      console.log(
+        `청크 ${Math.floor(i / CHUNK_SIZE) + 1} 처리 중... (${i + 1}-${Math.min(
+          i + CHUNK_SIZE,
+          params.data.length
+        )})`
+      );
+
+      try {
+        // 각 청크를 별도 요청으로 전송
+        const response = await fetch("/api/test/import-collection", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            collectionName: params.collectionName,
+            data: chunk, // 청크 데이터만 전송
+            overwrite: params.overwrite,
+            applyCompletionLogic: params.applyCompletionLogic,
+            excludeUserName: params.excludeUserName,
+            useStreaming: false, // 청크는 일반 방식으로
+          }),
+        });
+
+        const responseData = await response.json();
+
+        if (response.ok) {
+          totalImported += responseData.importedCount || 0;
+          totalSkipped += responseData.skippedCount || 0;
+        } else {
+          throw new Error(responseData.error || "청크 처리 실패");
+        }
+      } catch (chunkError) {
+        console.error(
+          `청크 ${Math.floor(i / CHUNK_SIZE) + 1} 처리 실패:`,
+          chunkError
+        );
+        // 실패한 청크의 데이터는 스킵으로 처리
+        totalSkipped += chunk.length;
+      }
+    }
+
+    const successResult = {
+      success: true,
+      message: `청크 처리로 ${totalImported}개 문서를 Import했습니다. (스킵: ${totalSkipped}개)`,
+      importedCount: totalImported,
+      skippedCount: totalSkipped,
+    };
+
+    setImportResult(successResult);
+    return successResult;
+  }
 
   const loadFromFile = (file: File): Promise<DocumentData[]> => {
     return new Promise((resolve, reject) => {

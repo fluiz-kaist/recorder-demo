@@ -6,6 +6,9 @@ import { isDevelopment } from "@/utils/envConfig";
 interface RequestBody {
   collectionName: string;
   limit?: number;
+  includeSubcollections?: boolean; // 추가
+  startDate?: string; // 추가 (ISO 문자열)
+  endDate?: string; // 추가 (ISO 문자열)
 }
 
 interface ResponseData {
@@ -32,7 +35,13 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { collectionName, limit = 100 }: RequestBody = req.body;
+  const {
+    collectionName,
+    limit = 100,
+    includeSubcollections = false, // 추가
+    startDate, // 추가
+    endDate, // 추가
+  }: RequestBody = req.body;
 
   if (!collectionName) {
     return res.status(400).json({
@@ -43,11 +52,11 @@ export default async function handler(
   try {
     console.log(`📥 데이터 Export 시작: ${collectionName} (최대 ${limit}개)`);
 
-    // 현재 환경의 DB에서 데이터 가져오기 (프로덕션 설정으로 실행시)
-    const query = adminDb.collection(collectionName).limit(limit);
+    // 쿼리 빌드 부분 수정
+    let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
+      adminDb.collection(collectionName);
 
     const snapshot = await query.get();
-
     if (snapshot.empty) {
       console.log("⚠️ Export할 문서가 없습니다.");
       return res.status(200).json({
@@ -60,29 +69,44 @@ export default async function handler(
 
     // 문서 데이터 추출
     const exportedData = [];
+    // 날짜 필터 추가
+    if (startDate) {
+      query = query.where("uploadedAt", ">=", new Date(startDate));
+    }
+    if (endDate) {
+      query = query.where("uploadedAt", "<", new Date(endDate));
+    }
+
+    query = query.limit(limit);
+
+    // 하위 컬렉션 처리 부분을 조건부로 변경
     for (const doc of snapshot.docs) {
       const docData: {
         id: string;
         data: any;
-        subcollections: { [key: string]: any[] };
+        subcollections?: { [key: string]: any[] }; // optional로 변경
       } = {
         id: doc.id,
         data: doc.data(),
-        subcollections: {},
       };
-      // 하위 컬렉션 가져오기
-      const subcollections = await doc.ref.listCollections();
-      for (const subcol of subcollections) {
-        const subSnapshot = await subcol.get();
-        docData.subcollections[subcol.id] = subSnapshot.docs.map((subDoc) => ({
-          id: subDoc.id,
-          data: subDoc.data(),
-        }));
+
+      // 하위 컬렉션 처리를 조건부로
+      if (includeSubcollections) {
+        docData.subcollections = {};
+        const subcollections = await doc.ref.listCollections();
+        for (const subcol of subcollections) {
+          const subSnapshot = await subcol.get();
+          docData.subcollections[subcol.id] = subSnapshot.docs.map(
+            (subDoc) => ({
+              id: subDoc.id,
+              data: subDoc.data(),
+            })
+          );
+        }
       }
 
       exportedData.push(docData);
     }
-
     console.log(`✅ Export 완료: ${exportedData.length}개 문서`);
 
     return res.status(200).json({

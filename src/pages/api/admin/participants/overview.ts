@@ -2,7 +2,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { adminDb } from "@/lib/firebase/admin";
 import { User, RoundStatus } from "@/types/user";
-import { analyzeUserStatus } from "@/utils/userStatusValidation";
+import {
+  analyzeUserStatusForAdmin,
+  AdminUserStatus,
+  ADMIN_STATUS_KOREAN_MAP,
+  mapToLegacyStatus,
+} from "@/utils/adminUserStatusValidation";
 
 export interface ParticipantOverview {
   userId: string;
@@ -24,7 +29,8 @@ export interface ParticipantOverview {
   averageQualityScore: number;
 
   // 상태
-  status: "not_started" | "in_progress" | "completed" | "inactive";
+  status: AdminUserStatus;
+
   lastRecordingAt?: string;
 
   //현재 진행중인 라운드
@@ -52,37 +58,12 @@ interface ParticipantsOverviewResponse {
   message?: string;
 }
 
-// 참여자 상태 계산 함수
+// 참여자 상태 계산 함수 - 세분화된 상태 직접 반환
 const calculateParticipantStatus = (user: User) => {
-  // 유틸 함수로 정확한 상태 분석
-  const userStatusAnalysis = analyzeUserStatus(user);
+  const userStatusAnalysis = analyzeUserStatusForAdmin(user);
 
-  // 관리자용 간단한 상태로 매핑
-  let simpleStatus: ParticipantOverview["status"];
-
-  switch (userStatusAnalysis.status) {
-    case "new_user":
-      simpleStatus = "not_started";
-      break;
-    case "in_progress":
-    case "can_start_next_round":
-      simpleStatus = "in_progress";
-      break;
-    case "waiting_for_approval":
-      simpleStatus = "completed"; // 또는 새로운 상태 추가
-      break;
-    case "all_completed":
-      simpleStatus = "completed";
-      break;
-    default:
-      // 7일 이상 비활성화 체크 (기존 로직 유지)
-      const lastAccess = new Date(user.profile.lastAccessAt as string);
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      simpleStatus = lastAccess < sevenDaysAgo ? "inactive" : "not_started";
-      break;
-  }
-
-  return simpleStatus;
+  // UserAccessStatus를 그대로 반환 (더 이상 4단계로 매핑 안함)
+  return userStatusAnalysis.status;
 };
 // 전체 진행률 계산 함수
 const calculateOverallProgress = (user: User): number => {
@@ -94,7 +75,8 @@ const calculateOverallProgress = (user: User): number => {
   const completedRounds = user.roundSummaries.filter(
     (round) =>
       round.status === RoundStatus.COMPLETED ||
-      round.status === RoundStatus.APPROVED
+      round.status === RoundStatus.APPROVED ||
+      round.status === RoundStatus.SUBMITTED
   );
 
   overallProgress += completedRounds.length * roundWeight;
@@ -110,7 +92,8 @@ const calculateOverallProgress = (user: User): number => {
 
     const isCurrentRoundCompleted =
       currentRoundSummary?.status === RoundStatus.COMPLETED ||
-      currentRoundSummary?.status === RoundStatus.APPROVED;
+      currentRoundSummary?.status === RoundStatus.APPROVED ||
+      currentRoundSummary?.status === RoundStatus.SUBMITTED;
 
     if (!isCurrentRoundCompleted) {
       const currentRoundProgress =
@@ -164,12 +147,17 @@ const sortParticipants = (
         break;
 
       case "status":
-        // 상태 기준 정렬 (우선순위: completed > in_progress > not_started > inactive)
+        // 새로운 7가지 상태에 맞는 우선순위 설정
         const statusPriority = {
-          completed: 4,
-          in_progress: 3,
-          not_started: 2,
-          inactive: 1,
+          all_completed: 7,
+          round_2_waiting_approval: 6,
+          round_2_in_progress: 5,
+          round_2_waiting: 4,
+          round_1_waiting_approval: 3,
+          round_1_in_progress: 2,
+          guide_incomplete: 1,
+          tutorial_required: 1,
+          blocked: 0,
         };
         comparison = statusPriority[a.status] - statusPriority[b.status];
         break;
@@ -369,8 +357,12 @@ export default async function handler(
 
       // 기존 통계 (users 기준)
       startedParticipants: participants.filter((p) => p.hasStarted).length,
+      // completed 상태를 새로운 상태들로 수정
       completedParticipants: participants.filter(
-        (p) => p.status === "completed"
+        (p) =>
+          p.status === "all_completed" ||
+          p.status === "round_1_waiting_approval" ||
+          p.status === "round_2_waiting_approval"
       ).length,
       activeInLast7Days: participants.filter((p) => {
         const lastAccess = new Date(p.lastAccessAt);

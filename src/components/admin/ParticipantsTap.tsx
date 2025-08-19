@@ -20,7 +20,16 @@ interface SortConfig {
   field: SortField;
   order: SortOrder;
 }
-type StatusKey = "completed" | "in_progress" | "not_started" | "inactive";
+type StatusKey =
+  | "guide_incomplete"
+  | "round_1_in_progress"
+  | "round_1_waiting_approval"
+  | "round_2_waiting"
+  | "round_2_in_progress"
+  | "round_2_waiting_approval"
+  | "all_completed"
+  | "blocked"
+  | "tutorial_required";
 // 참여자 정렬 함수
 const sortParticipants = (participants: any[], sortConfig: SortConfig) => {
   return [...participants].sort((a, b) => {
@@ -55,10 +64,15 @@ const sortParticipants = (participants: any[], sortConfig: SortConfig) => {
 
       case "status":
         const statusPriority = {
-          completed: 4,
-          in_progress: 3,
-          not_started: 2,
-          inactive: 1,
+          all_completed: 7,
+          round_2_waiting_approval: 6,
+          round_2_in_progress: 5,
+          round_2_waiting: 4,
+          round_1_waiting_approval: 3,
+          round_1_in_progress: 2,
+          guide_incomplete: 1,
+          tutorial_required: 1, // 추가
+          blocked: 0, // 추가
         };
 
         const aStatus = a.status as StatusKey;
@@ -144,23 +158,37 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
 
   const getStatusBadge = (participantData: ParticipantOverview) => {
     const { currentSetNumber, status } = participantData;
+
+    // 7가지 상태에 맞는 스타일 매핑
     const statusClass =
       {
-        not_started: styles.statusGray,
-        in_progress: styles.statusBlue,
-        completed: styles.statusGreen,
-        inactive: styles.statusRed,
+        guide_incomplete: styles.statusGray, // 회색: 시작 안함
+        tutorial_required: styles.statusGray, // 회색: 시작 안함
+
+        round_1_in_progress: styles.statusBlue, // 파랑: 진행중
+        round_2_in_progress: styles.statusBlue, // 파랑: 진행중
+        round_2_waiting: styles.statusBlue, // 파랑: 진행중 (대기도 진행 상태)
+
+        round_1_waiting_approval: styles.statusYellow, // 노랑: 승인대기 (없다면 statusBlue 사용)
+        round_2_waiting_approval: styles.statusYellow, // 노랑: 승인대기 (없다면 statusBlue 사용)
+
+        all_completed: styles.statusGreen, // 초록: 완료
+        blocked: styles.statusRed, // 빨강: 차단
       }[status] || styles.statusGray;
 
-    let statusText =
+    // 한국어 상태명 매핑
+    const statusText =
       {
-        not_started: "시작 안함",
-        in_progress: "진행 중",
-        completed: "완료",
-        inactive: "비활성",
+        guide_incomplete: "가이드 미완료",
+        round_1_in_progress: "1회차 진행중",
+        round_1_waiting_approval: "1회차 승인대기",
+        round_2_waiting: "2회차 대기중",
+        round_2_in_progress: "2회차 진행중",
+        round_2_waiting_approval: "2회차 승인대기",
+        all_completed: "모든 작업 완료",
+        tutorial_required: "튜토리얼 필요", // 추가
+        blocked: "접근 차단", // 추가
       }[status] || status;
-
-    statusText = `${currentSetNumber}회차 ${statusText}`;
 
     return (
       <span className={`${styles.statusBadge} ${statusClass}`}>

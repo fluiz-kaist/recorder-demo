@@ -180,7 +180,6 @@ const CompletionAllTasksBtn = () => {
       console.groupEnd();
 
       console.log("작업 완료, 페이지 이동 시작");
-      console.log("작업 완료, 페이지 이동 시작");
       // 라운드별로 다른 페이지나 메시지 처리
       if (currentRoundNumber === 1) {
         router.push("/completion?round=1");

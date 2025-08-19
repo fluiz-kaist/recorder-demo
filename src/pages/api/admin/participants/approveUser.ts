@@ -1,7 +1,10 @@
 // pages/api/admin/participants/approveUser.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { getDocByIdAdmin, updateDocByIdAdmin } from "@/lib/firebase/firestoreAdmin";
-import { FieldValue } from "firebase-admin/firestore";
+import {
+  getDocByIdAdmin,
+  updateDocByIdAdmin,
+} from "@/lib/firebase/firestoreAdmin";
+import { Timestamp } from "firebase-admin/firestore";
 import { RoundStatus } from "@/types/user";
 
 interface ApprovalRequest {
@@ -23,10 +26,14 @@ interface ApprovalResponse {
 /**
  * 단일 사용자 승인 처리 함수
  */
-async function approveUserRound(userId: string, roundNumber: number): Promise<ApprovalResponse> {
+async function approveUserRound(
+  userId: string,
+  roundNumber: number
+): Promise<ApprovalResponse> {
   try {
-    const now = FieldValue.serverTimestamp();
-    const collectionName = process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
+    const now = Timestamp.now(); // ← FieldValue.serverTimestamp() 대신 Timestamp.now() 사용
+    const collectionName =
+      process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
 
     // 1. 사용자 데이터 조회
     const userData = await getDocByIdAdmin(collectionName, userId);
@@ -48,10 +55,12 @@ async function approveUserRound(userId: string, roundNumber: number): Promise<Ap
     const currentRoundSummary = userData.roundSummaries?.find(
       (summary: any) => summary.roundNumber === roundNumber
     );
-    
+
     if (!currentRoundSummary || currentRoundSummary.status !== "submitted") {
       throw new Error(
-        `승인할 수 없는 상태입니다. 현재 상태: ${currentRoundSummary?.status || "없음"}`
+        `승인할 수 없는 상태입니다. 현재 상태: ${
+          currentRoundSummary?.status || "없음"
+        }`
       );
     }
 
@@ -105,7 +114,9 @@ async function approveUserRound(userId: string, roundNumber: number): Promise<Ap
     await updateDocByIdAdmin(collectionName, userId, userUpdates);
 
     console.log(`✅ ${roundNumber}라운드 승인 완료 - 사용자 ${userId}`);
-    console.log(`📊 새 상태: ${isLastRound ? 'ALL_COMPLETED' : 'CAN_START_NEXT_ROUND'}`);
+    console.log(
+      `📊 새 상태: ${isLastRound ? "ALL_COMPLETED" : "CAN_START_NEXT_ROUND"}`
+    );
 
     return {
       success: true,
@@ -113,12 +124,11 @@ async function approveUserRound(userId: string, roundNumber: number): Promise<Ap
       roundNumber,
       isLastRound,
       newRoundNumber: roundNumber + 1,
-      newStatus: isLastRound ? 'ALL_COMPLETED' : 'CAN_START_NEXT_ROUND',
+      newStatus: isLastRound ? "ALL_COMPLETED" : "CAN_START_NEXT_ROUND",
       message: isLastRound
         ? "모든 라운드 완료"
         : `${roundNumber + 1}라운드 진행 가능`,
     };
-
   } catch (error) {
     console.error(`❌ 승인 처리 실패 - ${userId}:`, error);
     return {
@@ -138,9 +148,9 @@ export default async function handler(
   res: NextApiResponse<ApprovalResponse | ApprovalResponse[]>
 ) {
   if (req.method !== "POST") {
-    return res.status(405).json({ 
-      success: false, 
-      error: "Method not allowed" 
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed",
     });
   }
 
@@ -148,9 +158,9 @@ export default async function handler(
     // TODO: 관리자 인증 검증
     // const isAdmin = await verifyAdminAuth(req);
     // if (!isAdmin) {
-    //   return res.status(403).json({ 
-    //     success: false, 
-    //     error: "관리자 권한이 필요합니다" 
+    //   return res.status(403).json({
+    //     success: false,
+    //     error: "관리자 권한이 필요합니다"
     //   });
     // }
 
@@ -166,7 +176,7 @@ export default async function handler(
     // 일괄 승인 처리
     if (Array.isArray(body.approvalList)) {
       const approvalList = body.approvalList as ApprovalRequest[];
-      
+
       console.log(`🚀 일괄 승인 요청: ${approvalList.length}명`);
 
       const results = await Promise.allSettled(
@@ -188,10 +198,12 @@ export default async function handler(
         }
       });
 
-      const successCount = responses.filter(r => r.success).length;
+      const successCount = responses.filter((r) => r.success).length;
       const failedCount = responses.length - successCount;
 
-      console.log(`📈 일괄 승인 완료: 성공 ${successCount}명, 실패 ${failedCount}명`);
+      console.log(
+        `📈 일괄 승인 완료: 성공 ${successCount}명, 실패 ${failedCount}명`
+      );
 
       return res.status(200).json(responses);
     }
@@ -200,7 +212,6 @@ export default async function handler(
       success: false,
       error: "잘못된 요청 형식입니다",
     });
-
   } catch (error) {
     console.error("❌ API 처리 중 오류:", error);
     return res.status(500).json({

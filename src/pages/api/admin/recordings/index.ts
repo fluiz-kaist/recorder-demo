@@ -47,6 +47,7 @@ export default async function handler(
 
   const audioCollectionName =
     process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
+  console.log("audioCollectionName?", audioCollectionName);
 
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";

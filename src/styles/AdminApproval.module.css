@@ -126,6 +126,27 @@
   color: #6b7280;
 }
 
+.approved {
+  background-color: #10b981;
+  color: white;
+}
+
+.approvedItem {
+  opacity: 0.7;
+  background-color: #f0f9ff;
+}
+
+.approvedBadge {
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.approvalStatus {
+  padding: 10px;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
 /* 반응형 */
 @media (max-width: 768px) {
   .bulkHeader {
