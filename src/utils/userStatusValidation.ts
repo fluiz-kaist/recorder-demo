@@ -53,7 +53,6 @@ export function analyzeUserStatus(
   const canStartNextRound = user.currentStatus.canStartNextRound;
   const completedPercentage =
     user.currentStatus.currentRoundProgress?.completedPercentage || 0;
-  const hasPendingApproval = user.currentStatus.hasPendingApproval;
 
   // 분석 로직에서 튜토리얼 상태 확인
   if (currentRound > 0 && !user.currentStatus.isTutorialCompleted) {
@@ -88,50 +87,51 @@ export function analyzeUserStatus(
     };
   }
 
-  // ===== 수정된 부분 =====
-  // 3. 이전 라운드 완료 후 다음 라운드 대기 상태
-  // - currentRound가 1보다 크고 (이전 라운드가 있음)
-  // - 현재 라운드 진행률이 0%이고 (아직 시작 안함)
-  // - 녹음 시작 불가능하고
-  // - 다음 라운드 시작 불가능한 상태
-  // 3. 이전 라운드 완료 후 다음 라운드 대기 상태
-  const hasPreviousRoundCompleted = user.roundSummaries?.some(
-    (summary) =>
-      summary.roundNumber === currentRound - 1 && summary.status === "completed"
+  // 3. 현재 라운드의 roundSummary 상태 확인
+  const currentRoundSummary = user.roundSummaries?.find(
+    (summary) => summary.roundNumber === currentRound
   );
 
+  // 4. 현재 라운드가 submitted 상태 (완료 버튼 눌러서 제출했지만 승인 대기 중)
+  if (currentRoundSummary?.status === "submitted") {
+    return {
+      status: UserAccessStatus.WAITING_FOR_APPROVAL,
+      canAccessStartPage: false,
+      currentRound,
+      maxAllowedRounds: maxRounds,
+      reason: `${currentRound}라운드 제출 완료, 관리자 승인 대기 중`,
+      redirectPath: `/completion?round=${currentRound}`,
+    };
+  }
+
+  // 5. 이전 라운드가 completed이고 현재 라운드 시작 가능
+  if (currentRound > 1) {
+    const previousRoundSummary = user.roundSummaries?.find(
+      (summary) => summary.roundNumber === currentRound - 1
+    );
+
+    // 이전 라운드가 완료되었고, 현재 라운드 시작 권한이 있는 경우
+    if (
+      previousRoundSummary?.status === "completed" &&
+      canStartRecording &&
+      canStartNextRound
+    ) {
+      return {
+        status: UserAccessStatus.CAN_START_NEXT_ROUND,
+        canAccessStartPage: true,
+        currentRound,
+        maxAllowedRounds: maxRounds,
+      };
+    }
+  }
+
+  // 6. 첫 번째 라운드이고 작업 가능한 상태
   if (
-    hasPreviousRoundCompleted &&
-    completedPercentage === 0 &&
-    !canStartRecording &&
-    !canStartNextRound
+    currentRound === 1 &&
+    canStartRecording &&
+    canStartNextRound &&
+    currentRoundSummary?.status === "assigned"
   ) {
-    // 완료된 라운드 번호를 쿼리 파라미터로 추가
-    const completedRound = currentRound - 1;
-
-    return {
-      status: UserAccessStatus.WAITING_FOR_APPROVAL,
-      canAccessStartPage: false,
-      currentRound,
-      maxAllowedRounds: maxRounds,
-      reason: "이전 라운드 완료, 관리자 승인 대기 중",
-      redirectPath: `/completion?round=${completedRound}`, // ← 쿼리 파라미터 포함
-    };
-  }
-
-  // 4. 현재 라운드를 100% 완료했고 승인 대기 중인 상태
-  if (completedPercentage === 100 && !canStartNextRound && !canStartRecording) {
-    return {
-      status: UserAccessStatus.WAITING_FOR_APPROVAL,
-      canAccessStartPage: false,
-      currentRound,
-      maxAllowedRounds: maxRounds,
-      reason: "현재 라운드 완료, 관리자 승인 대기 중",
-      redirectPath: `/completion?round=${currentRound}`, // ← 쿼리 파라미터 포함
-    };
-  }
-  // 5. 다음 라운드 시작 허가를 받은 상태
-  if (canStartNextRound && canStartRecording) {
     return {
       status: UserAccessStatus.CAN_START_NEXT_ROUND,
       canAccessStartPage: true,
@@ -140,7 +140,7 @@ export function analyzeUserStatus(
     };
   }
 
-  // 6. 현재 라운드 진행 중
+  // 7. 현재 라운드 진행 중 (100% 미만)
   if (canStartRecording && completedPercentage < 100) {
     return {
       status: UserAccessStatus.IN_PROGRESS,
@@ -150,7 +150,19 @@ export function analyzeUserStatus(
     };
   }
 
-  // 7. 기타 차단 상태 (안전장치)
+  // 8. 기타 승인 대기 상태들
+  if (completedPercentage === 100 && !canStartRecording && !canStartNextRound) {
+    return {
+      status: UserAccessStatus.WAITING_FOR_APPROVAL,
+      canAccessStartPage: false,
+      currentRound,
+      maxAllowedRounds: maxRounds,
+      reason: "승인 대기 중",
+      redirectPath: `/completion?round=${currentRound}`,
+    };
+  }
+
+  // 9. 기타 차단 상태 (안전장치)
   return {
     status: UserAccessStatus.BLOCKED,
     canAccessStartPage: false,

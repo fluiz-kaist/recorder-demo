@@ -26,6 +26,9 @@ export interface ParticipantOverview {
   // 상태
   status: "not_started" | "in_progress" | "completed" | "inactive";
   lastRecordingAt?: string;
+
+  //현재 진행중인 라운드
+  currentRound?: number;
 }
 
 interface ParticipantsOverviewResponse {
@@ -232,6 +235,32 @@ export default async function handler(
     const allUsers = allUsersSnapshot.docs.map(
       (doc) => ({ ...doc.data() } as User)
     );
+
+    // console.log("=== 디버깅 시작 ===");
+    // console.log("전체 사용자 수:", allUsers.length);
+
+    // // 각 사용자의 currentStatus 상태 확인
+    // allUsers.forEach((user, index) => {
+    //   console.log(`사용자 ${index + 1}:`, {
+    //     userId: user.profile?.userId || "userId 없음",
+    //     hasCurrentStatus: !!user.currentStatus,
+    //     currentStatus: user.currentStatus,
+    //     isTutorialCompleted: user.currentStatus?.isTutorialCompleted,
+    //   });
+
+    //   // currentStatus가 없는 사용자가 있다면 전체 구조 확인
+    //   if (!user.currentStatus) {
+    //     console.log(`currentStatus 없는 사용자 전체 데이터:`, user);
+    //   }
+    // });
+
+    // const activeParticipants = allUsers.filter(
+    //   (user) => user.currentStatus?.isTutorialCompleted // ?. 연산자 추가해서 일단 에러 방지
+    // ).length;
+
+    // console.log("activeParticipants 계산 결과:", activeParticipants);
+    // console.log("=== 디버깅 끝 ===");
+
     const activeParticipants = allUsers.filter(
       (user) => user.currentStatus.isTutorialCompleted
     ).length;
@@ -295,6 +324,8 @@ export default async function handler(
         ageGroup: user.profile.ageGroup,
         createdAt: user.profile.createdAt as string,
         lastAccessAt: user.profile.lastAccessAt as string,
+
+        currentRound: user.currentStatus.currentRoundNumber,
 
         hasStarted: user.currentStatus.isOnboardingCompleted,
         currentSetNumber: user.currentStatus.currentRoundNumber,

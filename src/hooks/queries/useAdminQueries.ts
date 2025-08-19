@@ -22,11 +22,12 @@ interface ParticipantsOverviewData {
     totalApplicants: number; // 참가 신청자 (화이트리스트)
     totalRegisteredUsers: number; // 가입 완료자 (users)
     activeParticipants: number; // 작업 참여자 (실제 작업 시작한 사람)
+    actualCompletedTasks: number; // 실제 작업 완료자 (새로 추가)
 
     // 기존 통계
     totalParticipants: number; // = totalRegisteredUsers와 동일
     startedParticipants: number;
-    completedParticipants: number;
+    completedParticipants: number; // 승인 대기자로 의미 변경
     activeInLast7Days: number;
   };
 }
@@ -474,14 +475,16 @@ export const getParticipationStageColor = (
   }
 };
 
-/**
- * 참여 전환율 계산 함수
- */
 export const calculateConversionRates = (
   statistics: ParticipantsOverviewData["statistics"]
 ) => {
-  const { totalApplicants, totalRegisteredUsers, activeParticipants } =
-    statistics;
+  const {
+    totalApplicants,
+    totalRegisteredUsers,
+    activeParticipants,
+    actualCompletedTasks,
+    completedParticipants,
+  } = statistics;
 
   return {
     // 신청자 → 가입자 전환율
@@ -494,6 +497,20 @@ export const calculateConversionRates = (
     registeredToActive:
       totalRegisteredUsers > 0
         ? Math.round((activeParticipants / totalRegisteredUsers) * 100)
+        : 0,
+
+    // 활동자 → 작업완료자 전환율 (새로 추가)
+    activeToTaskCompleted:
+      activeParticipants > 0
+        ? Math.round(((actualCompletedTasks || 0) / activeParticipants) * 100)
+        : 0,
+
+    // 작업완료자 → 승인대기자 전환율 (새로 추가)
+    taskCompletedToApprovalWaiting:
+      (actualCompletedTasks || 0) > 0
+        ? Math.round(
+            (completedParticipants / (actualCompletedTasks || 1)) * 100
+          )
         : 0,
 
     // 신청자 → 활동자 전환율 (전체)

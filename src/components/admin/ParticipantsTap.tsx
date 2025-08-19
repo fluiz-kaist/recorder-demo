@@ -5,7 +5,7 @@ import styles from "@/styles/AdminDashboard.module.css";
 import { User } from "@/types/user";
 import { ParticipantDetail } from "@/pages/api/admin/participants/[userId]";
 import { ParticipantOverview } from "@/pages/api/admin/participants/overview";
-
+import { ApprovalButton } from "@/components/admin/ApproveNextRoundBtn";
 // 정렬 타입 정의
 type SortField =
   | "lastAccessAt"
@@ -136,6 +136,10 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
 
       setTimeout(sendData, 1500); // 1.5초 후
     }
+  };
+
+  const handleApproveRecentRound = (participant: ParticipantOverview) => {
+    console.log("여기 participant?", participant);
   };
 
   const getStatusBadge = (participantData: ParticipantOverview) => {
@@ -271,6 +275,13 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
             >
               상세보기
             </div>
+
+            <div
+              className={`${styles.tableCell} ${styles.sortableHeader}`}
+              // onClick={() => handleSort("lastAccessAt")}
+            >
+              승인하기
+            </div>
           </div>
         </div>
 
@@ -329,6 +340,14 @@ const ParticipantsTab = ({ participantsData }: { participantsData: any }) => {
                 >
                   상세보기
                 </button>
+              </div>
+
+              <div className={styles.tableCell}>
+                <ApprovalButton
+                  userId={participant.userId}
+                  roundNumber={participant.currentRound}
+                  userName={participant.userName}
+                />
               </div>
             </div>
           ))}

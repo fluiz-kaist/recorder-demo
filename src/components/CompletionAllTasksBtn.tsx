@@ -40,7 +40,7 @@ const CompletionAllTasksBtn = () => {
 
     if (!isRoundCompleted) {
       alert(
-        `${currentRoundNumber}라운드의 모든 작업을 완료한 후에만 진행할 수 있습니다.`
+        `${currentRoundNumber}회의 모든 작업을 완료한 후에만 진행할 수 있습니다.`
       );
       return;
     }
@@ -103,7 +103,7 @@ const CompletionAllTasksBtn = () => {
 
       const updatedSummary = {
         roundNumber: currentRoundNumber,
-        status: RoundStatus.COMPLETED,
+        status: RoundStatus.SUBMITTED,
         completedAt: now,
         progressSummary: {
           totalTasks,
@@ -145,16 +145,16 @@ const CompletionAllTasksBtn = () => {
       const userUpdates = {
         currentStatus: {
           ...user.currentStatus,
-          currentRoundNumber: currentRoundNumber + 1, // 회차 번호 1 증가
+          // currentRoundNumber: currentRoundNumber + 1, // 회차 번호 1 증가
           canStartRecording: false, // 녹음 시작 불가로 변경
           canStartNextRound: false, //  관리자 허가 대기
           nextTask: null,
-          hasPendingApproval: submittedExists,
-          currentRoundProgress: {
-            completedPercentage: 0,
-            submittedPercentage: 0,
-            approvedPercentage: 0,
-          },
+          hasPendingApproval: true,
+          // currentRoundProgress: {
+          //   completedPercentage: 0,
+          //   submittedPercentage: 0,
+          //   approvedPercentage: 0,
+          // },
         },
         statistics: {
           ...user.statistics,

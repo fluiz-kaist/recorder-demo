@@ -492,8 +492,8 @@ const MainSelectionPage = () => {
           {/* 완료 축하 메시지 */}
           {overallProgress === 100 && (
             <div className={styles.congratulationsMessage}>
-              <h3>모든 녹음을 완료했습니다!</h3>
-              <p>수고하셨습니다.</p>
+              <h3>참여하신 회차의 녹음을 완료했습니다.</h3>
+              <p>수고하셨습니다. 아래 버튼을 꼭 눌러 주세요.</p>
 
               <CompletionAllTasksBtn />
             </div>
