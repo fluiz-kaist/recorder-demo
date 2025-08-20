@@ -2,7 +2,12 @@
 import { getEnv } from "@/utils/envConfig";
 const { isDev, isPreview, isProduction } = getEnv();
 
-export const isRecordingAvailable = (): boolean => {
+export const isRecordingAvailable = (userName?: string): boolean => {
+  // 특정 사용자는 항상 허용
+  const allowedUsers = ["가", "나", "다", "테스트"]; // 여기에 허용할 사용자명 추가
+  if (userName && allowedUsers.includes(userName)) {
+    return true;
+  }
   // timeCheck 기능이 명시적으로 비활성화된 경우 항상 true 반환
   if (process.env.NEXT_PUBLIC_ENABLE_TIME_CHECK === "false") {
     return true;
@@ -41,7 +46,8 @@ const checkTimeRestriction = (): boolean => {
   }
 
   // 제한 시점 이전이라면 기존 평일 정오~오후6시 로직 적용
-  return checkWorkingHours(koreaTime);
+  // return checkWorkingHours(koreaTime);
+  return false;
 };
 
 const checkWorkingHours = (time: Date = new Date()): boolean => {

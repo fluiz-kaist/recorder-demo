@@ -361,7 +361,8 @@ async function processDocument(
         const roundData = extractRoundDataFromSubcollections(
           item.subcollections
         );
-        const result = applyNewCompletionLogic(item.data, roundData);
+        // 수정된 데이터를 전달해야 함
+        const result = applyNewCompletionLogic(processedData, roundData); //
         processedData = result.updatedUserData;
 
         console.log(`완료 로직 적용: ${item.id}`);
