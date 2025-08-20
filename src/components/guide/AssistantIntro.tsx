@@ -34,7 +34,7 @@ const AssistantIntro: React.FC = () => {
           <div className={styles.featureContent}>
             <h3 className={styles.featureTitle}>기차표 예매</h3>
             <p className={styles.featureDescription}>
-              비서가 핸드폰으로 기차표를 대신 예매해줍니다
+              말씀만 하시면 비서가 핸드폰으로 기차표를 대신 예매해 드립니다.
             </p>
           </div>
         </div>
@@ -44,7 +44,7 @@ const AssistantIntro: React.FC = () => {
           <div className={styles.featureContent}>
             <h3 className={styles.featureTitle}>택시 호출</h3>
             <p className={styles.featureDescription}>
-              비서가 택시 앱을 실행해 호출까지 도와줍니다
+              비서가 택시 앱을 실행해 택시를 불러 드립니다.
             </p>
           </div>
         </div>
@@ -54,7 +54,18 @@ const AssistantIntro: React.FC = () => {
           <div className={styles.featureContent}>
             <h3 className={styles.featureTitle}>온라인 쇼핑몰 주문하기</h3>
             <p className={styles.featureDescription}>
-              온라인 쇼핑몰에 들어가 주문을 대신 진행합니다
+              온라인 쇼핑몰에 들어가 물건 주문까지 대신 진행해 드립니다.
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>❗ </div>
+          <div className={styles.featureContent}>
+            <h3 className={styles.featureTitle}>참고하세요</h3>
+            <p className={styles.featureDescription}>
+              비서는 핸드폰을 직접 다뤄주는 역할을 합니다. 그래서{" "}
+              <u>[어떻게 하는지]를 물어보실 필요는 없습니다.</u>
             </p>
           </div>
         </div>

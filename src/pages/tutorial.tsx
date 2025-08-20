@@ -305,11 +305,11 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
               <div className={styles.keyMessageSection}>
                 <div className={styles.keyMessage}>
                   <p>
-                    이제 이 비서를 상상하면서, <u>어떤 말을 하실지</u> 녹음하는
+                    이제 이 비서를 떠올리면서,<u>어떻게 지시하실지</u> 녹음하는
                     연습을 해보겠습니다.
                   </p>
                   <p>
-                    <strong>평소처럼 부탁하듯 말씀해 주세요.</strong>
+                    <strong>평소처럼 자연스럽게 말씀해 주세요.</strong>
                   </p>
                 </div>
               </div>
@@ -317,8 +317,9 @@ const TutorialComponent: React.FC<TutorialComponentProps> = ({
                 계속해서 [다음] 버튼을 눌러서 진행해주세요!
               </p>
               <p className={styles.next}>
-                <br />위 내용은 작업 중 하단의 [비서 소개] 버튼을 눌러 언제든
-                다시 볼 수 있습니다
+                <br />
+                진행 중에도 하단의 [비서 소개] 버튼을 누르시면 이 안내를 다시
+                보실 수 있습니다.
               </p>
             </div>
           )}
