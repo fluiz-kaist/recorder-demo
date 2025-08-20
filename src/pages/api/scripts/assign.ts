@@ -373,19 +373,24 @@ async function loadScriptData(setId: number): Promise<{
 }> {
   const { isPreview, isDev } = getEnv();
   const isDevMode = isPreview || isDev;
+  let situationScriptPath: string;
+  let formalScriptPath: string;
 
-  const situationScriptPath = isDevMode
-    ? "public/data/dev_situ_script.json"
-    : "public/data/prod_situational_script.json";
-  const formalScriptPath = isDevMode
-    ? "public/data/dev_formal_script.json"
-    : "public/data/prod_formal_script.json";
+  if (isDev) {
+    // 개발 환경
+    situationScriptPath = "public/data/dev_situ_script.json";
+    formalScriptPath = "public/data/dev_formal_script.json";
+  } else {
+    //  preview 또는 prod → prod 파일 사용
+    situationScriptPath = "public/data/prod_situational_script.json";
+    formalScriptPath = "public/data/prod_formal_script.json";
+  }
 
   try {
     const situationalPath = path.join(process.cwd(), situationScriptPath);
     const formalPath = path.join(process.cwd(), formalScriptPath);
 
-    console.log("🔍 [loadScriptData] 파일 경로:", {
+    console.log("🔍 [loadScriptData] 파일 경로(isDevMode):", {
       situationalPath,
       formalPath,
       setId,

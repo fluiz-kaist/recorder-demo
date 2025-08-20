@@ -7,7 +7,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 기록",
       "task_key": "건강-건강정보-1",
-      "id": "20-mid"
+      "id": "1-mid"
     },
     {
       "service_name": "건강",
@@ -16,7 +16,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 기록",
       "task_key": "건강-건강정보-1",
-      "id": "20-low"
+      "id": "1-low"
     }
   ],
   "건강-건강정보-2": [
@@ -27,7 +27,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 확인",
       "task_key": "건강-건강정보-2",
-      "id": "21-high"
+      "id": "2-high"
     },
     {
       "service_name": "건강",
@@ -36,7 +36,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 확인",
       "task_key": "건강-건강정보-2",
-      "id": "21-mid"
+      "id": "2-mid"
     }
   ],
   "건강-건강정보-3": [
@@ -47,7 +47,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 기록",
       "task_key": "건강-건강정보-3",
-      "id": "88-high"
+      "id": "3-high"
     },
     {
       "service_name": "건강",
@@ -56,7 +56,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 기록",
       "task_key": "건강-건강정보-3",
-      "id": "88-low"
+      "id": "3-low"
     }
   ],
   "건강-건강정보-4": [
@@ -67,7 +67,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 확인",
       "task_key": "건강-건강정보-4",
-      "id": "89-high"
+      "id": "4-high"
     },
     {
       "service_name": "건강",
@@ -76,7 +76,7 @@
       "service_target": "건강정보",
       "task_name": "건강 정보 확인",
       "task_key": "건강-건강정보-4",
-      "id": "89-mid"
+      "id": "4-mid"
     }
   ],
   "건강-건강정보-5": [
@@ -87,7 +87,7 @@
       "service_target": "건강정보",
       "task_name": "운동 기록 확인",
       "task_key": "건강-건강정보-5",
-      "id": "90-high"
+      "id": "5-high"
     },
     {
       "service_name": "건강",
@@ -96,7 +96,7 @@
       "service_target": "건강정보",
       "task_name": "운동 기록 확인",
       "task_key": "건강-건강정보-5",
-      "id": "90-low"
+      "id": "5-low"
     }
   ],
   "건강-건강정보-6": [
@@ -107,7 +107,7 @@
       "service_target": "건강정보",
       "task_name": "혈압·혈당 기록 확인",
       "task_key": "건강-건강정보-6",
-      "id": "91-mid"
+      "id": "6-mid"
     },
     {
       "service_name": "건강",
@@ -116,7 +116,7 @@
       "service_target": "건강정보",
       "task_name": "혈압·혈당 기록 확인",
       "task_key": "건강-건강정보-6",
-      "id": "91-low"
+      "id": "6-low"
     }
   ],
   "건강-건강정보-7": [
@@ -127,7 +127,7 @@
       "service_target": "건강정보",
       "task_name": "체중 변화 확인",
       "task_key": "건강-건강정보-7",
-      "id": "92-high"
+      "id": "7-high"
     },
     {
       "service_name": "건강",
@@ -136,7 +136,7 @@
       "service_target": "건강정보",
       "task_name": "체중 변화 확인",
       "task_key": "건강-건강정보-7",
-      "id": "92-low"
+      "id": "7-low"
     }
   ],
   "건강-건강정보-8": [
@@ -147,7 +147,7 @@
       "service_target": "건강정보",
       "task_name": "수면 상태 확인",
       "task_key": "건강-건강정보-8",
-      "id": "93-high"
+      "id": "8-high"
     },
     {
       "service_name": "건강",
@@ -156,7 +156,7 @@
       "service_target": "건강정보",
       "task_name": "수면 상태 확인",
       "task_key": "건강-건강정보-8",
-      "id": "93-low"
+      "id": "8-low"
     }
   ],
   "건강-건강정보-9": [
@@ -167,7 +167,7 @@
       "service_target": "건강정보",
       "task_name": "복약 리마인더 설정",
       "task_key": "건강-건강정보-9",
-      "id": "94-high"
+      "id": "9-high"
     },
     {
       "service_name": "건강",
@@ -176,7 +176,7 @@
       "service_target": "건강정보",
       "task_name": "복약 리마인더 설정",
       "task_key": "건강-건강정보-9",
-      "id": "94-mid"
+      "id": "9-mid"
     }
   ],
   "건강-건강정보-10": [
@@ -187,7 +187,7 @@
       "service_target": "건강정보",
       "task_name": "스트레스 지수 확인",
       "task_key": "건강-건강정보-10",
-      "id": "95-mid"
+      "id": "10-mid"
     },
     {
       "service_name": "건강",
@@ -196,7 +196,7 @@
       "service_target": "건강정보",
       "task_name": "스트레스 지수 확인",
       "task_key": "건강-건강정보-10",
-      "id": "95-low"
+      "id": "10-low"
     }
   ],
   "공공서비스-수도요금-1": [
@@ -207,7 +207,7 @@
       "service_target": "수도요금",
       "task_name": "수도요금 조회",
       "task_key": "공공서비스-수도요금-1",
-      "id": "62-high"
+      "id": "11-high"
     },
     {
       "service_name": "공공서비스",
@@ -216,7 +216,7 @@
       "service_target": "수도요금",
       "task_name": "수도요금 조회",
       "task_key": "공공서비스-수도요금-1",
-      "id": "62-low"
+      "id": "11-low"
     }
   ],
   "공공서비스-수도요금-2": [
@@ -227,7 +227,7 @@
       "service_target": "수도요금",
       "task_name": "전자고지서 조회",
       "task_key": "공공서비스-수도요금-2",
-      "id": "63-high"
+      "id": "12-high"
     },
     {
       "service_name": "공공서비스",
@@ -236,7 +236,7 @@
       "service_target": "수도요금",
       "task_name": "전자고지서 조회",
       "task_key": "공공서비스-수도요금-2",
-      "id": "63-mid"
+      "id": "12-mid"
     }
   ],
   "공공서비스-수도요금-3": [
@@ -247,7 +247,7 @@
       "service_target": "수도요금",
       "task_name": "수도요금 납부",
       "task_key": "공공서비스-수도요금-3",
-      "id": "64-high"
+      "id": "13-high"
     },
     {
       "service_name": "공공서비스",
@@ -256,7 +256,7 @@
       "service_target": "수도요금",
       "task_name": "수도요금 납부",
       "task_key": "공공서비스-수도요금-3",
-      "id": "64-low"
+      "id": "13-low"
     }
   ],
   "공공서비스-도서관-1": [
@@ -267,7 +267,7 @@
       "service_target": "도서관",
       "task_name": "도서 예약",
       "task_key": "공공서비스-도서관-1",
-      "id": "65-high"
+      "id": "14-high"
     },
     {
       "service_name": "공공서비스",
@@ -276,7 +276,7 @@
       "service_target": "도서관",
       "task_name": "도서 예약",
       "task_key": "공공서비스-도서관-1",
-      "id": "65-low"
+      "id": "14-low"
     }
   ],
   "공공서비스-도서관-2": [
@@ -287,7 +287,7 @@
       "service_target": "도서관",
       "task_name": "대출 현황 조회",
       "task_key": "공공서비스-도서관-2",
-      "id": "66-high"
+      "id": "15-high"
     },
     {
       "service_name": "공공서비스",
@@ -296,7 +296,7 @@
       "service_target": "도서관",
       "task_name": "대출 현황 조회",
       "task_key": "공공서비스-도서관-2",
-      "id": "66-low"
+      "id": "15-low"
     }
   ],
   "공공서비스-도서관-3": [
@@ -307,7 +307,7 @@
       "service_target": "도서관",
       "task_name": "반납일 안내",
       "task_key": "공공서비스-도서관-3",
-      "id": "67-high"
+      "id": "16-high"
     },
     {
       "service_name": "공공서비스",
@@ -316,7 +316,7 @@
       "service_target": "도서관",
       "task_name": "반납일 안내",
       "task_key": "공공서비스-도서관-3",
-      "id": "67-low"
+      "id": "16-low"
     }
   ],
   "공공서비스-도서관-4": [
@@ -327,7 +327,7 @@
       "service_target": "도서관",
       "task_name": "신간 도서 확인",
       "task_key": "공공서비스-도서관-4",
-      "id": "68-high"
+      "id": "17-high"
     },
     {
       "service_name": "공공서비스",
@@ -336,7 +336,7 @@
       "service_target": "도서관",
       "task_name": "신간 도서 확인",
       "task_key": "공공서비스-도서관-4",
-      "id": "68-low"
+      "id": "17-low"
     }
   ],
   "공공서비스-행정서비스-1-정부24": [
@@ -347,7 +347,7 @@
       "service_target": "행정서비스",
       "task_name": "주민등록등본 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-1-정부24",
-      "id": "78-high"
+      "id": "18-high"
     },
     {
       "service_name": "공공서비스",
@@ -356,7 +356,7 @@
       "service_target": "행정서비스",
       "task_name": "주민등록등본 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-1-정부24",
-      "id": "78-low"
+      "id": "18-low"
     }
   ],
   "공공서비스-행정서비스-2-정부24": [
@@ -367,7 +367,7 @@
       "service_target": "행정서비스",
       "task_name": "건강보험 자격득실 확인서 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-2-정부24",
-      "id": "79-high"
+      "id": "19-high"
     },
     {
       "service_name": "공공서비스",
@@ -376,7 +376,7 @@
       "service_target": "행정서비스",
       "task_name": "건강보험 자격득실 확인서 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-2-정부24",
-      "id": "79-mid"
+      "id": "19-mid"
     }
   ],
   "공공서비스-행정서비스-3-정부24": [
@@ -387,7 +387,7 @@
       "service_target": "행정서비스",
       "task_name": "연금지급내역 확인 (정부24)",
       "task_key": "공공서비스-행정서비스-3-정부24",
-      "id": "80-high"
+      "id": "20-high"
     },
     {
       "service_name": "공공서비스",
@@ -396,7 +396,7 @@
       "service_target": "행정서비스",
       "task_name": "연금지급내역 확인 (정부24)",
       "task_key": "공공서비스-행정서비스-3-정부24",
-      "id": "80-low"
+      "id": "20-low"
     }
   ],
   "공공서비스-행정서비스-4-정부24": [
@@ -407,7 +407,7 @@
       "service_target": "행정서비스",
       "task_name": "자동차 등록원부 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-4-정부24",
-      "id": "81-high"
+      "id": "21-high"
     },
     {
       "service_name": "공공서비스",
@@ -416,7 +416,7 @@
       "service_target": "행정서비스",
       "task_name": "자동차 등록원부 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-4-정부24",
-      "id": "81-low"
+      "id": "21-low"
     }
   ],
   "공공서비스-행정서비스-5-정부24": [
@@ -427,7 +427,7 @@
       "service_target": "행정서비스",
       "task_name": "가족관계증명서 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-5-정부24",
-      "id": "82-high"
+      "id": "22-high"
     },
     {
       "service_name": "공공서비스",
@@ -436,7 +436,7 @@
       "service_target": "행정서비스",
       "task_name": "가족관계증명서 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-5-정부24",
-      "id": "82-low"
+      "id": "22-low"
     }
   ],
   "교통-고속버스-1": [
@@ -447,7 +447,7 @@
       "service_target": "고속버스",
       "task_name": "고속버스표 예매",
       "task_key": "교통-고속버스-1",
-      "id": "1-high"
+      "id": "23-high"
     },
     {
       "service_name": "교통",
@@ -456,7 +456,7 @@
       "service_target": "고속버스",
       "task_name": "고속버스표 예매",
       "task_key": "교통-고속버스-1",
-      "id": "1-low"
+      "id": "23-low"
     }
   ],
   "교통-고속버스-2": [
@@ -467,7 +467,7 @@
       "service_target": "고속버스",
       "task_name": "고속버스표 취소",
       "task_key": "교통-고속버스-2",
-      "id": "2-high"
+      "id": "24-high"
     },
     {
       "service_name": "교통",
@@ -476,7 +476,7 @@
       "service_target": "고속버스",
       "task_name": "고속버스표 취소",
       "task_key": "교통-고속버스-2",
-      "id": "2-low"
+      "id": "24-low"
     }
   ],
   "교통-고속버스-3": [
@@ -487,7 +487,7 @@
       "service_target": "고속버스",
       "task_name": "고속버스표 발권",
       "task_key": "교통-고속버스-3",
-      "id": "3-high"
+      "id": "25-high"
     },
     {
       "service_name": "교통",
@@ -496,7 +496,7 @@
       "service_target": "고속버스",
       "task_name": "고속버스표 발권",
       "task_key": "교통-고속버스-3",
-      "id": "3-low"
+      "id": "25-low"
     }
   ],
   "교통-기차-1-srt": [
@@ -507,7 +507,7 @@
       "service_target": "기차",
       "task_name": "기차표 예매(SRT)",
       "task_key": "교통-기차-1-srt",
-      "id": "4-high"
+      "id": "26-high"
     },
     {
       "service_name": "교통",
@@ -516,7 +516,7 @@
       "service_target": "기차",
       "task_name": "기차표 예매(SRT)",
       "task_key": "교통-기차-1-srt",
-      "id": "4-low"
+      "id": "26-low"
     }
   ],
   "교통-기차-2-srt": [
@@ -527,7 +527,7 @@
       "service_target": "기차",
       "task_name": "기차표 취소(SRT)",
       "task_key": "교통-기차-2-srt",
-      "id": "5-high"
+      "id": "27-high"
     },
     {
       "service_name": "교통",
@@ -536,7 +536,7 @@
       "service_target": "기차",
       "task_name": "기차표 취소(SRT)",
       "task_key": "교통-기차-2-srt",
-      "id": "5-low"
+      "id": "27-low"
     }
   ],
   "교통-기차-3-srt": [
@@ -547,7 +547,7 @@
       "service_target": "기차",
       "task_name": "기차표 발권(SRT)",
       "task_key": "교통-기차-3-srt",
-      "id": "6-high"
+      "id": "28-high"
     },
     {
       "service_name": "교통",
@@ -556,7 +556,7 @@
       "service_target": "기차",
       "task_name": "기차표 발권(SRT)",
       "task_key": "교통-기차-3-srt",
-      "id": "6-low"
+      "id": "28-low"
     }
   ],
   "교통-택시-1": [
@@ -567,7 +567,7 @@
       "service_target": "택시",
       "task_name": "택시 호출",
       "task_key": "교통-택시-1",
-      "id": "7-high"
+      "id": "29-high"
     },
     {
       "service_name": "교통",
@@ -576,7 +576,7 @@
       "service_target": "택시",
       "task_name": "택시 호출",
       "task_key": "교통-택시-1",
-      "id": "7-low"
+      "id": "29-low"
     }
   ],
   "교통-택시-3": [
@@ -587,7 +587,7 @@
       "service_target": "택시",
       "task_name": "안전 문자 전송",
       "task_key": "교통-택시-3",
-      "id": "8-high"
+      "id": "30-high"
     },
     {
       "service_name": "교통",
@@ -596,7 +596,7 @@
       "service_target": "택시",
       "task_name": "안전 문자 전송",
       "task_key": "교통-택시-3",
-      "id": "8-low"
+      "id": "30-low"
     }
   ],
   "교통-택시-4": [
@@ -607,7 +607,7 @@
       "service_target": "택시",
       "task_name": "예상 요금",
       "task_key": "교통-택시-4",
-      "id": "9-high"
+      "id": "31-high"
     },
     {
       "service_name": "교통",
@@ -616,7 +616,7 @@
       "service_target": "택시",
       "task_name": "예상 요금",
       "task_key": "교통-택시-4",
-      "id": "9-mid"
+      "id": "31-mid"
     }
   ],
   "교통-장애인콜택시-1": [
@@ -627,7 +627,7 @@
       "service_target": "장애인콜택시",
       "task_name": "장애인 콜택시 호출",
       "task_key": "교통-장애인콜택시-1",
-      "id": "29-high"
+      "id": "32-high"
     },
     {
       "service_name": "교통",
@@ -636,7 +636,7 @@
       "service_target": "장애인콜택시",
       "task_name": "장애인 콜택시 호출",
       "task_key": "교통-장애인콜택시-1",
-      "id": "29-low"
+      "id": "32-low"
     }
   ],
   "교통-장애인콜택시-3": [
@@ -647,7 +647,7 @@
       "service_target": "장애인콜택시",
       "task_name": "장애인 콜택시 예약",
       "task_key": "교통-장애인콜택시-3",
-      "id": "31-high"
+      "id": "33-high"
     },
     {
       "service_name": "교통",
@@ -656,7 +656,7 @@
       "service_target": "장애인콜택시",
       "task_name": "장애인 콜택시 예약",
       "task_key": "교통-장애인콜택시-3",
-      "id": "31-mid"
+      "id": "33-mid"
     }
   ],
   "은행-은행-1": [
@@ -667,7 +667,7 @@
       "service_target": "은행",
       "task_name": "공과금 납부",
       "task_key": "은행-은행-1",
-      "id": "25-high"
+      "id": "34-high"
     },
     {
       "service_name": "금융",
@@ -676,7 +676,7 @@
       "service_target": "은행",
       "task_name": "공과금 납부",
       "task_key": "은행-은행-1",
-      "id": "25-mid"
+      "id": "34-mid"
     }
   ],
   "은행-은행-2": [
@@ -687,7 +687,7 @@
       "service_target": "은행",
       "task_name": "송금하기",
       "task_key": "은행-은행-2",
-      "id": null
+      "id": "35-high"
     },
     {
       "service_name": "금융",
@@ -696,16 +696,7 @@
       "service_target": "은행",
       "task_name": "송금하기",
       "task_key": "은행-은행-2",
-      "id": null
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "동생한테 3만원만 보내줘.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "송금하기",
-      "task_key": "은행-은행-2",
-      "id": null
+      "id": "35-mid"
     }
   ],
   "은행-은행-3": [
@@ -716,7 +707,7 @@
       "service_target": "은행",
       "task_name": "송금하기",
       "task_key": "은행-은행-3",
-      "id": "26-high"
+      "id": "36-high"
     },
     {
       "service_name": "금융",
@@ -725,7 +716,7 @@
       "service_target": "은행",
       "task_name": "송금하기",
       "task_key": "은행-은행-3",
-      "id": "26-mid"
+      "id": "36-mid"
     }
   ],
   "은행-은행-4": [
@@ -736,7 +727,7 @@
       "service_target": "은행",
       "task_name": "계좌 잔액 조회",
       "task_key": "은행-은행-4",
-      "id": "23-high"
+      "id": "37-high"
     },
     {
       "service_name": "금융",
@@ -745,7 +736,7 @@
       "service_target": "은행",
       "task_name": "계좌 잔액 조회",
       "task_key": "은행-은행-4",
-      "id": "23-mid"
+      "id": "37-mid"
     }
   ],
   "은행-은행-5": [
@@ -756,7 +747,7 @@
       "service_target": "은행",
       "task_name": "최근 거래 내역 조회",
       "task_key": "은행-은행-5",
-      "id": "24-high"
+      "id": "38-high"
     },
     {
       "service_name": "금융",
@@ -765,7 +756,7 @@
       "service_target": "은행",
       "task_name": "최근 거래 내역 조회",
       "task_key": "은행-은행-5",
-      "id": "24-mid"
+      "id": "38-mid"
     }
   ],
   "은행-은행-6": [
@@ -776,7 +767,7 @@
       "service_target": "은행",
       "task_name": "금리 확인",
       "task_key": "은행-은행-6",
-      "id": "27-high"
+      "id": "39-high"
     },
     {
       "service_name": "금융",
@@ -785,7 +776,7 @@
       "service_target": "은행",
       "task_name": "금리 확인",
       "task_key": "은행-은행-6",
-      "id": "27-mid"
+      "id": "39-mid"
     }
   ],
   "은행-은행-7": [
@@ -796,7 +787,7 @@
       "service_target": "은행",
       "task_name": "QR결제",
       "task_key": "은행-은행-7",
-      "id": "28-high"
+      "id": "40-high"
     },
     {
       "service_name": "금융",
@@ -805,7 +796,7 @@
       "service_target": "은행",
       "task_name": "QR결제",
       "task_key": "은행-은행-7",
-      "id": "28-mid"
+      "id": "40-mid"
     }
   ],
   "대중교통-저상버스예약-1": [
@@ -816,7 +807,7 @@
       "service_target": "저상버스예약",
       "task_name": "현재 위치에서 저상버스 예약",
       "task_key": "대중교통-저상버스예약-1",
-      "id": "37-high"
+      "id": "41-high"
     },
     {
       "service_name": "대중교통",
@@ -825,7 +816,7 @@
       "service_target": "저상버스예약",
       "task_name": "현재 위치에서 저상버스 예약",
       "task_key": "대중교통-저상버스예약-1",
-      "id": "37-mid"
+      "id": "41-mid"
     }
   ],
   "대중교통-저상버스예약-2": [
@@ -836,7 +827,7 @@
       "service_target": "저상버스예약",
       "task_name": "저상버스 예약 취소",
       "task_key": "대중교통-저상버스예약-2",
-      "id": "38-high"
+      "id": "42-high"
     },
     {
       "service_name": "대중교통",
@@ -845,7 +836,7 @@
       "service_target": "저상버스예약",
       "task_name": "저상버스 예약 취소",
       "task_key": "대중교통-저상버스예약-2",
-      "id": "38-mid"
+      "id": "42-mid"
     }
   ],
   "대중교통-지하철정보-1": [
@@ -856,7 +847,7 @@
       "service_target": "지하철정보",
       "task_name": "역사 내 엘리베이터/에스컬레이터 위치 확인",
       "task_key": "대중교통-지하철정보-1",
-      "id": "39-high"
+      "id": "43-high"
     },
     {
       "service_name": "대중교통",
@@ -865,7 +856,7 @@
       "service_target": "지하철정보",
       "task_name": "역사 내 엘리베이터/에스컬레이터 위치 확인",
       "task_key": "대중교통-지하철정보-1",
-      "id": "39-mid"
+      "id": "43-mid"
     }
   ],
   "대중교통-지하철정보-2": [
@@ -876,7 +867,7 @@
       "service_target": "지하철정보",
       "task_name": "수유실/충전소 있는 역 찾기",
       "task_key": "대중교통-지하철정보-2",
-      "id": "40-high"
+      "id": "44-high"
     },
     {
       "service_name": "대중교통",
@@ -885,7 +876,7 @@
       "service_target": "지하철정보",
       "task_name": "수유실/충전소 있는 역 찾기",
       "task_key": "대중교통-지하철정보-2",
-      "id": "40-mid"
+      "id": "44-mid"
     }
   ],
   "대중교통-지하철정보-3": [
@@ -896,7 +887,7 @@
       "service_target": "지하철정보",
       "task_name": "지하철 안전도우미 호출",
       "task_key": "대중교통-지하철정보-3",
-      "id": "41-high"
+      "id": "45-high"
     },
     {
       "service_name": "대중교통",
@@ -905,7 +896,7 @@
       "service_target": "지하철정보",
       "task_name": "지하철 안전도우미 호출",
       "task_key": "대중교통-지하철정보-3",
-      "id": "41-low"
+      "id": "45-low"
     }
   ],
   "대중교통-지하철-1-또타지하철": [
@@ -916,7 +907,7 @@
       "service_target": "지하철",
       "task_name": "지하철 편의시설 확인 (또타지하철)",
       "task_key": "대중교통-지하철-1-또타지하철",
-      "id": "49-high"
+      "id": "46-high"
     },
     {
       "service_name": "대중교통",
@@ -925,7 +916,7 @@
       "service_target": "지하철",
       "task_name": "지하철 편의시설 확인 (또타지하철)",
       "task_key": "대중교통-지하철-1-또타지하철",
-      "id": "49-low"
+      "id": "46-low"
     }
   ],
   "대중교통-지하철-3-또타지하철": [
@@ -936,7 +927,7 @@
       "service_target": "지하철",
       "task_name": "지하철 유실물 찾기 (또타지하철)",
       "task_key": "대중교통-지하철-3-또타지하철",
-      "id": "51-high"
+      "id": "47-high"
     },
     {
       "service_name": "대중교통",
@@ -945,7 +936,7 @@
       "service_target": "지하철",
       "task_name": "지하철 유실물 찾기 (또타지하철)",
       "task_key": "대중교통-지하철-3-또타지하철",
-      "id": "51-low"
+      "id": "47-low"
     }
   ],
   "대중교통-지하철-4-또타지하철": [
@@ -956,7 +947,7 @@
       "service_target": "지하철",
       "task_name": "평일 열차 시간표 확인 (또타지하철)",
       "task_key": "대중교통-지하철-4-또타지하철",
-      "id": "52-high"
+      "id": "48-high"
     },
     {
       "service_name": "대중교통",
@@ -965,7 +956,7 @@
       "service_target": "지하철",
       "task_name": "평일 열차 시간표 확인 (또타지하철)",
       "task_key": "대중교통-지하철-4-또타지하철",
-      "id": "52-low"
+      "id": "48-low"
     }
   ],
   "대중교통-지하철-5-또타지하철": [
@@ -976,7 +967,7 @@
       "service_target": "지하철",
       "task_name": "주말 열차 시간표 확인 (또타지하철)",
       "task_key": "대중교통-지하철-5-또타지하철",
-      "id": "53-high"
+      "id": "49-high"
     },
     {
       "service_name": "대중교통",
@@ -985,7 +976,7 @@
       "service_target": "지하철",
       "task_name": "주말 열차 시간표 확인 (또타지하철)",
       "task_key": "대중교통-지하철-5-또타지하철",
-      "id": "53-low"
+      "id": "49-low"
     }
   ],
   "대중교통-지하철-6-또타지하철": [
@@ -996,7 +987,7 @@
       "service_target": "지하철",
       "task_name": "교통약자 우회 경로 안내 (또타지하철)",
       "task_key": "대중교통-지하철-6-또타지하철",
-      "id": "54-high"
+      "id": "50-high"
     },
     {
       "service_name": "대중교통",
@@ -1005,7 +996,7 @@
       "service_target": "지하철",
       "task_name": "교통약자 우회 경로 안내 (또타지하철)",
       "task_key": "대중교통-지하철-6-또타지하철",
-      "id": "54-low"
+      "id": "50-low"
     }
   ],
   "메시지-메신저-1": [
@@ -1016,16 +1007,16 @@
       "service_target": "메신저",
       "task_name": "단문 메시지 전송",
       "task_key": "메시지-메신저-1",
-      "id": "25-high"
+      "id": "51-high"
     },
     {
       "service_name": "메시지",
-      "formal_script": "카톡으로 친구 홍길동이에게 '오늘 저녁 만남 어려움'이라고 짧게 전송해주세요.",
+      "formal_script": "카톡으로 친구 홍길동이에게 '오늘 저녁 만남 어려움'이라고 짧게 전송해줘.",
       "set-id": null,
       "service_target": "메신저",
       "task_name": "단문 메시지 전송",
       "task_key": "메시지-메신저-1",
-      "id": "25-mid"
+      "id": "51-mid"
     }
   ],
   "메시지-메신저-4": [
@@ -1036,7 +1027,7 @@
       "service_target": "메신저",
       "task_name": "영상 통화 걸기",
       "task_key": "메시지-메신저-4",
-      "id": "26-high"
+      "id": "52-high"
     },
     {
       "service_name": "메시지",
@@ -1045,7 +1036,7 @@
       "service_target": "메신저",
       "task_name": "영상 통화 걸기",
       "task_key": "메시지-메신저-4",
-      "id": "26-mid"
+      "id": "52-mid"
     }
   ],
   "메시지-네이버밴드-1": [
@@ -1056,7 +1047,7 @@
       "service_target": "네이버밴드",
       "task_name": "최신 사진 업로드 (네이버밴드)",
       "task_key": "메시지-네이버밴드-1",
-      "id": "69-high"
+      "id": "53-high"
     },
     {
       "service_name": "메시지",
@@ -1065,7 +1056,7 @@
       "service_target": "네이버밴드",
       "task_name": "최신 사진 업로드 (네이버밴드)",
       "task_key": "메시지-네이버밴드-1",
-      "id": "69-mid"
+      "id": "53-mid"
     }
   ],
   "메시지-네이버밴드-2": [
@@ -1076,7 +1067,7 @@
       "service_target": "네이버밴드",
       "task_name": "밴드 알림 확인 (네이버밴드)",
       "task_key": "메시지-네이버밴드-2",
-      "id": "70-high"
+      "id": "54-high"
     },
     {
       "service_name": "메시지",
@@ -1085,7 +1076,7 @@
       "service_target": "네이버밴드",
       "task_name": "밴드 알림 확인 (네이버밴드)",
       "task_key": "메시지-네이버밴드-2",
-      "id": "70-low"
+      "id": "54-low"
     }
   ],
   "메시지-페이스북-1": [
@@ -1096,7 +1087,7 @@
       "service_target": "페이스북",
       "task_name": "최신 사진 업로드 (페이스북)",
       "task_key": "메시지-페이스북-1",
-      "id": "71-high"
+      "id": "55-high"
     },
     {
       "service_name": "메시지",
@@ -1105,7 +1096,7 @@
       "service_target": "페이스북",
       "task_name": "최신 사진 업로드 (페이스북)",
       "task_key": "메시지-페이스북-1",
-      "id": "71-mid"
+      "id": "55-mid"
     }
   ],
   "메시지-페이스북-2": [
@@ -1116,16 +1107,16 @@
       "service_target": "페이스북",
       "task_name": "짧은 게시글 작성 (페이스북)",
       "task_key": "메시지-페이스북-2",
-      "id": "72-high"
+      "id": "56-high"
     },
     {
       "service_name": "메시지",
-      "formal_script": "친구들한테 안부 전하고 싶어, 페이스북에 짧게 '안부 전합니다. 잘 지내세요' 같은 글 올려줘.",
+      "formal_script": "페북으로 친구들한테 안부 전하고 싶어, 페이스북에 짧게 '안부 전합니다. 잘 지내세요' 같은 글 올려줘.",
       "set-id": null,
       "service_target": "페이스북",
       "task_name": "짧은 게시글 작성 (페이스북)",
       "task_key": "메시지-페이스북-2",
-      "id": "72-low"
+      "id": "56-low"
     }
   ],
   "메시지-인스타그램-1": [
@@ -1136,16 +1127,16 @@
       "service_target": "인스타그램",
       "task_name": "최신 사진 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-1",
-      "id": "73-high"
+      "id": "57-high"
     },
     {
       "service_name": "메시지",
-      "formal_script": "아까 찍은 벚꽃 사진이 참 좋더라. 인스타그램에 올려줘.",
+      "formal_script": "아까 찍은 벚꽃 사진이 참 좋더라. 우리 손자가 인스타그램 계정을 만들어줬었는데, 거기에 올려줘.",
       "set-id": null,
       "service_target": "인스타그램",
       "task_name": "최신 사진 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-1",
-      "id": "73-low"
+      "id": "57-low"
     }
   ],
   "메시지-인스타그램-2": [
@@ -1156,7 +1147,7 @@
       "service_target": "인스타그램",
       "task_name": "최신 영상 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-2",
-      "id": "74-high"
+      "id": "58-high"
     },
     {
       "service_name": "메시지",
@@ -1165,7 +1156,7 @@
       "service_target": "인스타그램",
       "task_name": "최신 영상 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-2",
-      "id": "74-mid"
+      "id": "58-mid"
     }
   ],
   "생활-생필품-1": [
@@ -1176,7 +1167,7 @@
       "service_target": "생필품",
       "task_name": "물건 구매",
       "task_key": "생활-생필품-1",
-      "id": "12-high"
+      "id": "59-high"
     },
     {
       "service_name": "생활",
@@ -1185,7 +1176,7 @@
       "service_target": "생필품",
       "task_name": "물건 구매",
       "task_key": "생활-생필품-1",
-      "id": "12-mid"
+      "id": "59-mid"
     }
   ],
   "생활-생필품-2": [
@@ -1196,7 +1187,7 @@
       "service_target": "생필품",
       "task_name": "물건 구매",
       "task_key": "생활-생필품-2",
-      "id": null
+      "id": "60-high"
     },
     {
       "service_name": "생활",
@@ -1205,7 +1196,7 @@
       "service_target": "생필품",
       "task_name": "물건 구매",
       "task_key": "생활-생필품-2",
-      "id": null
+      "id": "60-mid"
     }
   ],
   "생활-생필품-3": [
@@ -1216,7 +1207,7 @@
       "service_target": "생필품",
       "task_name": "구매한 물품 확인",
       "task_key": "생활-생필품-3",
-      "id": "13-high"
+      "id": "61-high"
     },
     {
       "service_name": "생활",
@@ -1225,7 +1216,7 @@
       "service_target": "생필품",
       "task_name": "구매한 물품 확인",
       "task_key": "생활-생필품-3",
-      "id": "13-mid"
+      "id": "61-mid"
     }
   ],
   "생활-배달음식-1": [
@@ -1236,7 +1227,7 @@
       "service_target": "배달음식",
       "task_name": "배달음식 주문",
       "task_key": "생활-배달음식-1",
-      "id": "14-high"
+      "id": "62-high"
     },
     {
       "service_name": "생활",
@@ -1245,7 +1236,7 @@
       "service_target": "배달음식",
       "task_name": "배달음식 주문",
       "task_key": "생활-배달음식-1",
-      "id": "14-mid"
+      "id": "62-mid"
     }
   ],
   "생활-배달음식-2": [
@@ -1256,7 +1247,7 @@
       "service_target": "배달음식",
       "task_name": "배달음식 재구매",
       "task_key": "생활-배달음식-2",
-      "id": "15-high"
+      "id": "63-high"
     },
     {
       "service_name": "생활",
@@ -1265,7 +1256,7 @@
       "service_target": "배달음식",
       "task_name": "배달음식 재구매",
       "task_key": "생활-배달음식-2",
-      "id": "15-low"
+      "id": "63-low"
     }
   ],
   "생활-배달음식-4": [
@@ -1276,7 +1267,7 @@
       "service_target": "배달음식",
       "task_name": "배달한 음식정보 확인",
       "task_key": "생활-배달음식-4",
-      "id": "16-high"
+      "id": "64-high"
     },
     {
       "service_name": "생활",
@@ -1285,7 +1276,7 @@
       "service_target": "배달음식",
       "task_name": "배달한 음식정보 확인",
       "task_key": "생활-배달음식-4",
-      "id": "16-mid"
+      "id": "64-mid"
     }
   ],
   "생활-중고거래-1": [
@@ -1296,7 +1287,7 @@
       "service_target": "중고거래",
       "task_name": "중고물품 검색",
       "task_key": "생활-중고거래-1",
-      "id": "17-high"
+      "id": "65-high"
     },
     {
       "service_name": "생활",
@@ -1305,7 +1296,7 @@
       "service_target": "중고거래",
       "task_name": "중고물품 검색",
       "task_key": "생활-중고거래-1",
-      "id": "17-mid"
+      "id": "65-mid"
     }
   ],
   "생활-뉴스-1": [
@@ -1316,7 +1307,7 @@
       "service_target": "뉴스",
       "task_name": "원하는 섹션의 최신 뉴스 안내",
       "task_key": "생활-뉴스-1",
-      "id": "75-mid"
+      "id": "66-mid"
     },
     {
       "service_name": "생활",
@@ -1325,7 +1316,7 @@
       "service_target": "뉴스",
       "task_name": "원하는 섹션의 최신 뉴스 안내",
       "task_key": "생활-뉴스-1",
-      "id": "75-low"
+      "id": "66-low"
     }
   ],
   "생활-날씨-1": [
@@ -1336,7 +1327,7 @@
       "service_target": "날씨",
       "task_name": "오늘 날씨 안내",
       "task_key": "생활-날씨-1",
-      "id": "76-high"
+      "id": "67-high"
     },
     {
       "service_name": "생활",
@@ -1345,7 +1336,7 @@
       "service_target": "날씨",
       "task_name": "오늘 날씨 안내",
       "task_key": "생활-날씨-1",
-      "id": "76-low"
+      "id": "67-low"
     }
   ],
   "생활-날씨-2": [
@@ -1356,7 +1347,7 @@
       "service_target": "날씨",
       "task_name": "최근 날씨 동향 안내",
       "task_key": "생활-날씨-2",
-      "id": "77-high"
+      "id": "68-high"
     },
     {
       "service_name": "생활",
@@ -1365,7 +1356,7 @@
       "service_target": "날씨",
       "task_name": "최근 날씨 동향 안내",
       "task_key": "생활-날씨-2",
-      "id": "77-low"
+      "id": "68-low"
     }
   ],
   "생활-신선식품-1-마켓컬리": [
@@ -1376,7 +1367,7 @@
       "service_target": "신선식품",
       "task_name": "신선식품 구매하기",
       "task_key": "생활-신선식품-1-마켓컬리",
-      "id": "83-high"
+      "id": "69-high"
     },
     {
       "service_name": "생활",
@@ -1385,7 +1376,7 @@
       "service_target": "신선식품",
       "task_name": "신선식품 구매하기",
       "task_key": "생활-신선식품-1-마켓컬리",
-      "id": "83-low"
+      "id": "69-low"
     }
   ],
   "생활-신선식품-2-마켓컬리": [
@@ -1396,7 +1387,7 @@
       "service_target": "신선식품",
       "task_name": "신선식품 구매하기",
       "task_key": "생활-신선식품-2-마켓컬리",
-      "id": null
+      "id": "70-high"
     },
     {
       "service_name": "생활",
@@ -1405,7 +1396,7 @@
       "service_target": "신선식품",
       "task_name": "신선식품 구매하기",
       "task_key": "생활-신선식품-2-마켓컬리",
-      "id": null
+      "id": "70-low"
     }
   ],
   "생활-간편결제-1-삼성페이": [
@@ -1416,7 +1407,7 @@
       "service_target": "간편결제",
       "task_name": "편의점 결제(QR)",
       "task_key": "생활-간편결제-1-삼성페이",
-      "id": "84-high"
+      "id": "71-high"
     },
     {
       "service_name": "생활",
@@ -1425,7 +1416,7 @@
       "service_target": "간편결제",
       "task_name": "편의점 결제(QR)",
       "task_key": "생활-간편결제-1-삼성페이",
-      "id": "84-low"
+      "id": "71-low"
     }
   ],
   "생활-간편결제-2-네이버페이": [
@@ -1436,7 +1427,7 @@
       "service_target": "간편결제",
       "task_name": "편의점 결제(QR)",
       "task_key": "생활-간편결제-2-네이버페이",
-      "id": "85-high"
+      "id": "72-high"
     },
     {
       "service_name": "생활",
@@ -1445,7 +1436,7 @@
       "service_target": "간편결제",
       "task_name": "편의점 결제(QR)",
       "task_key": "생활-간편결제-2-네이버페이",
-      "id": "85-low"
+      "id": "72-low"
     }
   ],
   "생활-라디오-1-스마트폰라디오": [
@@ -1456,7 +1447,7 @@
       "service_target": "라디오",
       "task_name": "라디오 청취 시작하기",
       "task_key": "생활-라디오-1-스마트폰라디오",
-      "id": "86-high"
+      "id": "73-high"
     },
     {
       "service_name": "생활",
@@ -1465,7 +1456,7 @@
       "service_target": "라디오",
       "task_name": "라디오 청취 시작하기",
       "task_key": "생활-라디오-1-스마트폰라디오",
-      "id": "86-mid"
+      "id": "73-mid"
     }
   ],
   "생활-라디오-2-스마트폰라디오": [
@@ -1476,7 +1467,7 @@
       "service_target": "라디오",
       "task_name": "라디오 채널 변경",
       "task_key": "생활-라디오-2-스마트폰라디오",
-      "id": "87-high"
+      "id": "74-high"
     },
     {
       "service_name": "생활",
@@ -1485,7 +1476,7 @@
       "service_target": "라디오",
       "task_name": "라디오 채널 변경",
       "task_key": "생활-라디오-2-스마트폰라디오",
-      "id": "87-mid"
+      "id": "74-mid"
     }
   ],
   "영상-영상-1": [
@@ -1496,7 +1487,7 @@
       "service_target": "영상",
       "task_name": "특정 채널 영상 재생",
       "task_key": "영상-영상-1",
-      "id": "42-high"
+      "id": "75-high"
     },
     {
       "service_name": "영상",
@@ -1505,7 +1496,7 @@
       "service_target": "영상",
       "task_name": "특정 채널 영상 재생",
       "task_key": "영상-영상-1",
-      "id": "42-low"
+      "id": "75-low"
     }
   ],
   "영상-영상-2": [
@@ -1516,7 +1507,7 @@
       "service_target": "영상",
       "task_name": "구독피드 최신영상 재생요청",
       "task_key": "영상-영상-2",
-      "id": "22-high"
+      "id": "76-high"
     },
     {
       "service_name": "영상",
@@ -1525,7 +1516,7 @@
       "service_target": "영상",
       "task_name": "구독피드 최신영상 재생요청",
       "task_key": "영상-영상-2",
-      "id": "22-low"
+      "id": "76-low"
     }
   ],
   "영상-영상-3": [
@@ -1536,7 +1527,7 @@
       "service_target": "영상",
       "task_name": "특정 주제 영상 검색 후 재생",
       "task_key": "영상-영상-3",
-      "id": "43-high"
+      "id": "77-high"
     },
     {
       "service_name": "영상",
@@ -1545,7 +1536,7 @@
       "service_target": "영상",
       "task_name": "특정 주제 영상 검색 후 재생",
       "task_key": "영상-영상-3",
-      "id": "43-mid"
+      "id": "77-mid"
     }
   ],
   "영상-영상-4": [
@@ -1556,7 +1547,7 @@
       "service_target": "영상",
       "task_name": "시청 기록 기반 영상 이어보기",
       "task_key": "영상-영상-4",
-      "id": "44-high"
+      "id": "78-high"
     },
     {
       "service_name": "영상",
@@ -1565,7 +1556,7 @@
       "service_target": "영상",
       "task_name": "시청 기록 기반 영상 이어보기",
       "task_key": "영상-영상-4",
-      "id": "44-mid"
+      "id": "78-mid"
     }
   ],
   "영상-영상-5": [
@@ -1576,7 +1567,7 @@
       "service_target": "영상",
       "task_name": "좋아요한 영상 재생",
       "task_key": "영상-영상-5",
-      "id": "45-high"
+      "id": "79-high"
     },
     {
       "service_name": "영상",
@@ -1585,7 +1576,7 @@
       "service_target": "영상",
       "task_name": "좋아요한 영상 재생",
       "task_key": "영상-영상-5",
-      "id": "45-mid"
+      "id": "79-mid"
     }
   ],
   "영상-영상-6": [
@@ -1596,7 +1587,7 @@
       "service_target": "영상",
       "task_name": "가장 최근에 본 드라마 재생하기",
       "task_key": "영상-영상-6",
-      "id": "46-high"
+      "id": "80-high"
     },
     {
       "service_name": "영상",
@@ -1605,7 +1596,7 @@
       "service_target": "영상",
       "task_name": "가장 최근에 본 드라마 재생하기",
       "task_key": "영상-영상-6",
-      "id": "46-mid"
+      "id": "80-mid"
     }
   ],
   "영상-영상-7": [
@@ -1616,7 +1607,7 @@
       "service_target": "영상",
       "task_name": "영화 다시보기",
       "task_key": "영상-영상-7",
-      "id": "47-high"
+      "id": "81-high"
     },
     {
       "service_name": "영상",
@@ -1625,7 +1616,7 @@
       "service_target": "영상",
       "task_name": "영화 다시보기",
       "task_key": "영상-영상-7",
-      "id": "47-mid"
+      "id": "81-mid"
     }
   ],
   "영상-영상-8": [
@@ -1636,7 +1627,7 @@
       "service_target": "영상",
       "task_name": "이어서보기",
       "task_key": "영상-영상-8",
-      "id": "48-high"
+      "id": "82-high"
     },
     {
       "service_name": "영상",
@@ -1645,7 +1636,7 @@
       "service_target": "영상",
       "task_name": "이어서보기",
       "task_key": "영상-영상-8",
-      "id": "48-mid"
+      "id": "82-mid"
     }
   ],
   "의료-병원-1": [
@@ -1656,7 +1647,7 @@
       "service_target": "병원",
       "task_name": "주변 병원 찾기",
       "task_key": "의료-병원-1",
-      "id": "18-high"
+      "id": "83-high"
     },
     {
       "service_name": "의료",
@@ -1665,7 +1656,7 @@
       "service_target": "병원",
       "task_name": "주변 병원 찾기",
       "task_key": "의료-병원-1",
-      "id": "18-low"
+      "id": "83-low"
     }
   ],
   "의료-병원-2": [
@@ -1676,7 +1667,7 @@
       "service_target": "병원",
       "task_name": "병원 예약하기",
       "task_key": "의료-병원-2",
-      "id": "19-high"
+      "id": "84-high"
     },
     {
       "service_name": "의료",
@@ -1685,7 +1676,7 @@
       "service_target": "병원",
       "task_name": "병원 예약하기",
       "task_key": "의료-병원-2",
-      "id": "19-mid"
+      "id": "84-mid"
     }
   ],
   "의료-서울의료원-1": [
@@ -1696,7 +1687,7 @@
       "service_target": "서울의료원",
       "task_name": "진료 예약",
       "task_key": "의료-서울의료원-1",
-      "id": "55-high"
+      "id": "85-high"
     },
     {
       "service_name": "의료",
@@ -1705,7 +1696,7 @@
       "service_target": "서울의료원",
       "task_name": "진료 예약",
       "task_key": "의료-서울의료원-1",
-      "id": "55-mid"
+      "id": "85-mid"
     }
   ],
   "의료-서울의료원-2": [
@@ -1716,7 +1707,7 @@
       "service_target": "서울의료원",
       "task_name": "진료 일정 확인",
       "task_key": "의료-서울의료원-2",
-      "id": "56-high"
+      "id": "86-high"
     },
     {
       "service_name": "의료",
@@ -1725,7 +1716,7 @@
       "service_target": "서울의료원",
       "task_name": "진료 일정 확인",
       "task_key": "의료-서울의료원-2",
-      "id": "56-mid"
+      "id": "86-mid"
     },
     {
       "service_name": "의료",
@@ -1734,7 +1725,7 @@
       "service_target": "서울의료원",
       "task_name": "진료 일정 확인",
       "task_key": "의료-서울의료원-2",
-      "id": "56-low"
+      "id": "86-low"
     }
   ],
   "의료-서울의료원-3": [
@@ -1745,7 +1736,7 @@
       "service_target": "서울의료원",
       "task_name": "검사 결과 확인",
       "task_key": "의료-서울의료원-3",
-      "id": "57-high"
+      "id": "87-high"
     },
     {
       "service_name": "의료",
@@ -1754,7 +1745,7 @@
       "service_target": "서울의료원",
       "task_name": "검사 결과 확인",
       "task_key": "의료-서울의료원-3",
-      "id": "57-low"
+      "id": "87-low"
     }
   ],
   "의료-서울의료원-4": [
@@ -1765,7 +1756,7 @@
       "service_target": "서울의료원",
       "task_name": "입원 식단 확인",
       "task_key": "의료-서울의료원-4",
-      "id": "58-high"
+      "id": "88-high"
     },
     {
       "service_name": "의료",
@@ -1774,7 +1765,7 @@
       "service_target": "서울의료원",
       "task_name": "입원 식단 확인",
       "task_key": "의료-서울의료원-4",
-      "id": "58-low"
+      "id": "88-low"
     }
   ],
   "의료-서울의료원-5": [
@@ -1785,7 +1776,7 @@
       "service_target": "서울의료원",
       "task_name": "건강수첩 기록",
       "task_key": "의료-서울의료원-5",
-      "id": "59-high"
+      "id": "89-high"
     },
     {
       "service_name": "의료",
@@ -1794,7 +1785,7 @@
       "service_target": "서울의료원",
       "task_name": "건강수첩 기록",
       "task_key": "의료-서울의료원-5",
-      "id": "59-mid"
+      "id": "89-mid"
     }
   ],
   "의료-서울의료원-6": [
@@ -1805,7 +1796,7 @@
       "service_target": "서울의료원",
       "task_name": "처방약 조회",
       "task_key": "의료-서울의료원-6",
-      "id": "60-high"
+      "id": "90-high"
     },
     {
       "service_name": "의료",
@@ -1814,7 +1805,7 @@
       "service_target": "서울의료원",
       "task_name": "처방약 조회",
       "task_key": "의료-서울의료원-6",
-      "id": "60-low"
+      "id": "90-low"
     }
   ],
   "의료-서울의료원-7": [
@@ -1825,7 +1816,7 @@
       "service_target": "서울의료원",
       "task_name": "건강검진 일정 안내",
       "task_key": "의료-서울의료원-7",
-      "id": "61-high"
+      "id": "91-high"
     },
     {
       "service_name": "의료",
@@ -1834,7 +1825,7 @@
       "service_target": "서울의료원",
       "task_name": "건강검진 일정 안내",
       "task_key": "의료-서울의료원-7",
-      "id": "61-low"
+      "id": "91-low"
     }
   ],
   "이동정보-약자경로-1": [
@@ -1845,7 +1836,7 @@
       "service_target": "약자경로",
       "task_name": "노약자/임산부 경로 확인",
       "task_key": "이동정보-약자경로-1",
-      "id": "32-high"
+      "id": "92-high"
     },
     {
       "service_name": "이동정보",
@@ -1854,7 +1845,7 @@
       "service_target": "약자경로",
       "task_name": "노약자/임산부 경로 확인",
       "task_key": "이동정보-약자경로-1",
-      "id": "32-mid"
+      "id": "92-mid"
     }
   ],
   "이동정보-약자경로-2": [
@@ -1865,7 +1856,7 @@
       "service_target": "약자경로",
       "task_name": "휠체어 사용자 경로 확인",
       "task_key": "이동정보-약자경로-2",
-      "id": "33-high"
+      "id": "93-high"
     },
     {
       "service_name": "이동정보",
@@ -1874,7 +1865,7 @@
       "service_target": "약자경로",
       "task_name": "휠체어 사용자 경로 확인",
       "task_key": "이동정보-약자경로-2",
-      "id": "33-mid"
+      "id": "93-mid"
     }
   ],
   "이동정보-약자경로-3": [
@@ -1885,7 +1876,7 @@
       "service_target": "약자경로",
       "task_name": "유모차 동반 경로 확인",
       "task_key": "이동정보-약자경로-3",
-      "id": "34-high"
+      "id": "94-high"
     },
     {
       "service_name": "이동정보",
@@ -1894,7 +1885,7 @@
       "service_target": "약자경로",
       "task_name": "유모차 동반 경로 확인",
       "task_key": "이동정보-약자경로-3",
-      "id": "34-mid"
+      "id": "94-mid"
     }
   ],
   "이동정보-약자경로-4": [
@@ -1905,7 +1896,7 @@
       "service_target": "약자경로",
       "task_name": "임산부 배려 경로 확인",
       "task_key": "이동정보-약자경로-4",
-      "id": "35-high"
+      "id": "95-high"
     },
     {
       "service_name": "이동정보",
@@ -1914,7 +1905,7 @@
       "service_target": "약자경로",
       "task_name": "임산부 배려 경로 확인",
       "task_key": "이동정보-약자경로-4",
-      "id": "35-mid"
+      "id": "95-mid"
     }
   ],
   "이동정보-약자경로-5": [
@@ -1925,7 +1916,7 @@
       "service_target": "약자경로",
       "task_name": "보행 불편 지점 피해서 이동",
       "task_key": "이동정보-약자경로-5",
-      "id": "36-high"
+      "id": "96-high"
     },
     {
       "service_name": "이동정보",
@@ -1934,7 +1925,7 @@
       "service_target": "약자경로",
       "task_name": "보행 불편 지점 피해서 이동",
       "task_key": "이동정보-약자경로-5",
-      "id": "36-mid"
+      "id": "96-mid"
     }
   ],
   "이동정보-지도-1": [
@@ -1945,7 +1936,7 @@
       "service_target": "지도",
       "task_name": "예상소요시간 질의",
       "task_key": "이동정보-지도-1",
-      "id": "96-high"
+      "id": "97-high"
     },
     {
       "service_name": "이동정보",
@@ -1954,7 +1945,7 @@
       "service_target": "지도",
       "task_name": "예상소요시간 질의",
       "task_key": "이동정보-지도-1",
-      "id": "96-mid"
+      "id": "97-mid"
     }
   ],
   "이동정보-지도-2": [
@@ -1965,7 +1956,7 @@
       "service_target": "지도",
       "task_name": "이동 경로 길찾기 질의",
       "task_key": "이동정보-지도-2",
-      "id": "97-high"
+      "id": "98-high"
     },
     {
       "service_name": "이동정보",
@@ -1974,7 +1965,7 @@
       "service_target": "지도",
       "task_name": "이동 경로 길찾기 질의",
       "task_key": "이동정보-지도-2",
-      "id": "97-mid"
+      "id": "98-mid"
     }
   ],
   "이동정보-지도-3": [
@@ -1985,7 +1976,7 @@
       "service_target": "지도",
       "task_name": "실시간 버스 도착 확인",
       "task_key": "이동정보-지도-3",
-      "id": "98-high"
+      "id": "99-high"
     },
     {
       "service_name": "이동정보",
@@ -1994,7 +1985,7 @@
       "service_target": "지도",
       "task_name": "실시간 버스 도착 확인",
       "task_key": "이동정보-지도-3",
-      "id": "98-mid"
+      "id": "99-mid"
     }
   ],
   "이동정보-지도-4": [
@@ -2005,7 +1996,7 @@
       "service_target": "지도",
       "task_name": "가까운 편의점 찾기",
       "task_key": "이동정보-지도-4",
-      "id": "99-high"
+      "id": "100-high"
     },
     {
       "service_name": "이동정보",
@@ -2014,7 +2005,7 @@
       "service_target": "지도",
       "task_name": "가까운 편의점 찾기",
       "task_key": "이동정보-지도-4",
-      "id": "99-mid"
+      "id": "100-mid"
     }
   ],
   "이동정보-지도-5": [
@@ -2025,7 +2016,7 @@
       "service_target": "지도",
       "task_name": "즐겨찾기 경로 실행",
       "task_key": "이동정보-지도-5",
-      "id": "100-high"
+      "id": "101-high"
     },
     {
       "service_name": "이동정보",
@@ -2034,7 +2025,7 @@
       "service_target": "지도",
       "task_name": "즐겨찾기 경로 실행",
       "task_key": "이동정보-지도-5",
-      "id": "100-mid"
+      "id": "101-mid"
     }
   ],
   "이동정보-지도-6": [
@@ -2045,7 +2036,7 @@
       "service_target": "지도",
       "task_name": "실시간 지하철 도착 확인",
       "task_key": "이동정보-지도-6",
-      "id": "101-high"
+      "id": "102-high"
     },
     {
       "service_name": "이동정보",
@@ -2054,7 +2045,7 @@
       "service_target": "지도",
       "task_name": "실시간 지하철 도착 확인",
       "task_key": "이동정보-지도-6",
-      "id": "101-mid"
+      "id": "102-mid"
     }
   ],
   "이동정보-지도-9": [
@@ -2065,7 +2056,7 @@
       "service_target": "지도",
       "task_name": "맛집 길찾기",
       "task_key": "이동정보-지도-9",
-      "id": "102-high"
+      "id": "103-high"
     },
     {
       "service_name": "이동정보",
@@ -2074,7 +2065,7 @@
       "service_target": "지도",
       "task_name": "맛집 길찾기",
       "task_key": "이동정보-지도-9",
-      "id": "102-mid"
+      "id": "103-mid"
     }
   ],
   "이동정보-지도-11": [
@@ -2085,7 +2076,7 @@
       "service_target": "지도",
       "task_name": "버스/지하철 혼합 길찾기",
       "task_key": "이동정보-지도-11",
-      "id": "103-high"
+      "id": "104-high"
     },
     {
       "service_name": "이동정보",
@@ -2094,7 +2085,7 @@
       "service_target": "지도",
       "task_name": "버스/지하철 혼합 길찾기",
       "task_key": "이동정보-지도-11",
-      "id": "103-mid"
+      "id": "104-mid"
     }
   ],
   "이동정보-지도-12": [
@@ -2105,7 +2096,7 @@
       "service_target": "지도",
       "task_name": "도보 길찾기",
       "task_key": "이동정보-지도-12",
-      "id": "104-high"
+      "id": "105-high"
     },
     {
       "service_name": "이동정보",
@@ -2114,7 +2105,7 @@
       "service_target": "지도",
       "task_name": "도보 길찾기",
       "task_key": "이동정보-지도-12",
-      "id": "104-mid"
+      "id": "105-mid"
     }
   ]
 }
