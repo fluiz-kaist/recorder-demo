@@ -8,15 +8,6 @@
       "task_name": "건강 정보 기록",
       "task_key": "건강-건강정보-1",
       "id": "1-mid"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "오늘 점심에 뭐 먹었더라? 육개장 먹었던 거 같은데 그거 기록해줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "건강 정보 기록",
-      "task_key": "건강-건강정보-1",
-      "id": "1-low"
     }
   ],
   "건강-건강정보-2": [
@@ -28,15 +19,6 @@
       "task_name": "건강 정보 확인",
       "task_key": "건강-건강정보-2",
       "id": "2-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "오늘은 좀 피곤하네. 손목닥터 9988앱에 오늘 내가 얼마나 걸었는지 확인해서 알려줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "건강 정보 확인",
-      "task_key": "건강-건강정보-2",
-      "id": "2-mid"
     }
   ],
   "건강-건강정보-3": [
@@ -48,15 +30,6 @@
       "task_name": "건강 정보 기록",
       "task_key": "건강-건강정보-3",
       "id": "3-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "아이고, 오늘 속이 좀 안 좋네. 오늘 물을 두 잔만 마셨다고 적어놔.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "건강 정보 기록",
-      "task_key": "건강-건강정보-3",
-      "id": "3-low"
     }
   ],
   "건강-건강정보-4": [
@@ -68,15 +41,6 @@
       "task_name": "건강 정보 확인",
       "task_key": "건강-건강정보-4",
       "id": "4-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "어제 밤에 좀 잠을 뒤척였는데 어젯밤에 내가 얼마나 잘 잤는지 수면 점수를 확인해줄래?",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "건강 정보 확인",
-      "task_key": "건강-건강정보-4",
-      "id": "4-mid"
     }
   ],
   "건강-건강정보-5": [
@@ -88,15 +52,6 @@
       "task_name": "운동 기록 확인",
       "task_key": "건강-건강정보-5",
       "id": "5-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "삼성 헬스에 기록된 오늘 운동 기록 좀 확인해줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "운동 기록 확인",
-      "task_key": "건강-건강정보-5",
-      "id": "5-low"
     }
   ],
   "건강-건강정보-6": [
@@ -108,15 +63,6 @@
       "task_name": "혈압·혈당 기록 확인",
       "task_key": "건강-건강정보-6",
       "id": "6-mid"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "삼성 헬스에서 내 혈압하고 혈당 최근 기록 좀 확인해줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "혈압·혈당 기록 확인",
-      "task_key": "건강-건강정보-6",
-      "id": "6-low"
     }
   ],
   "건강-건강정보-7": [
@@ -128,15 +74,6 @@
       "task_name": "체중 변화 확인",
       "task_key": "건강-건강정보-7",
       "id": "7-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "저번 주부터 살이 빠지는 거 같아. 앱에서 최근 일주일간 체중 변화 확인해줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "체중 변화 확인",
-      "task_key": "건강-건강정보-7",
-      "id": "7-low"
     }
   ],
   "건강-건강정보-8": [
@@ -148,15 +85,6 @@
       "task_name": "수면 상태 확인",
       "task_key": "건강-건강정보-8",
       "id": "8-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "요즘 자꾸 피곤하네, 요즘 내 수면 상태 좀 봐줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "수면 상태 확인",
-      "task_key": "건강-건강정보-8",
-      "id": "8-low"
     }
   ],
   "건강-건강정보-9": [
@@ -168,15 +96,6 @@
       "task_name": "복약 리마인더 설정",
       "task_key": "건강-건강정보-9",
       "id": "9-high"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "삼성 헬스 앱에서 건강정보에 따라 매일 저녁 9시에 혈압약 먹는 걸 알림 맞춰줘.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "복약 리마인더 설정",
-      "task_key": "건강-건강정보-9",
-      "id": "9-mid"
     }
   ],
   "건강-건강정보-10": [
@@ -188,15 +107,6 @@
       "task_name": "스트레스 지수 확인",
       "task_key": "건강-건강정보-10",
       "id": "10-mid"
-    },
-    {
-      "service_name": "건강",
-      "formal_script": "요즘 스트레스가 얼마나 되는지 삼성 헬스에서 볼 수 있나? 확인해봐.",
-      "set-id": null,
-      "service_target": "건강정보",
-      "task_name": "스트레스 지수 확인",
-      "task_key": "건강-건강정보-10",
-      "id": "10-low"
     }
   ],
   "공공서비스-수도요금-1": [
@@ -208,15 +118,6 @@
       "task_name": "수도요금 조회",
       "task_key": "공공서비스-수도요금-1",
       "id": "11-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "수도요금을 핸드폰으로도 낼 수 있다며? 내 고객번호는 123456인데 수도요금이 얼마나 나오나?",
-      "set-id": null,
-      "service_target": "수도요금",
-      "task_name": "수도요금 조회",
-      "task_key": "공공서비스-수도요금-1",
-      "id": "11-low"
     }
   ],
   "공공서비스-수도요금-2": [
@@ -228,15 +129,6 @@
       "task_name": "전자고지서 조회",
       "task_key": "공공서비스-수도요금-2",
       "id": "12-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "집에 온 고지서를 잃어버렸어. 아리수 켜고 고객번호 123455로 2025년 8월에 발급된 내 수도요금 전자고지서 조회해줘.",
-      "set-id": null,
-      "service_target": "수도요금",
-      "task_name": "전자고지서 조회",
-      "task_key": "공공서비스-수도요금-2",
-      "id": "12-mid"
     }
   ],
   "공공서비스-수도요금-3": [
@@ -248,15 +140,6 @@
       "task_name": "수도요금 납부",
       "task_key": "공공서비스-수도요금-3",
       "id": "13-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "은행 갈 시간이 없으니까 수도요금을 핸드폰으로 내야겠어. 내 고객번호는 123456이야.",
-      "set-id": null,
-      "service_target": "수도요금",
-      "task_name": "수도요금 납부",
-      "task_key": "공공서비스-수도요금-3",
-      "id": "13-low"
     }
   ],
   "공공서비스-도서관-1": [
@@ -268,15 +151,6 @@
       "task_name": "도서 예약",
       "task_key": "공공서비스-도서관-1",
       "id": "14-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "건강한 음식에 대해 더 알아보고 싶어. 약이 되는 음식, 독이 되는 음식이라는 책이 강남구립도서관에 있을 텐데, 저번에 못빌렸거든? 예약 좀 해줘~",
-      "set-id": null,
-      "service_target": "도서관",
-      "task_name": "도서 예약",
-      "task_key": "공공서비스-도서관-1",
-      "id": "14-low"
     }
   ],
   "공공서비스-도서관-2": [
@@ -288,15 +162,6 @@
       "task_name": "대출 현황 조회",
       "task_key": "공공서비스-도서관-2",
       "id": "15-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "요즘 기억이 잘 안 나서, 서울도서관 앱으로 내가 빌린 책들 있는지 한 번 확인해줘.",
-      "set-id": null,
-      "service_target": "도서관",
-      "task_name": "대출 현황 조회",
-      "task_key": "공공서비스-도서관-2",
-      "id": "15-low"
     }
   ],
   "공공서비스-도서관-3": [
@@ -308,15 +173,6 @@
       "task_name": "반납일 안내",
       "task_key": "공공서비스-도서관-3",
       "id": "16-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "서울도서관공식앱에서 '약이 되는 음식, 독이 되는 음식' 책 반납일 확인해줄래?",
-      "set-id": null,
-      "service_target": "도서관",
-      "task_name": "반납일 안내",
-      "task_key": "공공서비스-도서관-3",
-      "id": "16-low"
     }
   ],
   "공공서비스-도서관-4": [
@@ -328,15 +184,6 @@
       "task_name": "신간 도서 확인",
       "task_key": "공공서비스-도서관-4",
       "id": "17-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "우리 동네 도서관에 새로 들어온 신간이 뭐가 있는지 서울도서관공식앱으로 확인해줘.",
-      "set-id": null,
-      "service_target": "도서관",
-      "task_name": "신간 도서 확인",
-      "task_key": "공공서비스-도서관-4",
-      "id": "17-low"
     }
   ],
   "공공서비스-행정서비스-1-정부24": [
@@ -348,15 +195,6 @@
       "task_name": "주민등록등본 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-1-정부24",
       "id": "18-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "동사무소에 가지 않아도 앱으로 주민등록등본을 뗄 수 있다고 들었어. 정부24 앱에서 주민등록등본을 핸드폰으로 발급해줘.",
-      "set-id": null,
-      "service_target": "행정서비스",
-      "task_name": "주민등록등본 발급 (정부24)",
-      "task_key": "공공서비스-행정서비스-1-정부24",
-      "id": "18-low"
     }
   ],
   "공공서비스-행정서비스-2-정부24": [
@@ -368,15 +206,6 @@
       "task_name": "건강보험 자격득실 확인서 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-2-정부24",
       "id": "19-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "다음주에 서류 제출해야 하거든, 정부24 앱으로 건강보험 자격득실 확인서를 신청해줘. 등기로 받는 거로.",
-      "set-id": null,
-      "service_target": "행정서비스",
-      "task_name": "건강보험 자격득실 확인서 발급 (정부24)",
-      "task_key": "공공서비스-행정서비스-2-정부24",
-      "id": "19-mid"
     }
   ],
   "공공서비스-행정서비스-3-정부24": [
@@ -388,15 +217,6 @@
       "task_name": "연금지급내역 확인 (정부24)",
       "task_key": "공공서비스-행정서비스-3-정부24",
       "id": "20-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "올해 받은 기초연금 내역이 궁금한데, 정부24 앱으로 보여줄래?",
-      "set-id": null,
-      "service_target": "행정서비스",
-      "task_name": "연금지급내역 확인 (정부24)",
-      "task_key": "공공서비스-행정서비스-3-정부24",
-      "id": "20-low"
     }
   ],
   "공공서비스-행정서비스-4-정부24": [
@@ -408,15 +228,6 @@
       "task_name": "자동차 등록원부 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-4-정부24",
       "id": "21-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "정부24 켜서 내가 건강보험료 낸 내역 종이 대신 폰으로 볼 수 있게 해줘",
-      "set-id": null,
-      "service_target": "행정서비스",
-      "task_name": "자동차 등록원부 발급 (정부24)",
-      "task_key": "공공서비스-행정서비스-4-정부24",
-      "id": "21-low"
     }
   ],
   "공공서비스-행정서비스-5-정부24": [
@@ -428,15 +239,6 @@
       "task_name": "가족관계증명서 발급 (정부24)",
       "task_key": "공공서비스-행정서비스-5-정부24",
       "id": "22-high"
-    },
-    {
-      "service_name": "공공서비스",
-      "formal_script": "정부24로 가족관계증명서 좀 뗴줘. 내 핸드폰에서 볼 수 있게.",
-      "set-id": null,
-      "service_target": "행정서비스",
-      "task_name": "가족관계증명서 발급 (정부24)",
-      "task_key": "공공서비스-행정서비스-5-정부24",
-      "id": "22-low"
     }
   ],
   "교통-고속버스-1": [
@@ -448,15 +250,6 @@
       "task_name": "고속버스표 예매",
       "task_key": "교통-고속버스-1",
       "id": "23-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "내일 부산 가는 고속버스 표 좀 예매해줘. 아침 10시 이후에 출발하는 거로~",
-      "set-id": null,
-      "service_target": "고속버스",
-      "task_name": "고속버스표 예매",
-      "task_key": "교통-고속버스-1",
-      "id": "23-low"
     }
   ],
   "교통-고속버스-2": [
@@ -468,15 +261,6 @@
       "task_name": "고속버스표 취소",
       "task_key": "교통-고속버스-2",
       "id": "24-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "몸이 안 좋아서 대전 가려고 한 거 못 가겠어. 모바일 티머니 앱에서 예매했던 고속버스 표 취소해줄래? 내일 가는 거였어.",
-      "set-id": null,
-      "service_target": "고속버스",
-      "task_name": "고속버스표 취소",
-      "task_key": "교통-고속버스-2",
-      "id": "24-low"
     }
   ],
   "교통-고속버스-3": [
@@ -488,15 +272,6 @@
       "task_name": "고속버스표 발권",
       "task_key": "교통-고속버스-3",
       "id": "25-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "버스 타려면 QR(큐알)을 찍어야 한대. 내가 예매했던 표 보여줘.",
-      "set-id": null,
-      "service_target": "고속버스",
-      "task_name": "고속버스표 발권",
-      "task_key": "교통-고속버스-3",
-      "id": "25-low"
     }
   ],
   "교통-기차-1-srt": [
@@ -508,15 +283,6 @@
       "task_name": "기차표 예매(SRT)",
       "task_key": "교통-기차-1-srt",
       "id": "26-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "내일 수서에서 여수 가는 기차 표를 두 장 끊어줘. 아침 10시 이후에 출발하는 표면 좋겠어.",
-      "set-id": null,
-      "service_target": "기차",
-      "task_name": "기차표 예매(SRT)",
-      "task_key": "교통-기차-1-srt",
-      "id": "26-low"
     }
   ],
   "교통-기차-2-srt": [
@@ -528,15 +294,6 @@
       "task_name": "기차표 취소(SRT)",
       "task_key": "교통-기차-2-srt",
       "id": "27-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "내일 KTX로 여수 가는 표 끊었던 거 예매 취소해줘. 오전 11시에 출발하는 거였어.",
-      "set-id": null,
-      "service_target": "기차",
-      "task_name": "기차표 취소(SRT)",
-      "task_key": "교통-기차-2-srt",
-      "id": "27-low"
     }
   ],
   "교통-기차-3-srt": [
@@ -548,15 +305,6 @@
       "task_name": "기차표 발권(SRT)",
       "task_key": "교통-기차-3-srt",
       "id": "28-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "오늘 오후 두시에 출발하는 KTX 기차표를 보여줄래? 직원이 보여달래.",
-      "set-id": null,
-      "service_target": "기차",
-      "task_name": "기차표 발권(SRT)",
-      "task_key": "교통-기차-3-srt",
-      "id": "28-low"
     }
   ],
   "교통-택시-1": [
@@ -568,15 +316,6 @@
       "task_name": "택시 호출",
       "task_key": "교통-택시-1",
       "id": "29-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "이제 집에 가야겠어. 지금 있는 곳으로 집까지 가는 택시 불러줘.",
-      "set-id": null,
-      "service_target": "택시",
-      "task_name": "택시 호출",
-      "task_key": "교통-택시-1",
-      "id": "29-low"
     }
   ],
   "교통-택시-3": [
@@ -588,15 +327,6 @@
       "task_name": "안전 문자 전송",
       "task_key": "교통-택시-3",
       "id": "30-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "친구가 언제 오냐고 해서 지금 가고 있다고 알려줘야 할 거 같아. 홍길동이에게 안전 문자 보내줘.",
-      "set-id": null,
-      "service_target": "택시",
-      "task_name": "안전 문자 전송",
-      "task_key": "교통-택시-3",
-      "id": "30-low"
     }
   ],
   "교통-택시-4": [
@@ -608,15 +338,6 @@
       "task_name": "예상 요금",
       "task_key": "교통-택시-4",
       "id": "31-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "장 보러 가려는데 지금 마포구 합정동에 있는 우리 집에서 가장 가까운 이마트까지 가려면 택시 요금이 얼마나 나와?",
-      "set-id": null,
-      "service_target": "택시",
-      "task_name": "예상 요금",
-      "task_key": "교통-택시-4",
-      "id": "31-mid"
     }
   ],
   "교통-장애인콜택시-1": [
@@ -628,15 +349,6 @@
       "task_name": "장애인 콜택시 호출",
       "task_key": "교통-장애인콜택시-1",
       "id": "32-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "우리 아들이랑 같이 이동해야 하니까 장애인 콜택시 앱으로 택시 불러줘. 국립 중앙 박물관으로 가려고 해.",
-      "set-id": null,
-      "service_target": "장애인콜택시",
-      "task_name": "장애인 콜택시 호출",
-      "task_key": "교통-장애인콜택시-1",
-      "id": "32-low"
     }
   ],
   "교통-장애인콜택시-3": [
@@ -648,15 +360,6 @@
       "task_name": "장애인 콜택시 예약",
       "task_key": "교통-장애인콜택시-3",
       "id": "33-high"
-    },
-    {
-      "service_name": "교통",
-      "formal_script": "곧 8시니까 예약 해보자. 강남구 역삼동 집 앞에서 강남세브란스병원까지 휠체어 사용하는 사람 하나, 동승자 하나로 예약 해줘.",
-      "set-id": null,
-      "service_target": "장애인콜택시",
-      "task_name": "장애인 콜택시 예약",
-      "task_key": "교통-장애인콜택시-3",
-      "id": "33-mid"
     }
   ],
   "은행-은행-1": [
@@ -668,15 +371,6 @@
       "task_name": "공과금 납부",
       "task_key": "은행-은행-1",
       "id": "34-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "12345-1-12-12-12345678가 내 납부번호인데, 이거로 신한은행 앱을 사용해서 상하수도 요금을 바로 결제해줘.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "공과금 납부",
-      "task_key": "은행-은행-1",
-      "id": "34-mid"
     }
   ],
   "은행-은행-2": [
@@ -688,15 +382,6 @@
       "task_name": "송금하기",
       "task_key": "은행-은행-2",
       "id": "35-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "하나은행에 내가 우리 아파트 관리비 내는 계좌를 아파트관리실로 설정해뒀거든? 거기로 이번달 관리비 30만원 송금해줘.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "송금하기",
-      "task_key": "은행-은행-2",
-      "id": "35-mid"
     }
   ],
   "은행-은행-3": [
@@ -708,15 +393,6 @@
       "task_name": "송금하기",
       "task_key": "은행-은행-3",
       "id": "36-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "내 입출금 계좌에서 50,000원을 송금해야 해. 계좌번호 123-456-789로 농협 은행 앱에서 이체해줘.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "송금하기",
-      "task_key": "은행-은행-3",
-      "id": "36-mid"
     }
   ],
   "은행-은행-4": [
@@ -728,15 +404,6 @@
       "task_name": "계좌 잔액 조회",
       "task_key": "은행-은행-4",
       "id": "37-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "우체국 은행에 있는 내 돈이 얼마나 있지? 알려줘봐.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "계좌 잔액 조회",
-      "task_key": "은행-은행-4",
-      "id": "37-mid"
     }
   ],
   "은행-은행-5": [
@@ -748,15 +415,6 @@
       "task_name": "최근 거래 내역 조회",
       "task_key": "은행-은행-5",
       "id": "38-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "가계부를 써야겠어. 우리 손자가 만들어준 카카오뱅크 계좌에서 어제 쓴 돈이 얼마나 되는지 알려줘.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "최근 거래 내역 조회",
-      "task_key": "은행-은행-5",
-      "id": "38-mid"
     }
   ],
   "은행-은행-6": [
@@ -768,15 +426,6 @@
       "task_name": "금리 확인",
       "task_key": "은행-은행-6",
       "id": "39-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "농협은행 모바일뱅크에서 6개월 정기적금 금리가 얼마나 되는지 알려줘봐.",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "금리 확인",
-      "task_key": "은행-은행-6",
-      "id": "39-mid"
     }
   ],
   "은행-은행-7": [
@@ -788,15 +437,6 @@
       "task_name": "QR결제",
       "task_key": "은행-은행-7",
       "id": "40-high"
-    },
-    {
-      "service_name": "금융",
-      "formal_script": "현금이랑 카드를 안 가져왔네. 휴대폰으로 내가 쓰는 신한은행의 간편결제 앱을 켜줄래?",
-      "set-id": null,
-      "service_target": "은행",
-      "task_name": "QR결제",
-      "task_key": "은행-은행-7",
-      "id": "40-mid"
     }
   ],
   "대중교통-저상버스예약-1": [
@@ -808,15 +448,6 @@
       "task_name": "현재 위치에서 저상버스 예약",
       "task_key": "대중교통-저상버스예약-1",
       "id": "41-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "아이랑 같이 가거든, 서울동행맵으로 지금 있는 정류장에 오는 저상버스 예약해줘.",
-      "set-id": null,
-      "service_target": "저상버스예약",
-      "task_name": "현재 위치에서 저상버스 예약",
-      "task_key": "대중교통-저상버스예약-1",
-      "id": "41-mid"
     }
   ],
   "대중교통-저상버스예약-2": [
@@ -828,15 +459,6 @@
       "task_name": "저상버스 예약 취소",
       "task_key": "대중교통-저상버스예약-2",
       "id": "42-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "비가 와서 가지 않기로 했어. 서울동행맵으로 아까 예약했던 저상 버스의 예약을 취소해줘.",
-      "set-id": null,
-      "service_target": "저상버스예약",
-      "task_name": "저상버스 예약 취소",
-      "task_key": "대중교통-저상버스예약-2",
-      "id": "42-mid"
     }
   ],
   "대중교통-지하철정보-1": [
@@ -848,15 +470,6 @@
       "task_name": "역사 내 엘리베이터/에스컬레이터 위치 확인",
       "task_key": "대중교통-지하철정보-1",
       "id": "43-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "서울동행맵에서 혜화역에 엘리베이터나 에스컬레이터가 있는지 확인해줘.",
-      "set-id": null,
-      "service_target": "지하철정보",
-      "task_name": "역사 내 엘리베이터/에스컬레이터 위치 확인",
-      "task_key": "대중교통-지하철정보-1",
-      "id": "43-mid"
     }
   ],
   "대중교통-지하철정보-2": [
@@ -868,15 +481,6 @@
       "task_name": "수유실/충전소 있는 역 찾기",
       "task_key": "대중교통-지하철정보-2",
       "id": "44-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "전통 휠체어를 쓰는중인데 충전소 근처에 없나? 이 근처에 있는 역이 강남역인데... 서울동행앱으로 확인해줘.",
-      "set-id": null,
-      "service_target": "지하철정보",
-      "task_name": "수유실/충전소 있는 역 찾기",
-      "task_key": "대중교통-지하철정보-2",
-      "id": "44-mid"
     }
   ],
   "대중교통-지하철정보-3": [
@@ -888,15 +492,6 @@
       "task_name": "지하철 안전도우미 호출",
       "task_key": "대중교통-지하철정보-3",
       "id": "45-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "혼자라서 휠체어 리프트랑 도와줄 역무원이 필요해. 서울동행맵에서 종로역 사무실로 전화 걸어줘.",
-      "set-id": null,
-      "service_target": "지하철정보",
-      "task_name": "지하철 안전도우미 호출",
-      "task_key": "대중교통-지하철정보-3",
-      "id": "45-low"
     }
   ],
   "대중교통-지하철-1-또타지하철": [
@@ -908,15 +503,6 @@
       "task_name": "지하철 편의시설 확인 (또타지하철)",
       "task_key": "대중교통-지하철-1-또타지하철",
       "id": "46-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "지금 명동역인데 여기 화장실이 어디 있어?",
-      "set-id": null,
-      "service_target": "지하철",
-      "task_name": "지하철 편의시설 확인 (또타지하철)",
-      "task_key": "대중교통-지하철-1-또타지하철",
-      "id": "46-low"
     }
   ],
   "대중교통-지하철-3-또타지하철": [
@@ -928,15 +514,6 @@
       "task_name": "지하철 유실물 찾기 (또타지하철)",
       "task_key": "대중교통-지하철-3-또타지하철",
       "id": "47-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "지난주에 부산 서면역에서 기념품이 든 보조 가방을 두고 내렸거든? 거기 유실물 센터에 전화 연결 해줘.",
-      "set-id": null,
-      "service_target": "지하철",
-      "task_name": "지하철 유실물 찾기 (또타지하철)",
-      "task_key": "대중교통-지하철-3-또타지하철",
-      "id": "47-low"
     }
   ],
   "대중교통-지하철-4-또타지하철": [
@@ -948,15 +525,6 @@
       "task_name": "평일 열차 시간표 확인 (또타지하철)",
       "task_key": "대중교통-지하철-4-또타지하철",
       "id": "48-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "평일 삼각지역 오후 11시 이후로 하행선 시간표가 어떻게 돼?",
-      "set-id": null,
-      "service_target": "지하철",
-      "task_name": "평일 열차 시간표 확인 (또타지하철)",
-      "task_key": "대중교통-지하철-4-또타지하철",
-      "id": "48-low"
     }
   ],
   "대중교통-지하철-5-또타지하철": [
@@ -968,15 +536,6 @@
       "task_name": "주말 열차 시간표 확인 (또타지하철)",
       "task_key": "대중교통-지하철-5-또타지하철",
       "id": "49-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "토요일에 오후 4시쯤 합정역에서 효창공원역으로 가는 방향으로 가는 기차가 언제 오는지 알려줘. 또타지하철에 나올 거야.",
-      "set-id": null,
-      "service_target": "지하철",
-      "task_name": "주말 열차 시간표 확인 (또타지하철)",
-      "task_key": "대중교통-지하철-5-또타지하철",
-      "id": "49-low"
     }
   ],
   "대중교통-지하철-6-또타지하철": [
@@ -988,15 +547,6 @@
       "task_name": "교통약자 우회 경로 안내 (또타지하철)",
       "task_key": "대중교통-지하철-6-또타지하철",
       "id": "50-high"
-    },
-    {
-      "service_name": "대중교통",
-      "formal_script": "나 지금 청량리 역인데 또타지하철로 엘리베이터 있는 길 찾아서 안내해줘.",
-      "set-id": null,
-      "service_target": "지하철",
-      "task_name": "교통약자 우회 경로 안내 (또타지하철)",
-      "task_key": "대중교통-지하철-6-또타지하철",
-      "id": "50-low"
     }
   ],
   "메시지-메신저-1": [
@@ -1008,15 +558,6 @@
       "task_name": "단문 메시지 전송",
       "task_key": "메시지-메신저-1",
       "id": "51-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "카톡으로 친구 홍길동이에게 '오늘 저녁 만남 어려움'이라고 짧게 전송해줘.",
-      "set-id": null,
-      "service_target": "메신저",
-      "task_name": "단문 메시지 전송",
-      "task_key": "메시지-메신저-1",
-      "id": "51-mid"
     }
   ],
   "메시지-메신저-4": [
@@ -1028,15 +569,6 @@
       "task_name": "영상 통화 걸기",
       "task_key": "메시지-메신저-4",
       "id": "52-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "외국에 사는 작은아들이랑 영상 통화 할 거야. 전화 걸어줘.",
-      "set-id": null,
-      "service_target": "메신저",
-      "task_name": "영상 통화 걸기",
-      "task_key": "메시지-메신저-4",
-      "id": "52-mid"
     }
   ],
   "메시지-네이버밴드-1": [
@@ -1048,15 +580,6 @@
       "task_name": "최신 사진 업로드 (네이버밴드)",
       "task_key": "메시지-네이버밴드-1",
       "id": "53-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "동기 모임 밴드에 오늘 아침 산책하며 찍은 꽃 사진 두 장 올려줘, 아침 공기가 참 좋았거든.",
-      "set-id": null,
-      "service_target": "네이버밴드",
-      "task_name": "최신 사진 업로드 (네이버밴드)",
-      "task_key": "메시지-네이버밴드-1",
-      "id": "53-mid"
     }
   ],
   "메시지-네이버밴드-2": [
@@ -1068,15 +591,6 @@
       "task_name": "밴드 알림 확인 (네이버밴드)",
       "task_key": "메시지-네이버밴드-2",
       "id": "54-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "요즘 자꾸 놓치거든, 네이버밴드 한 번 확인해서 새 알림 있으면 말해줘.",
-      "set-id": null,
-      "service_target": "네이버밴드",
-      "task_name": "밴드 알림 확인 (네이버밴드)",
-      "task_key": "메시지-네이버밴드-2",
-      "id": "54-low"
     }
   ],
   "메시지-페이스북-1": [
@@ -1088,15 +602,6 @@
       "task_name": "최신 사진 업로드 (페이스북)",
       "task_key": "메시지-페이스북-1",
       "id": "55-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "어제 관광지 가서 찍은 사진이 참 좋더라. 친구들한테 보여주고 싶은데, 페이스북에 어제 찍은 사진 하나 올려줘.",
-      "set-id": null,
-      "service_target": "페이스북",
-      "task_name": "최신 사진 업로드 (페이스북)",
-      "task_key": "메시지-페이스북-1",
-      "id": "55-mid"
     }
   ],
   "메시지-페이스북-2": [
@@ -1108,15 +613,6 @@
       "task_name": "짧은 게시글 작성 (페이스북)",
       "task_key": "메시지-페이스북-2",
       "id": "56-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "페북으로 친구들한테 안부 전하고 싶어, 페이스북에 짧게 '안부 전합니다. 잘 지내세요' 같은 글 올려줘.",
-      "set-id": null,
-      "service_target": "페이스북",
-      "task_name": "짧은 게시글 작성 (페이스북)",
-      "task_key": "메시지-페이스북-2",
-      "id": "56-low"
     }
   ],
   "메시지-인스타그램-1": [
@@ -1128,15 +624,6 @@
       "task_name": "최신 사진 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-1",
       "id": "57-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "아까 찍은 벚꽃 사진이 참 좋더라. 우리 손자가 인스타그램 계정을 만들어줬었는데, 거기에 올려줘.",
-      "set-id": null,
-      "service_target": "인스타그램",
-      "task_name": "최신 사진 업로드 (인스타그램)",
-      "task_key": "메시지-인스타그램-1",
-      "id": "57-low"
     }
   ],
   "메시지-인스타그램-2": [
@@ -1148,15 +635,6 @@
       "task_name": "최신 영상 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-2",
       "id": "58-high"
-    },
-    {
-      "service_name": "메시지",
-      "formal_script": "인스타그램에 어제 밤에 찍은 바닷가 영상 올려줘.",
-      "set-id": null,
-      "service_target": "인스타그램",
-      "task_name": "최신 영상 업로드 (인스타그램)",
-      "task_key": "메시지-인스타그램-2",
-      "id": "58-mid"
     }
   ],
   "생활-생필품-1": [
@@ -1168,15 +646,6 @@
       "task_name": "물건 구매",
       "task_key": "생활-생필품-1",
       "id": "59-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "세탁 세제가 거의 다 떨어진 거 같으니 주문해야겠어. 사람들이 가장 많이 사는 세제로 주문해줘.",
-      "set-id": null,
-      "service_target": "생필품",
-      "task_name": "물건 구매",
-      "task_key": "생활-생필품-1",
-      "id": "59-mid"
     }
   ],
   "생활-생필품-2": [
@@ -1188,15 +657,6 @@
       "task_name": "물건 구매",
       "task_key": "생활-생필품-2",
       "id": "60-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "마트 갈 시간이 없네. 쿠팡에서 신라면, 치약 한통, 로션 하나 주문해줘.",
-      "set-id": null,
-      "service_target": "생필품",
-      "task_name": "물건 구매",
-      "task_key": "생활-생필품-2",
-      "id": "60-mid"
     }
   ],
   "생활-생필품-3": [
@@ -1208,15 +668,6 @@
       "task_name": "구매한 물품 확인",
       "task_key": "생활-생필품-3",
       "id": "61-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "어제 쿠팡으로 휴대폰 충전기랑 비누를 주문했는데 그거 주문 잘 됐는지 확인해봐.",
-      "set-id": null,
-      "service_target": "생필품",
-      "task_name": "구매한 물품 확인",
-      "task_key": "생활-생필품-3",
-      "id": "61-mid"
     }
   ],
   "생활-배달음식-1": [
@@ -1228,15 +679,6 @@
       "task_name": "배달음식 주문",
       "task_key": "생활-배달음식-1",
       "id": "62-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "순두부 찌개가 먹고 싶은데 떙겨요로 사람들이 가장 많이 주문하는 가게에서 1인분만 집으로 주문해줘.",
-      "set-id": null,
-      "service_target": "배달음식",
-      "task_name": "배달음식 주문",
-      "task_key": "생활-배달음식-1",
-      "id": "62-mid"
     }
   ],
   "생활-배달음식-2": [
@@ -1248,15 +690,6 @@
       "task_name": "배달음식 재구매",
       "task_key": "생활-배달음식-2",
       "id": "63-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "저번에 땡겨요로 시킨 평양냉면을 2인분 똑같이 시켜줘.",
-      "set-id": null,
-      "service_target": "배달음식",
-      "task_name": "배달음식 재구매",
-      "task_key": "생활-배달음식-2",
-      "id": "63-low"
     }
   ],
   "생활-배달음식-4": [
@@ -1268,15 +701,6 @@
       "task_name": "배달한 음식정보 확인",
       "task_key": "생활-배달음식-4",
       "id": "64-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "떙겨요로 30분 전에 주문한 생선구이가 지금 어디쯤 왔는지 알려줘.",
-      "set-id": null,
-      "service_target": "배달음식",
-      "task_name": "배달한 음식정보 확인",
-      "task_key": "생활-배달음식-4",
-      "id": "64-mid"
     }
   ],
   "생활-중고거래-1": [
@@ -1288,15 +712,6 @@
       "task_name": "중고물품 검색",
       "task_key": "생활-중고거래-1",
       "id": "65-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "당근마켓으로 재봉틀이 보통 얼마에 팔리는지 검색해봐",
-      "set-id": null,
-      "service_target": "중고거래",
-      "task_name": "중고물품 검색",
-      "task_key": "생활-중고거래-1",
-      "id": "65-mid"
     }
   ],
   "생활-뉴스-1": [
@@ -1308,15 +723,6 @@
       "task_name": "원하는 섹션의 최신 뉴스 안내",
       "task_key": "생활-뉴스-1",
       "id": "66-mid"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "전국적으로 비가 많이 왔다는데... 네이버 앱의 뉴스에서 사회 부분 최신 기사 좀 찾아줘.",
-      "set-id": null,
-      "service_target": "뉴스",
-      "task_name": "원하는 섹션의 최신 뉴스 안내",
-      "task_key": "생활-뉴스-1",
-      "id": "66-low"
     }
   ],
   "생활-날씨-1": [
@@ -1328,15 +734,6 @@
       "task_name": "오늘 날씨 안내",
       "task_key": "생활-날씨-1",
       "id": "67-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "이따 장 보러 나가야 해서, 오늘 날씨가 어떻게 되는지 알려줘.",
-      "set-id": null,
-      "service_target": "날씨",
-      "task_name": "오늘 날씨 안내",
-      "task_key": "생활-날씨-1",
-      "id": "67-low"
     }
   ],
   "생활-날씨-2": [
@@ -1348,15 +745,6 @@
       "task_name": "최근 날씨 동향 안내",
       "task_key": "생활-날씨-2",
       "id": "68-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "우리 동네의 이번 주 예보가 어떻게 나왔는지 좀 알려줘.",
-      "set-id": null,
-      "service_target": "날씨",
-      "task_name": "최근 날씨 동향 안내",
-      "task_key": "생활-날씨-2",
-      "id": "68-low"
     }
   ],
   "생활-신선식품-1-마켓컬리": [
@@ -1368,15 +756,6 @@
       "task_name": "신선식품 구매하기",
       "task_key": "생활-신선식품-1-마켓컬리",
       "id": "69-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "마켓컬리에서 평소에 자주 시키는 신선식품들 지금 바로 골라서 주문해줘.",
-      "set-id": null,
-      "service_target": "신선식품",
-      "task_name": "신선식품 구매하기",
-      "task_key": "생활-신선식품-1-마켓컬리",
-      "id": "69-low"
     }
   ],
   "생활-신선식품-2-마켓컬리": [
@@ -1388,15 +767,6 @@
       "task_name": "신선식품 구매하기",
       "task_key": "생활-신선식품-2-마켓컬리",
       "id": "70-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "달걀이 다 떨어졌어. 유정란 10개를 주문해줘. 시금치도 300그램 주문해줘. 내일 아침에 받으면 좋겠어.",
-      "set-id": null,
-      "service_target": "신선식품",
-      "task_name": "신선식품 구매하기",
-      "task_key": "생활-신선식품-2-마켓컬리",
-      "id": "70-low"
     }
   ],
   "생활-간편결제-1-삼성페이": [
@@ -1408,15 +778,6 @@
       "task_name": "편의점 결제(QR)",
       "task_key": "생활-간편결제-1-삼성페이",
       "id": "71-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "삼성페이에서 내 신한은행 카드로 결제할래. 준비해줘.",
-      "set-id": null,
-      "service_target": "간편결제",
-      "task_name": "편의점 결제(QR)",
-      "task_key": "생활-간편결제-1-삼성페이",
-      "id": "71-low"
     }
   ],
   "생활-간편결제-2-네이버페이": [
@@ -1428,15 +789,6 @@
       "task_name": "편의점 결제(QR)",
       "task_key": "생활-간편결제-2-네이버페이",
       "id": "72-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "네이버 페이로 결제할건데 준비해줄래?",
-      "set-id": null,
-      "service_target": "간편결제",
-      "task_name": "편의점 결제(QR)",
-      "task_key": "생활-간편결제-2-네이버페이",
-      "id": "72-low"
     }
   ],
   "생활-라디오-1-스마트폰라디오": [
@@ -1448,15 +800,6 @@
       "task_name": "라디오 청취 시작하기",
       "task_key": "생활-라디오-1-스마트폰라디오",
       "id": "73-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "라디오 앱 열고 KBS 제2라디오로 틀어줘. 지금 퀴즈 프로 시작할 시간일 거야",
-      "set-id": null,
-      "service_target": "라디오",
-      "task_name": "라디오 청취 시작하기",
-      "task_key": "생활-라디오-1-스마트폰라디오",
-      "id": "73-mid"
     }
   ],
   "생활-라디오-2-스마트폰라디오": [
@@ -1468,15 +811,6 @@
       "task_name": "라디오 채널 변경",
       "task_key": "생활-라디오-2-스마트폰라디오",
       "id": "74-high"
-    },
-    {
-      "service_name": "생활",
-      "formal_script": "라디오 주파수를 101.9MHz로 바꿔줘.",
-      "set-id": null,
-      "service_target": "라디오",
-      "task_name": "라디오 채널 변경",
-      "task_key": "생활-라디오-2-스마트폰라디오",
-      "id": "74-mid"
     }
   ],
   "영상-영상-1": [
@@ -1488,15 +822,6 @@
       "task_name": "특정 채널 영상 재생",
       "task_key": "영상-영상-1",
       "id": "75-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "유튜브에서 ‘한국기행 KBS’ 채널 영상 하나 재생해줘",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "특정 채널 영상 재생",
-      "task_key": "영상-영상-1",
-      "id": "75-low"
     }
   ],
   "영상-영상-2": [
@@ -1508,15 +833,6 @@
       "task_name": "구독피드 최신영상 재생요청",
       "task_key": "영상-영상-2",
       "id": "76-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "50년 요리비결 채널에 새로 올라온 영상 재생해줘.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "구독피드 최신영상 재생요청",
-      "task_key": "영상-영상-2",
-      "id": "76-low"
     }
   ],
   "영상-영상-3": [
@@ -1528,15 +844,6 @@
       "task_name": "특정 주제 영상 검색 후 재생",
       "task_key": "영상-영상-3",
       "id": "77-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "제주 여행지 소개 영상 하나 찾아 틀어줘. 다음 달 여행 준비해야 하거든.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "특정 주제 영상 검색 후 재생",
-      "task_key": "영상-영상-3",
-      "id": "77-mid"
     }
   ],
   "영상-영상-4": [
@@ -1548,15 +855,6 @@
       "task_name": "시청 기록 기반 영상 이어보기",
       "task_key": "영상-영상-4",
       "id": "78-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "아침이라 몸 좀 풀고 싶어. 유튜브에서 그저께 본 '건강 체조 10분' 영상 중간부터 계속 틀어줘.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "시청 기록 기반 영상 이어보기",
-      "task_key": "영상-영상-4",
-      "id": "78-mid"
     }
   ],
   "영상-영상-5": [
@@ -1568,15 +866,6 @@
       "task_name": "좋아요한 영상 재생",
       "task_key": "영상-영상-5",
       "id": "79-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "내가 어제 황창연 신부님의 행복특강 강연을 좋아요 눌렀는데, 그거 다시 틀어줘.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "좋아요한 영상 재생",
-      "task_key": "영상-영상-5",
-      "id": "79-mid"
     }
   ],
   "영상-영상-6": [
@@ -1588,15 +877,6 @@
       "task_name": "가장 최근에 본 드라마 재생하기",
       "task_key": "영상-영상-6",
       "id": "80-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "티빙에서 '사랑의 불시착' 내가 보던 부분부터 이어서 틀어줘.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "가장 최근에 본 드라마 재생하기",
-      "task_key": "영상-영상-6",
-      "id": "80-mid"
     }
   ],
   "영상-영상-7": [
@@ -1608,15 +888,6 @@
       "task_name": "영화 다시보기",
       "task_key": "영상-영상-7",
       "id": "81-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "예전에 티빙에서 용의자라는 영화를 봤거든? 또 볼래.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "영화 다시보기",
-      "task_key": "영상-영상-7",
-      "id": "81-mid"
     }
   ],
   "영상-영상-8": [
@@ -1628,15 +899,6 @@
       "task_name": "이어서보기",
       "task_key": "영상-영상-8",
       "id": "82-high"
-    },
-    {
-      "service_name": "영상",
-      "formal_script": "그저께 보던 '인생은 아름다워' 영화를 마저 보고 싶어.",
-      "set-id": null,
-      "service_target": "영상",
-      "task_name": "이어서보기",
-      "task_key": "영상-영상-8",
-      "id": "82-mid"
     }
   ],
   "의료-병원-1": [
@@ -1648,15 +910,6 @@
       "task_name": "주변 병원 찾기",
       "task_key": "의료-병원-1",
       "id": "83-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "요새 허리가 좀 아프네. 우리집 근처 병원 중에 통증의학과가 있는지 찾아줘.",
-      "set-id": null,
-      "service_target": "병원",
-      "task_name": "주변 병원 찾기",
-      "task_key": "의료-병원-1",
-      "id": "83-low"
     }
   ],
   "의료-병원-2": [
@@ -1668,15 +921,6 @@
       "task_name": "병원 예약하기",
       "task_key": "의료-병원-2",
       "id": "84-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "어제부터 무릎이 쑤셔서 그러는데 똑닥으로 가장 가까운 재활의학과에 예약 잡아줘. 이번 주 중에 오전 진료로 받고 싶어.",
-      "set-id": null,
-      "service_target": "병원",
-      "task_name": "병원 예약하기",
-      "task_key": "의료-병원-2",
-      "id": "84-mid"
     }
   ],
   "의료-서울의료원-1": [
@@ -1688,15 +932,6 @@
       "task_name": "진료 예약",
       "task_key": "의료-서울의료원-1",
       "id": "85-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "아침에 허리가 아팠어, 서울케어 앱으로 다음 주 화요일 오전 9시 서울의료원 정형외과 진료 예약해줘.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "진료 예약",
-      "task_key": "의료-서울의료원-1",
-      "id": "85-mid"
     }
   ],
   "의료-서울의료원-2": [
@@ -1708,24 +943,6 @@
       "task_name": "진료 일정 확인",
       "task_key": "의료-서울의료원-2",
       "id": "86-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "의료 서비스로 서울의료원 정형외과 오후 2시 예약 일정과 진료실 위치 확인해줘, 다리 통증 때문에 걱정돼서.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "진료 일정 확인",
-      "task_key": "의료-서울의료원-2",
-      "id": "86-mid"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "의료에 서울의료원 내과 예약 있나랑 진료실 위치 확인해줘, 아침부터 속이 안 좋아서.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "진료 일정 확인",
-      "task_key": "의료-서울의료원-2",
-      "id": "86-low"
     }
   ],
   "의료-서울의료원-3": [
@@ -1737,15 +954,6 @@
       "task_name": "검사 결과 확인",
       "task_key": "의료-서울의료원-3",
       "id": "87-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "우리 애가 검사 결과 좀 보여달라는데 서울케어 앱으로 서울의료원에서 지난번 검사 결과 좀 봐줘.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "검사 결과 확인",
-      "task_key": "의료-서울의료원-3",
-      "id": "87-low"
     }
   ],
   "의료-서울의료원-4": [
@@ -1757,15 +965,6 @@
       "task_name": "입원 식단 확인",
       "task_key": "의료-서울의료원-4",
       "id": "88-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "서울캐어 앱으로 식단 볼 수 있다는데, 이번주 식단 좀 보여줘.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "입원 식단 확인",
-      "task_key": "의료-서울의료원-4",
-      "id": "88-low"
     }
   ],
   "의료-서울의료원-5": [
@@ -1777,15 +976,6 @@
       "task_name": "건강수첩 기록",
       "task_key": "의료-서울의료원-5",
       "id": "89-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "서울케어 건강수첩에 오늘 오후 3시에 잰 혈당 125랑 혈압 130/85를 적어둬.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "건강수첩 기록",
-      "task_key": "의료-서울의료원-5",
-      "id": "89-mid"
     }
   ],
   "의료-서울의료원-6": [
@@ -1797,15 +987,6 @@
       "task_name": "처방약 조회",
       "task_key": "의료-서울의료원-6",
       "id": "90-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "서울케어로 서울의료원에서 퇴원할 때 받은 약 좀 찾아줘, 내가 약 이름을 잘 못 기억하거든.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "처방약 조회",
-      "task_key": "의료-서울의료원-6",
-      "id": "90-low"
     }
   ],
   "의료-서울의료원-7": [
@@ -1817,15 +998,6 @@
       "task_name": "건강검진 일정 안내",
       "task_key": "의료-서울의료원-7",
       "id": "91-high"
-    },
-    {
-      "service_name": "의료",
-      "formal_script": "기억이 잘 안 나서 그런데, 서울케어 앱으로 서울의료원에서 예정된 건강검진 일정 좀 확인해줘.",
-      "set-id": null,
-      "service_target": "서울의료원",
-      "task_name": "건강검진 일정 안내",
-      "task_key": "의료-서울의료원-7",
-      "id": "91-low"
     }
   ],
   "이동정보-약자경로-1": [
@@ -1837,15 +1009,6 @@
       "task_name": "노약자/임산부 경로 확인",
       "task_key": "이동정보-약자경로-1",
       "id": "92-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "광화문에서 용산역까지 편한 길로 안내해줘. 위험하거나 좁은 길 말고, 엘리베이터 같은 걸 타고 갈 수 있는 길로 찾아줘.",
-      "set-id": null,
-      "service_target": "약자경로",
-      "task_name": "노약자/임산부 경로 확인",
-      "task_key": "이동정보-약자경로-1",
-      "id": "92-mid"
     }
   ],
   "이동정보-약자경로-2": [
@@ -1857,15 +1020,6 @@
       "task_name": "휠체어 사용자 경로 확인",
       "task_key": "이동정보-약자경로-2",
       "id": "93-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "몸이 불편해서, 서울동행맵에서 영등포 우리 집에서 시청까지 단차·급경사 없는 휠체어 길로 찾아줘.",
-      "set-id": null,
-      "service_target": "약자경로",
-      "task_name": "휠체어 사용자 경로 확인",
-      "task_key": "이동정보-약자경로-2",
-      "id": "93-mid"
     }
   ],
   "이동정보-약자경로-3": [
@@ -1877,15 +1031,6 @@
       "task_name": "유모차 동반 경로 확인",
       "task_key": "이동정보-약자경로-3",
       "id": "94-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "아기랑 같이 가야 하니, 서울동행맵에서 집에서 아산병원 가는데 유모차 이동이 가능한 계단 없는 길과 엘리베이터, 저상버스 포함 경로 찾아줘.",
-      "set-id": null,
-      "service_target": "약자경로",
-      "task_name": "유모차 동반 경로 확인",
-      "task_key": "이동정보-약자경로-3",
-      "id": "94-mid"
     }
   ],
   "이동정보-약자경로-4": [
@@ -1897,15 +1042,6 @@
       "task_name": "임산부 배려 경로 확인",
       "task_key": "이동정보-약자경로-4",
       "id": "95-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "오늘은 좀 덜 힘든 길로 서울역에서 압구정역까지 안내해줘. 엘리베이터나 에스컬레이터 있는 길이면 좋겠어.",
-      "set-id": null,
-      "service_target": "약자경로",
-      "task_name": "임산부 배려 경로 확인",
-      "task_key": "이동정보-약자경로-4",
-      "id": "95-mid"
     }
   ],
   "이동정보-약자경로-5": [
@@ -1917,15 +1053,6 @@
       "task_name": "보행 불편 지점 피해서 이동",
       "task_key": "이동정보-약자경로-5",
       "id": "96-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "강남세브란스병원 갈 건데, 최대한 평탄한 길로 안내해줘.",
-      "set-id": null,
-      "service_target": "약자경로",
-      "task_name": "보행 불편 지점 피해서 이동",
-      "task_key": "이동정보-약자경로-5",
-      "id": "96-mid"
     }
   ],
   "이동정보-지도-1": [
@@ -1937,15 +1064,6 @@
       "task_name": "예상소요시간 질의",
       "task_key": "이동정보-지도-1",
       "id": "97-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "처음 가보는 길인데, 네이버 지도로 우리 집에서 중앙병원까지 대략 얼마나 걸리는지 바로 알려줄래?",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "예상소요시간 질의",
-      "task_key": "이동정보-지도-1",
-      "id": "97-mid"
     }
   ],
   "이동정보-지도-2": [
@@ -1957,15 +1075,6 @@
       "task_name": "이동 경로 길찾기 질의",
       "task_key": "이동정보-지도-2",
       "id": "98-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "종로구청에서 성동구 보건소까지 어떻게 가면 돼?",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "이동 경로 길찾기 질의",
-      "task_key": "이동정보-지도-2",
-      "id": "98-mid"
     }
   ],
   "이동정보-지도-3": [
@@ -1977,15 +1086,6 @@
       "task_name": "실시간 버스 도착 확인",
       "task_key": "이동정보-지도-3",
       "id": "99-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "날이 더워서 오래 서 있긴 힘든데, 마포역 근처 7016번 버스가 몇 분 후 도착하는지 봐줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "실시간 버스 도착 확인",
-      "task_key": "이동정보-지도-3",
-      "id": "99-mid"
     }
   ],
   "이동정보-지도-4": [
@@ -1997,15 +1097,6 @@
       "task_name": "가까운 편의점 찾기",
       "task_key": "이동정보-지도-4",
       "id": "100-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "너무 더워서 시원한 데 들어가고 싶은데, 네이버 지도로 주변 편의점 알려줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "가까운 편의점 찾기",
-      "task_key": "이동정보-지도-4",
-      "id": "100-mid"
     }
   ],
   "이동정보-지도-5": [
@@ -2017,15 +1108,6 @@
       "task_name": "즐겨찾기 경로 실행",
       "task_key": "이동정보-지도-5",
       "id": "101-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "오늘 오후에 큰아들네 가야 하는데, 우리 아들이 카카오 맵에 추가해준 즐겨찾기 경로로 지금 출발하면 얼마나 걸리는지 알려줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "즐겨찾기 경로 실행",
-      "task_key": "이동정보-지도-5",
-      "id": "101-mid"
     }
   ],
   "이동정보-지도-6": [
@@ -2037,15 +1119,6 @@
       "task_name": "실시간 지하철 도착 확인",
       "task_key": "이동정보-지도-6",
       "id": "102-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "을지로입구역에서 기다리고 있는데 카카오 맵으로 2호선의 상행선 열차 도착 시간 좀 확인해줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "실시간 지하철 도착 확인",
-      "task_key": "이동정보-지도-6",
-      "id": "102-mid"
     }
   ],
   "이동정보-지도-9": [
@@ -2057,15 +1130,6 @@
       "task_name": "맛집 길찾기",
       "task_key": "이동정보-지도-9",
       "id": "103-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "친구랑 저녁 약속인데, 강남역 진미식당까지 도보로 가는 길 좀 찾아줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "맛집 길찾기",
-      "task_key": "이동정보-지도-9",
-      "id": "103-mid"
     }
   ],
   "이동정보-지도-11": [
@@ -2077,15 +1141,6 @@
       "task_name": "버스/지하철 혼합 길찾기",
       "task_key": "이동정보-지도-11",
       "id": "104-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "강남역에서 영등포구청까지 바로 가는 길 있나 찾아주고, 없으면 환승 포함해서라도 안내해줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "버스/지하철 혼합 길찾기",
-      "task_key": "이동정보-지도-11",
-      "id": "104-mid"
     }
   ],
   "이동정보-지도-12": [
@@ -2097,15 +1152,6 @@
       "task_name": "도보 길찾기",
       "task_key": "이동정보-지도-12",
       "id": "105-high"
-    },
-    {
-      "service_name": "이동정보",
-      "formal_script": "오늘은 걷기 운동 겸으로 집에서 동네 공원까지 걸어갈 건데 경로랑 얼마나 걸리는지를 알려줘.",
-      "set-id": null,
-      "service_target": "지도",
-      "task_name": "도보 길찾기",
-      "task_key": "이동정보-지도-12",
-      "id": "105-mid"
     }
   ]
 }
