@@ -426,6 +426,15 @@
       "task_name": "금리 확인",
       "task_key": "은행-은행-6",
       "id": "39-high"
+    },
+    {
+      "service_name": "금융",
+      "formal_script": "농협은행 모바일뱅크에서 6개월 정기적금 금리가 얼마나 되는지 알려줘봐.",
+      "set-id": null,
+      "service_target": "은행",
+      "task_name": "금리 확인",
+      "task_key": "은행-은행-6",
+      "id": "39-mid"
     }
   ],
   "은행-은행-7": [
@@ -437,6 +446,15 @@
       "task_name": "QR결제",
       "task_key": "은행-은행-7",
       "id": "40-high"
+    },
+    {
+      "service_name": "금융",
+      "formal_script": "현금이랑 카드를 안 가져왔네. 휴대폰으로 내가 쓰는 신한은행의 간편결제 앱을 켜줄래?",
+      "set-id": null,
+      "service_target": "은행",
+      "task_name": "QR결제",
+      "task_key": "은행-은행-7",
+      "id": "40-mid"
     }
   ],
   "대중교통-저상버스예약-1": [
@@ -547,6 +565,15 @@
       "task_name": "교통약자 우회 경로 안내 (또타지하철)",
       "task_key": "대중교통-지하철-6-또타지하철",
       "id": "50-high"
+    },
+    {
+      "service_name": "대중교통",
+      "formal_script": "나 지금 청량리 역인데 또타지하철로 엘리베이터 있는 길 찾아서 안내해줘.",
+      "set-id": null,
+      "service_target": "지하철",
+      "task_name": "교통약자 우회 경로 안내 (또타지하철)",
+      "task_key": "대중교통-지하철-6-또타지하철",
+      "id": "50-low"
     }
   ],
   "메시지-메신저-1": [
@@ -624,6 +651,15 @@
       "task_name": "최신 사진 업로드 (인스타그램)",
       "task_key": "메시지-인스타그램-1",
       "id": "57-high"
+    },
+    {
+      "service_name": "메시지",
+      "formal_script": "아까 찍은 벚꽃 사진이 참 좋더라. 우리 손자가 인스타그램 계정을 만들어줬었는데, 거기에 올려줘.",
+      "set-id": null,
+      "service_target": "인스타그램",
+      "task_name": "최신 사진 업로드 (인스타그램)",
+      "task_key": "메시지-인스타그램-1",
+      "id": "57-low"
     }
   ],
   "메시지-인스타그램-2": [
@@ -899,6 +935,15 @@
       "task_name": "이어서보기",
       "task_key": "영상-영상-8",
       "id": "82-high"
+    },
+    {
+      "service_name": "영상",
+      "formal_script": "그저께 보던 '인생은 아름다워' 영화를 마저 보고 싶어.",
+      "set-id": null,
+      "service_target": "영상",
+      "task_name": "이어서보기",
+      "task_key": "영상-영상-8",
+      "id": "82-mid"
     }
   ],
   "의료-병원-1": [
@@ -954,6 +999,15 @@
       "task_name": "검사 결과 확인",
       "task_key": "의료-서울의료원-3",
       "id": "87-high"
+    },
+    {
+      "service_name": "의료",
+      "formal_script": "우리 애가 검사 결과 좀 보여달라는데 서울케어 앱으로 서울의료원에서 지난번 검사 결과 좀 봐줘.",
+      "set-id": null,
+      "service_target": "서울의료원",
+      "task_name": "검사 결과 확인",
+      "task_key": "의료-서울의료원-3",
+      "id": "87-low"
     }
   ],
   "의료-서울의료원-4": [
