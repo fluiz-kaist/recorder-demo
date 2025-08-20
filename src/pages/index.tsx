@@ -128,7 +128,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
   const [pendingAuthData, setPendingAuthData] =
     useState<PendingAuthData | null>(null);
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
-  const isAvailable = isRecordingAvailable();
+  const isAvailable = isRecordingAvailable(userInput.name);
   // Temporarily hardcoded for the test period (4 PM to 10 PM)
   // const isAvailable = false;
 
