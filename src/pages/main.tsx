@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/MainSelectionPage.module.css";
 import Head from "next/head";
@@ -11,13 +11,20 @@ import {
 } from "@/hooks/queries/useUserQueries";
 import { SERVICE_CONFIG, toSlug, ServiceName } from "@/lib/serviceMapping";
 import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
+import { SERVICE_ORDER } from "@/lib/serviceMapping";
+
+import SecondRoundAssignBtn from "@/components/getSecondScriptBtn";
+import { ScriptDataManager } from "@/utils/scriptDataManager";
+import {
+  analyzeUserStatus,
+  UserAccessStatus,
+} from "@/utils/userStatusValidation";
+
 const LOCK_ICON =
   "M12,17A1.5,1.5 0 0,0 13.5,15.5A1.5,1.5 0 0,0 12,14A1.5,1.5 0 0,0 10.5,15.5A1.5,1.5 0 0,0 12,17M17,8H16V6.5C16,4.57 14.43,3 12.5,3A3.5,3.5 0 0,0 9,6.5V8H8A2,2 0 0,0 6,10V20A2,2 0 0,0 8,22H17A2,2 0 0,0 19,20V10A2,2 0 0,0 17,8M11,6.5C11,5.67 11.67,5 12.5,5A1.5,1.5 0 0,1 14,6.5V8H11V6.5Z";
 
-// 서비스 순서 정의
-const SERVICE_ORDER = Object.keys(SERVICE_CONFIG) as ServiceName[];
-
 const MainSelectionPage = () => {
+  const [showProgress, setShowProgress] = useState(false);
   const router = useRouter();
   // 인증 상태 확인
   const { data: authStatus, isLoading: authLoading } = useAuthStatusQuery();
@@ -37,7 +44,7 @@ const MainSelectionPage = () => {
     useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
 
-  // console.log("fullUser?", fullUser);
+  console.log("fullUser?", fullUser);
   // console.log("🔍 완전한 상태 체크:", {
   //   "1. authStatus": authStatus,
   //   "2. authLoading": authLoading,
@@ -142,6 +149,12 @@ const MainSelectionPage = () => {
   const handleServiceSelect = (serviceName: ServiceName) => {
     console.log("여기서 말하는 serviceName?", serviceName);
 
+    // 2회차 과제 받기 전에는 서비스 진입 막기
+    if (shouldShow2ndRoundAssignBtn()) {
+      alert("먼저 2회차 과제를 받아주세요.");
+      return;
+    }
+
     if (!isTutorialCompleted) {
       alert("먼저 사용법 익히기를 완료해주세요.");
       return;
@@ -161,6 +174,11 @@ const MainSelectionPage = () => {
 
   // 서비스 해금 상태 확인 함수
   const isServiceUnlocked = (serviceName: ServiceName): boolean => {
+    // 2회차 과제 받기 버튼이 보이는 상황에서는 모든 서비스 잠금
+    if (shouldShow2ndRoundAssignBtn()) {
+      return false;
+    }
+
     // 튜토리얼이 완료되지 않으면 모든 서비스 잠금
     if (!isTutorialCompleted) {
       return false;
@@ -208,6 +226,50 @@ const MainSelectionPage = () => {
     return null; // 모든 서비스 해금됨
   };
 
+  // 2회차 과제 받기 버튼을 보여줄지 결정하는 함수
+  const shouldShow2ndRoundAssignBtn = () => {
+    console.log("🔍 2회차 버튼 체크 시작");
+    console.log("fullUser 존재:", !!fullUser);
+
+    if (!fullUser) {
+      console.log("❌ fullUser 없음");
+      return false;
+    }
+
+    const currentRoundNumber = fullUser.currentStatus.currentRoundNumber || 0;
+    const canStartNextRound = fullUser.currentStatus.canStartNextRound;
+    const canStartRecording = fullUser.currentStatus.canStartRecording;
+
+    console.log("📊 현재 상태:", {
+      currentRoundNumber,
+      canStartNextRound,
+      canStartRecording,
+    });
+
+    // 2회차이고, 시작 권한이 있어야 함
+    if (currentRoundNumber !== 2 || !canStartNextRound || !canStartRecording) {
+      console.log("❌ 기본 조건 실패:", {
+        is2ndRound: currentRoundNumber === 2,
+        canStartNext: canStartNextRound,
+        canRecord: canStartRecording,
+      });
+      return false;
+    }
+
+    const has2ndRoundSummary = fullUser.roundSummaries?.some(
+      (summary) => summary.roundNumber === 2
+    );
+
+    console.log("📋 roundSummaries 체크:", {
+      roundSummaries: fullUser.roundSummaries,
+      has2ndRoundSummary,
+    });
+
+    const shouldShow = !has2ndRoundSummary;
+    console.log("🎯 최종 결과 - 버튼 표시 여부:", shouldShow);
+
+    return shouldShow;
+  };
   // console.log("인증 정보 로딩 중?", authStatus, completionLoading);
   // 사용자 인증 정보 로딩 중
   if (!authStatus?.isAuthenticated || completionLoading) {
@@ -334,17 +396,41 @@ const MainSelectionPage = () => {
             {/* 전체 진행 상황 */}
             {isTutorialCompleted && (
               <div className={styles.overallProgress}>
+                {/* 프로그레스 바는 항상 보임 */}
                 <div className={styles.progressBar}>
                   <div
                     className={styles.progressFill}
                     style={{ width: `${overallProgress}%` }}
                   />
                 </div>
-                <p className={styles.progressText}>
-                  전체 진행률: {currentRound?.progress?.totalTasks || 0}개 중{" "}
-                  {currentRound?.progress?.completedTasks || 0}개 완료(
-                  {overallProgress}% )
-                </p>
+
+                {/* 상세 수치 토글 버튼 */}
+                <button
+                  onClick={() => setShowProgress(!showProgress)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #ddd",
+                    borderRadius: "20px",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                    color: "#666",
+                    cursor: "pointer",
+                    margin: "8px 0",
+                  }}
+                >
+                  {showProgress ? "닫기" : "상세 보기"}
+                </button>
+
+                {/* 상세 수치 - 조건부 렌더링 */}
+                {showProgress && (
+                  <p className={styles.progressText}>
+                    전체 진행률: {currentRound?.progress?.totalTasks || 0}개 중{" "}
+                    {currentRound?.progress?.completedTasks || 0}개 완료(
+                    {overallProgress}% )
+                  </p>
+                )}
+
+                {/* 주제 정보는 항상 보임 */}
                 <p className={styles.unlockText}>
                   녹음 가능한 주제: {unlockedServices}/{totalServices}
                   {getNextUnlockService() && (
@@ -359,7 +445,8 @@ const MainSelectionPage = () => {
               </div>
             )}
           </header>
-
+          {/* 2회차 과제 받기 버튼 - 조건부 렌더링 */}
+          {shouldShow2ndRoundAssignBtn() && <SecondRoundAssignBtn />}
           {/* 선택 카드들 */}
           <main className={styles.cardContainer}>
             {/* 튜토리얼 카드 */}
@@ -494,8 +581,8 @@ const MainSelectionPage = () => {
           {/* 완료 축하 메시지 */}
           {overallProgress === 100 && (
             <div className={styles.congratulationsMessage}>
-              <h3>모든 녹음을 완료했습니다!</h3>
-              <p>수고하셨습니다.</p>
+              <h3>참여하신 회차의 녹음을 완료했습니다.</h3>
+              <p>수고하셨습니다. 아래 버튼을 꼭 눌러 주세요.</p>
 
               <CompletionAllTasksBtn />
             </div>

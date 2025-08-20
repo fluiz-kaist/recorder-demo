@@ -65,6 +65,7 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
               </div>
             </div>
           )}
+
           {isCompleted && <div className={styles.completedText}>제출 완료</div>}
         </div>
       </div>
@@ -97,8 +98,20 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
         }`}
       >
         {/* <div className={styles.formalSentenceLabel}>정형화 문장</div> */}
+        <div className={styles.formalInstruction}>아래 문장을 읽어주세요</div>
         <div className={styles.formalSentence}>{script.formal_script}</div>
-        <div className={styles.formalInstruction}>위 문장을 읽어주세요</div>
+
+        {scriptType === ScriptType.FORMAL && (
+          <div className={styles.detailedInstruction}>
+            <div className={styles.instructionLabel}>
+              👉 편하게 말씀하셔도 돼요
+            </div>
+            <div className={styles.instructionText}>
+              혹시 문장이 어색하게 느껴지신다면, 비슷한 길이로 같은 뜻을 담아
+              평소처럼 말씀해 주셔도 괜찮습니다.
+            </div>
+          </div>
+        )}
         {isCompleted && <div className={styles.completedText}>제출 완료</div>}
         {/* Set ID 정보 (필요시) */}
         {/* <div className={styles.setInfo}>

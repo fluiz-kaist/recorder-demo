@@ -4,6 +4,7 @@ import { User } from "@/types/user";
 import { ParticipantDetail } from "@/pages/api/admin/participants/[userId]";
 import { useAdminParticipantDetail } from "@/hooks/queries/useAdminQueries";
 import { ParticipantOverview } from "@/pages/api/admin/participants/overview";
+import { getDisplaySetId } from "@/utils/converter";
 interface ParticipantsPopupProps {
   participant: ParticipantOverview;
 }
@@ -573,7 +574,7 @@ const ParticipantsDetailPopup = ({ participant }: ParticipantsPopupProps) => {
                   <div key={round.roundNumber} style={popupStyles.roundCard}>
                     <div style={popupStyles.roundHeader}>
                       <span style={popupStyles.roundNumber}>
-                        {round.roundNumber}회차 (세트 {round.formalSetId})
+                        {round.roundNumber}회차 (세트 {getDisplaySetId(round)})
                       </span>
                       <span style={getRoundStatusStyle(round.status)}>
                         {getRoundStatusText(round.status)}

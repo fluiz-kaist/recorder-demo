@@ -178,15 +178,15 @@
 }
 
 .formalSentence {
-  font-size: var(--font-2xl);
+  font-size: var(--font-lg);
   color: var(--color-text-secondary);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-medium);
   line-height: var(--line-height-normal);
   margin: var(--space-md) 0;
   padding: var(--space-md);
   background: var(--color-bg-primary);
   border-radius: var(--radius-lg);
-  font-style: italic;
+  /* font-style: italic; */
   word-break: keep-all;
   box-shadow: var(--shadow-md);
 }

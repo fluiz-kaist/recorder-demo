@@ -31,6 +31,8 @@ const mergeScriptsByTaskKey = (
   situational: SituationalScript[],
   formal: FormalScript[]
 ): MergedScript[] => {
+  console.log("여기서 받은 foraml ", formal);
+  console.log("여기서 받은 situ", situational);
   const formalMap = formal.reduce<Record<string, FormalScript[]>>(
     (acc, item) => {
       if (!acc[item.task_key]) acc[item.task_key] = [];
@@ -66,7 +68,8 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
     isError,
   } = useAllScriptsByServiceQuery(
     serviceName,
-    currentSetId // setNumber 제거, setId만 사용
+    currentRoundNumber, // setNumber (라운드 번호)
+    currentRoundNumber // setId (상황발화 세트 ID, 라운드번호와 동일)
   );
 
   if (router.isFallback) {
@@ -79,23 +82,37 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
   }
 
   if (isError) return <div>에러 발생</div>;
-  if (!currentRound) {
-    console.log("여긴가?", currentRound);
+
+  // allScripts가 없거나 빈 경우 (localStorage에 데이터가 없거나 일치하지 않는 경우)
+  if (
+    !allScripts ||
+    (allScripts.situational.length === 0 && allScripts.formal.length === 0)
+  ) {
     return (
       <>
-        <div>현재 진행 중인 라운드가 없습니다</div>
+        <div>
+          아래 버튼을 눌러주세요. 버튼을 누른 이후에도 화면에 반응이 없다면,
+          새로고침 혹은 상단의 작업 종료하기를 누르고 다시 로그인을 해주시기
+          바랍니다.
+        </div>
         <ReAssignScript />
       </>
     );
   }
 
-  if (!allScripts)
+  if (!currentRound) {
+    console.log("여긴가?", currentRound);
     return (
       <>
-        <div>해당 스크립트 없음</div>
+        <div>
+          현재 진행 중인 작업이 없습니다(이 문구는 로그아웃 중에 잠시 보일 수
+          있습니다. 그 경우 잠시 기다려주세요.)
+        </div>
         <ReAssignScript />
       </>
     );
+  }
+
   console.log("allScripts?", allScripts);
 
   const mergedScripts = mergeScriptsByTaskKey(

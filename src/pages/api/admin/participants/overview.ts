@@ -2,6 +2,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { adminDb } from "@/lib/firebase/admin";
 import { User, RoundStatus } from "@/types/user";
+import {
+  analyzeUserStatusForAdmin,
+  AdminUserStatus,
+  ADMIN_STATUS_KOREAN_MAP,
+  mapToLegacyStatus,
+} from "@/utils/adminUserStatusValidation";
 
 export interface ParticipantOverview {
   userId: string;
@@ -23,8 +29,12 @@ export interface ParticipantOverview {
   averageQualityScore: number;
 
   // 상태
-  status: "not_started" | "in_progress" | "completed" | "inactive";
+  status: AdminUserStatus;
+
   lastRecordingAt?: string;
+
+  //현재 진행중인 라운드
+  currentRound?: number;
 }
 
 interface ParticipantsOverviewResponse {
@@ -48,65 +58,51 @@ interface ParticipantsOverviewResponse {
   message?: string;
 }
 
-// 참여자 상태 계산 함수
-const calculateParticipantStatus = (
-  user: User
-): ParticipantOverview["status"] => {
-  // console.log("여기서 user 데이터 뭐라고 나오지? ", user);
-  if (!user.currentStatus.isOnboardingCompleted) return "not_started";
+// 참여자 상태 계산 함수 - 세분화된 상태 직접 반환
+const calculateParticipantStatus = (user: User) => {
+  const userStatusAnalysis = analyzeUserStatusForAdmin(user);
 
-  // 현재 진행중인 라운드가 있는지 확인
-  if (user.currentStatus.currentRoundNumber === 0) return "not_started";
-
-  // 전체 완료 여부 확인 - statistics.current 또는 overall 사용
-  const totalApprovedTasks =
-    user.statistics.overall?.totalTasksApproved ||
-    user.statistics.current.approvedTasks;
-  const totalCompletedTasks =
-    user.statistics.overall?.totalTasksCompleted ||
-    user.statistics.current.completedTasks;
-
-  if (
-    totalApprovedTasks > 0 &&
-    user.currentStatus.currentRoundProgress.approvedPercentage === 100
-  ) {
-    return "completed";
-  }
-
-  if (totalCompletedTasks > 0) return "in_progress";
-
-  // 7일 이상 비활성화 체크
-  const lastAccess = new Date(user.profile.lastAccessAt as string);
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  if (lastAccess < sevenDaysAgo) return "inactive";
-
-  return "not_started";
+  // UserAccessStatus를 그대로 반환 (더 이상 4단계로 매핑 안함)
+  return userStatusAnalysis.status;
 };
-
 // 전체 진행률 계산 함수
 const calculateOverallProgress = (user: User): number => {
-  const maxRounds = 2;
+  const maxRounds = user.settings.maxAllowedRounds || 2;
+  const roundWeight = 100 / maxRounds; // 라운드당 비율 (2라운드면 50%씩)
   let overallProgress = 0;
 
-  user.roundSummaries.forEach((round) => {
-    const roundWeight = 50; // 각 라운드는 50%
-
-    if (
+  // 1. 완료된 라운드들은 각각 roundWeight% 추가
+  const completedRounds = user.roundSummaries.filter(
+    (round) =>
       round.status === RoundStatus.COMPLETED ||
-      round.status === RoundStatus.APPROVED
-    ) {
-      overallProgress += roundWeight; // 완료된 라운드는 50% 추가
-    } else if (round.status === RoundStatus.ASSIGNED) {
-      // 현재 진행 중인 라운드만 부분 진행률 적용
-      if (round.roundNumber === user.currentStatus.currentRoundNumber) {
-        const currentRoundProgress =
-          user.statistics.current.completedPercentage || 0;
-        overallProgress += (currentRoundProgress * roundWeight) / 100;
-      }
-    }
-  });
+      round.status === RoundStatus.APPROVED ||
+      round.status === RoundStatus.SUBMITTED
+  );
 
-  return Math.round(overallProgress);
+  overallProgress += completedRounds.length * roundWeight;
+
+  // 2. 현재 진행 중인 라운드의 부분 진행률 추가
+  const currentRoundNumber = user.currentStatus.currentRoundNumber;
+
+  if (currentRoundNumber > 0 && currentRoundNumber <= maxRounds) {
+    // 현재 라운드가 이미 완료된 경우는 제외
+    const currentRoundSummary = user.roundSummaries.find(
+      (round) => round.roundNumber === currentRoundNumber
+    );
+
+    const isCurrentRoundCompleted =
+      currentRoundSummary?.status === RoundStatus.COMPLETED ||
+      currentRoundSummary?.status === RoundStatus.APPROVED ||
+      currentRoundSummary?.status === RoundStatus.SUBMITTED;
+
+    if (!isCurrentRoundCompleted) {
+      const currentRoundProgress =
+        user.currentStatus.currentRoundProgress.completedPercentage || 0;
+      overallProgress += (currentRoundProgress * roundWeight) / 100;
+    }
+  }
+
+  return Math.round(Math.min(overallProgress, 100)); // 100% 초과 방지
 };
 
 // 정렬 함수
@@ -151,12 +147,17 @@ const sortParticipants = (
         break;
 
       case "status":
-        // 상태 기준 정렬 (우선순위: completed > in_progress > not_started > inactive)
+        // 새로운 7가지 상태에 맞는 우선순위 설정
         const statusPriority = {
-          completed: 4,
-          in_progress: 3,
-          not_started: 2,
-          inactive: 1,
+          all_completed: 7,
+          round_2_waiting_approval: 6,
+          round_2_in_progress: 5,
+          round_2_waiting: 4,
+          round_1_waiting_approval: 3,
+          round_1_in_progress: 2,
+          guide_incomplete: 1,
+          tutorial_required: 1,
+          blocked: 0,
         };
         comparison = statusPriority[a.status] - statusPriority[b.status];
         break;
@@ -222,6 +223,32 @@ export default async function handler(
     const allUsers = allUsersSnapshot.docs.map(
       (doc) => ({ ...doc.data() } as User)
     );
+
+    // console.log("=== 디버깅 시작 ===");
+    // console.log("전체 사용자 수:", allUsers.length);
+
+    // // 각 사용자의 currentStatus 상태 확인
+    // allUsers.forEach((user, index) => {
+    //   console.log(`사용자 ${index + 1}:`, {
+    //     userId: user.profile?.userId || "userId 없음",
+    //     hasCurrentStatus: !!user.currentStatus,
+    //     currentStatus: user.currentStatus,
+    //     isTutorialCompleted: user.currentStatus?.isTutorialCompleted,
+    //   });
+
+    //   // currentStatus가 없는 사용자가 있다면 전체 구조 확인
+    //   if (!user.currentStatus) {
+    //     console.log(`currentStatus 없는 사용자 전체 데이터:`, user);
+    //   }
+    // });
+
+    // const activeParticipants = allUsers.filter(
+    //   (user) => user.currentStatus?.isTutorialCompleted // ?. 연산자 추가해서 일단 에러 방지
+    // ).length;
+
+    // console.log("activeParticipants 계산 결과:", activeParticipants);
+    // console.log("=== 디버깅 끝 ===");
+
     const activeParticipants = allUsers.filter(
       (user) => user.currentStatus.isTutorialCompleted
     ).length;
@@ -286,6 +313,8 @@ export default async function handler(
         createdAt: user.profile.createdAt as string,
         lastAccessAt: user.profile.lastAccessAt as string,
 
+        currentRound: user.currentStatus.currentRoundNumber,
+
         hasStarted: user.currentStatus.isOnboardingCompleted,
         currentSetNumber: user.currentStatus.currentRoundNumber,
         totalCompletedSets:
@@ -328,8 +357,12 @@ export default async function handler(
 
       // 기존 통계 (users 기준)
       startedParticipants: participants.filter((p) => p.hasStarted).length,
+      // completed 상태를 새로운 상태들로 수정
       completedParticipants: participants.filter(
-        (p) => p.status === "completed"
+        (p) =>
+          p.status === "all_completed" ||
+          p.status === "round_1_waiting_approval" ||
+          p.status === "round_2_waiting_approval"
       ).length,
       activeInLast7Days: participants.filter((p) => {
         const lastAccess = new Date(p.lastAccessAt);

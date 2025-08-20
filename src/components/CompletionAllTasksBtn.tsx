@@ -6,7 +6,7 @@ import { Timestamp } from "firebase/firestore";
 import styles from "@/styles/CompletionBtn.module.css";
 import { RoundStatus } from "@/types/user";
 import { useTaskTracking } from "@/hooks/useTaskTracking";
-// 생략된 import 부분 동일
+import { ScriptDataManager } from "@/utils/scriptDataManager";
 
 const CompletionAllTasksBtn = () => {
   const router = useRouter();
@@ -32,16 +32,18 @@ const CompletionAllTasksBtn = () => {
     //   user.currentStatus.nextTask === null;
     const isRoundCompleted = roundProgress.completedPercentage === 100;
 
-    if (!isRoundCompleted) {
-      alert("모든 작업을 완료한 후에만 진행할 수 있습니다.");
-      return;
-    }
-
     const userId = user.profile.userId;
     const currentRoundNumber = user.currentStatus.currentRoundNumber || 1;
     const collectionName =
       process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
     const now = Timestamp.now();
+
+    if (!isRoundCompleted) {
+      alert(
+        `${currentRoundNumber}회의 모든 작업을 완료한 후에만 진행할 수 있습니다.`
+      );
+      return;
+    }
 
     try {
       console.group("1. 현재 ParticipationRound 데이터 조회");
@@ -101,7 +103,7 @@ const CompletionAllTasksBtn = () => {
 
       const updatedSummary = {
         roundNumber: currentRoundNumber,
-        status: RoundStatus.COMPLETED,
+        status: RoundStatus.SUBMITTED,
         completedAt: now,
         progressSummary: {
           totalTasks,
@@ -143,14 +145,16 @@ const CompletionAllTasksBtn = () => {
       const userUpdates = {
         currentStatus: {
           ...user.currentStatus,
-
-          canStartNextRound: false, // 🔒 관리자 허가 대기
+          // currentRoundNumber: currentRoundNumber + 1, // 회차 번호 1 증가
+          canStartRecording: false, // 녹음 시작 불가로 변경
+          canStartNextRound: false, //  관리자 허가 대기
           nextTask: null,
-          hasPendingApproval: submittedExists,
-          currentRoundProgress: {
-            ...user.currentStatus.currentRoundProgress,
-            completedPercentage: 100,
-          },
+          hasPendingApproval: true,
+          // currentRoundProgress: {
+          //   completedPercentage: 0,
+          //   submittedPercentage: 0,
+          //   approvedPercentage: 0,
+          // },
         },
         statistics: {
           ...user.statistics,
@@ -175,8 +179,26 @@ const CompletionAllTasksBtn = () => {
       console.log("사용자 문서 업데이트 완료");
       console.groupEnd();
 
+      // 로컬 스토리지의 스크립트 데이터 삭제
+      console.group("5. 로컬 스토리지 스크립트 데이터 삭제");
+      try {
+        ScriptDataManager.clearData();
+        console.log("✅ 로컬 스토리지 스크립트 데이터 삭제 완료");
+      } catch (error) {
+        console.error("❌ 스크립트 데이터 삭제 실패:", error);
+        // 로컬 스토리지 삭제 실패는 전체 플로우를 막지 않음
+      }
+      console.groupEnd();
+
       console.log("작업 완료, 페이지 이동 시작");
-      router.push("/completion");
+      // 라운드별로 다른 페이지나 메시지 처리
+      if (currentRoundNumber === 1) {
+        router.push("/completion?round=1");
+      } else if (currentRoundNumber === 2) {
+        router.push("/completion?round=2");
+      } else {
+        router.push("/completion");
+      }
     } catch (error) {
       console.error("완료 처리 실패:", error);
       alert("작업 완료 처리 중 오류가 발생했습니다.");

@@ -124,7 +124,7 @@ export interface Task {
  * 참여 회차의 전체적인 진행 상황을 추적하고 통계를 제공
  */
 export interface RoundProgress {
-  totalTasks: number; // 해당 회차의 전체 작업 수 (상황발화 26개 + 정형발화 수)
+  totalTasks: number; // 해당 회차의 전체 작업 수 
   completedTasks: number; // 녹음 완료된 작업 수
   submittedTasks: number; // 제출된 작업 수 (검토 요청)
   approvedTasks: number; // 최종 승인된 작업 수
@@ -153,7 +153,13 @@ export interface RoundProgress {
 /**
  * 참여 회차 정보 (서브컬렉션 문서)
  * 사용자가 참여하는 각 회차별 작업 묶음을 관리
- * 한 회차 = [상황발화 a + 특정 정형발화 세트]로 구성
+ * 
+ * <수정본>
+ * 한 회차 = [상황발화(세트 별)  + 상황발화와 짝이 되는 2개의 정형발화들의 모음]로 구성
+ * 예: 1회차 = [상황발화(1세트) + 개별 상황발화들에 짝이 되는 정형발화들의 모음], 2회차 = [상황발화(2세트) + 2세트 상황발화에게 짝이 되는 정형발화들의 모음]
+ * 
+ * <old, 더이상 쓰지 않을 것 그러나 이거로 저장된 데이터가 존재함>
+ * 한 회차 = [상황발화(세트 별)  + 특정 정형발화 세트]로 구성
  * 예: 1회차 = [상황발화 a + 1세트 정형발화], 2회차 = [상황발화 a + 2세트 정형발화]
  *
  * Firebase 경로: /users/{userId}/rounds/{roundNumber}
@@ -163,7 +169,9 @@ export interface ParticipationRound {
   // 회차 기본 정보
   userId: string; // 참여 사용자 ID (부모 문서 참조용)
   roundNumber: number; // 참여 회차 번호 (1회차, 2회차, 3회차... 사용자별 순차 증가)
-  formalSetId: number; // 정형발화 세트 ID (1, 2 - 스크립트 데이터의 set-id와 매핑)
+  // 하위 호환성을 위한 필드들
+  formalSetId?: number; // 기존 데이터: 정형발화 세트 ID (1, 2...)
+  setId?: number; // 새로운 데이터: 상황발화 세트 ID (1, 2...)
   progressMode: ProgressMode; // 이 회차의 진행 방식 (사용자가 선택 가능)
   status: RoundStatus; // 회차 전체 상태
 
@@ -195,7 +203,10 @@ export interface ParticipationRound {
  */
 export interface RoundSummary {
   roundNumber: number; // 회차 번호
-  formalSetId: number; // 정형발화 세트 ID
+  // 하위 호환성을 위한 필드들
+  formalSetId?: number; // 기존 데이터: 정형발화 세트 ID (1, 2...)
+  setId?: number; // 새로운 데이터: 상황발화 세트 ID (1, 2...)
+
   status: RoundStatus; // 회차 상태
   assignedAt: Timestamp | FieldValue | string; // 할당 시점
   completedAt?: Timestamp | FieldValue | string; // 완료 시점
@@ -208,7 +219,6 @@ export interface RoundSummary {
     approvalRate: number; // 승인율 (0-100)
   };
 }
-
 /**
  * 사용자 전체 통계 정보
  * 모든 참여 회차를 통합한 누적 통계 및 성과 지표
@@ -311,7 +321,7 @@ export interface User {
   // 기본 프로필 정보 (변경 빈도 낮음)
   profile: UserProfile;
 
-  // 사용자 설정 정보 (사용자가 변경 가능)
+  // 사용자 설정 정보
   settings: UserSettings;
 
   // 현재 상태 정보 (자주 업데이트되는 캐시 데이터)

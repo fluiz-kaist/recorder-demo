@@ -12,6 +12,7 @@ import AdminRecordingsTab from "@/components/admin/RecordingTaps";
 
 import ApplicantsTab from "@/components/admin/ApplicantsTabs";
 import ParticipantsTab from "@/components/admin/ParticipantsTap";
+import AdminLLMValidationTab from "@/components/admin/ValidationTap";
 // 로그아웃 버튼 컴포넌트
 export const AdminLogoutButton = () => {
   const router = useRouter();
@@ -60,6 +61,7 @@ const AdminDashboard = () => {
     | "applicants"
     | "participants"
     | "recordings"
+    | "validation"
     | "upload"
     | "test-task-manager"
   >("overview");
@@ -128,6 +130,14 @@ const AdminDashboard = () => {
           </button>
           <button
             className={`${styles.tabButton} ${
+              activeTab === "validation" ? styles.active : ""
+            }`}
+            onClick={() => setActiveTab("validation")}
+          >
+            녹음 데이터 검증
+          </button>
+          <button
+            className={`${styles.tabButton} ${
               activeTab === "upload" ? styles.active : ""
             }`}
             onClick={() => router.push("upload")}
@@ -156,6 +166,7 @@ const AdminDashboard = () => {
           {activeTab === "participants" && (
             <ParticipantsTab participantsData={participants.data} />
           )}
+          {activeTab === "validation" && <AdminLLMValidationTab />}
           {activeTab === "recordings" && <AdminRecordingsTab />}
         </main>
       </div>
@@ -163,7 +174,7 @@ const AdminDashboard = () => {
   );
 };
 
-// 전체 현황 탭 - 3단계 통계 반영
+// 전체 현황 탭 - 수정된 통계 반영
 const OverviewTab = ({
   participantsData,
   progressData,
@@ -178,7 +189,7 @@ const OverviewTab = ({
 
   return (
     <div className={styles.overviewGrid}>
-      {/* 3단계 통계 카드들 */}
+      {/* 수정된 통계 카드들 */}
       <div className={styles.statsGrid}>
         <div
           className={styles.statCard}
@@ -199,40 +210,36 @@ const OverviewTab = ({
             borderLeft: `4px solid ${getParticipationStageColor("registered")}`,
           }}
         >
-          <h3>가입 완료자</h3>
+          <h3>가입완료자 / 작업참여자</h3>
           <div className={styles.statNumber}>
-            {statistics.totalRegisteredUsers.toLocaleString()}
+            {statistics.totalRegisteredUsers.toLocaleString()} /{" "}
+            {statistics.activeParticipants.toLocaleString()}
           </div>
           <div className={styles.statDescription}>
-            사이트 가입 완료 ({conversionRates.applicantToRegistered}%)
+            사이트 가입완료 / 튜토리얼완료자
           </div>
         </div>
 
         <div
           className={styles.statCard}
-          style={{
-            borderLeft: `4px solid ${getParticipationStageColor("active")}`,
-          }}
+          style={{ borderLeft: "4px solid #8b5cf6" }}
         >
-          <h3>작업 참여자</h3>
+          <h3>작업 완료자</h3>
           <div className={styles.statNumber}>
-            {statistics.activeParticipants.toLocaleString()}
+            {statistics.actualCompletedTasks?.toLocaleString() || 0}
           </div>
-          <div className={styles.statDescription}>
-            {/* 실제 작업 시작 ({conversionRates.registeredToActive}%) */}
-            튜토리얼 완료자
-          </div>
+          <div className={styles.statDescription}>전체 작업 완료</div>
         </div>
 
         <div
           className={styles.statCard}
           style={{ borderLeft: "4px solid #10b981" }}
         >
-          <h3>작업 완료자</h3>
+          <h3>결과 승인대기자</h3>
           <div className={styles.statNumber}>
             {statistics.completedParticipants.toLocaleString()}
           </div>
-          <div className={styles.statDescription}>전체 작업 완료</div>
+          <div className={styles.statDescription}>승인 대기 중</div>
         </div>
       </div>
 
@@ -266,25 +273,42 @@ const OverviewTab = ({
               }}
             >
               <div className={styles.stageNumber}>
-                {statistics.totalRegisteredUsers}
+                {statistics.totalRegisteredUsers} /{" "}
+                {statistics.activeParticipants}
               </div>
-              <div className={styles.stageLabel}>가입자</div>
+              <div className={styles.stageLabel}>가입/활동자</div>
             </div>
           </div>
 
           <div className={styles.conversionArrow}>
-            <span>{conversionRates.registeredToActive}%</span>→
+            <span>{conversionRates.activeToTaskCompleted || 0}%</span>→
           </div>
 
           <div className={styles.conversionStage}>
             <div
               className={styles.stageBox}
-              style={{ backgroundColor: getParticipationStageColor("active") }}
+              style={{ backgroundColor: "#8b5cf6" }}
             >
               <div className={styles.stageNumber}>
-                {statistics.activeParticipants}
+                {statistics.actualCompletedTasks || 0}
               </div>
-              <div className={styles.stageLabel}>활동자</div>
+              <div className={styles.stageLabel}>작업완료</div>
+            </div>
+          </div>
+
+          <div className={styles.conversionArrow}>
+            <span>{conversionRates.taskCompletedToApprovalWaiting || 0}%</span>→
+          </div>
+
+          <div className={styles.conversionStage}>
+            <div
+              className={styles.stageBox}
+              style={{ backgroundColor: "#10b981" }}
+            >
+              <div className={styles.stageNumber}>
+                {statistics.completedParticipants}
+              </div>
+              <div className={styles.stageLabel}>승인대기</div>
             </div>
           </div>
         </div>
@@ -380,7 +404,4 @@ const OverviewTab = ({
     </div>
   );
 };
-
-
-
 export default AdminDashboard;

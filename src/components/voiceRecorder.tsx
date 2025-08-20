@@ -29,15 +29,15 @@ import {
   validateAudioQualitySimple,
   SimpleQualityResult,
 } from "@/utils/audioUtils";
-
+import { getUniqueKey } from "@/utils/createUniqKeyForTaskKey";
 // =================================
 // ========== 타입, 상수=============
 // ===================================
 
 const { isPreview, isDev } = getEnv();
 const isDevMode = isPreview || isDev;
-//  최소 녹음 시간 설정 (초 단위, 개발모드에서는 1, 실사용에서는 10)
-const MINIMUM_RECORDING_SECONDS = isDevMode ? 1 : 10;
+//  최소 녹음 시간 설정 (초 단위, 개발모드에서는 1, 실사용에서는 30)
+const MINIMUM_RECORDING_SECONDS = isDevMode ? 1 : 30;
 // 최대 녹음 시간 설정(초 단위, 개발모드에서는 20, 실사용에서는 120)
 const MAXIMUM_RECORDING_SECONDS = isDevMode ? 10 : 120;
 
@@ -48,6 +48,7 @@ const WARNING_START_TIME =
 
 /** interfaces */
 type AnyScript = SituationalScript | FormalScript | TutorialScript;
+type OnlyTwoAvType = SituationalScript | FormalScript;
 
 interface VoiceRecorderProps {
   scriptType: ScriptType;
@@ -410,8 +411,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       setCanStopRecording(false);
       setTimeout(() => {
         setCanStopRecording(true);
-      }, MINIMUM_RECORDING_SECONDS * 1000);
-
+      }, (isTutorial ? 10 : MINIMUM_RECORDING_SECONDS) * 1000);
       // : 90초 경고 타이머
       setTimeout(() => {
         setIsNearMaxTime(true);
@@ -543,6 +543,10 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
       }
       return;
     }
+
+    if (scriptType === ScriptType.TUTORIAL) return;
+
+    const uniqueTaskKey = getUniqueKey(scriptData as OnlyTwoAvType, scriptType);
 
     if (!recordingStartTime || !recordingEndTime) {
       console.error("녹음 시간 정보가 없습니다.");
@@ -708,7 +712,7 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
 
       const completeResult = await completeUserScriptMutation.mutateAsync({
         userId: fullUser.profile.userId,
-        taskKey: typedScript.task_key,
+        taskKey: uniqueTaskKey, //  고유키 사용
         taskType:
           scriptType === ScriptType.SITUATIONAL ? "situational" : "formal",
         status: "completed", // 또는 "in_progress", "not_started"
@@ -843,8 +847,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           )}
           {!canStopRecording && (
             <div className={styles.minimumTimeNotice}>
-              최소 {MINIMUM_RECORDING_SECONDS}초 이상 녹음해주세요 (남은 시간:{" "}
-              {Math.max(0, MINIMUM_RECORDING_SECONDS - recordingTime)}초)
+              최소 {isTutorial ? 10 : MINIMUM_RECORDING_SECONDS}초 이상
+              녹음해주세요 (남은 시간:{" "}
+              {Math.max(
+                0,
+                (isTutorial ? 10 : MINIMUM_RECORDING_SECONDS) - recordingTime
+              )}
+              초)
             </div>
           )}
         </div>
@@ -933,6 +942,13 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
             : `최소 ${MINIMUM_RECORDING_SECONDS}초 이상 녹음 후 `}
           <span className={styles.redText}>빨간 버튼</span>을 눌러주세요
         </div>
+      )}
+      {isTutorial ? (
+        <p className={styles.guidanceBox}>
+          가이드 이후에는 30초의 기본 녹음 시간이 주어집니다.
+        </p>
+      ) : (
+        <></>
       )}
 
       {/* 품질 경고 표시 */}

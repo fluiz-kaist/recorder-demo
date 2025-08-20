@@ -47,6 +47,7 @@ export default async function handler(
 
   const audioCollectionName =
     process.env.NEXT_PUBLIC_DB_AUDIO_RECORDINGS_COLLECTION || "recording-temp";
+  console.log("audioCollectionName?", audioCollectionName);
 
   const userCollectionName =
     process.env.NEXT_PUBLIC_DB_USER_COLLECTION || "users-temp";
@@ -80,7 +81,7 @@ export default async function handler(
     const limitNum = parseInt(queryLimit as string, 10);
 
     // 필터 쿼리 빌더 함수
-    function buildFilterQuery(baseQuery: Query<DocumentData>) {
+    async function buildFilterQuery(baseQuery: Query<DocumentData>) {
       let query = baseQuery;
 
       if (userId) query = query.where("userId", "==", userId);
@@ -94,8 +95,44 @@ export default async function handler(
       if (search && typeof search === "string") {
         const searchField = req.query.searchField as string;
 
+        console.log("searchField?", searchField);
+
         if (searchField === "userName") {
-          query = query.where("speakerInfo.userName", "==", search);
+          // 1. 먼저 users 컬렉션에서 이름으로 사용자 찾기
+          const usersQuery = adminDb
+            .collection(userCollectionName)
+            .where("userName", ">=", search)
+            .where("userName", "<=", search + "\uf8ff");
+
+          const usersSnap = await usersQuery.get();
+          const matchingUserIds = usersSnap.docs.map((doc) => doc.id);
+
+          // 🔍 디버깅 로그 추가
+          console.log("💕💕💕💕💕 검색어:", search);
+          console.log("💕💕💕💕💕 찾은 사용자 수:", usersSnap.docs.length);
+          console.log(
+            "💕💕💕💕💕 찾은 사용자들:",
+            usersSnap.docs.map((doc) => ({ id: doc.id, data: doc.data() }))
+          );
+          console.log("💕💕💕💕💕 matchingUserIds:", matchingUserIds);
+
+          // 2. 찾은 userId들로 recordings 검색
+          if (matchingUserIds.length > 0) {
+            // Firestore 'in' 쿼리는 최대 10개까지만 가능
+            const userIdBatches = [];
+            for (let i = 0; i < matchingUserIds.length; i += 10) {
+              userIdBatches.push(matchingUserIds.slice(i, i + 10));
+            }
+
+            // 첫 번째 배치만 사용 (10명까지)
+            if (userIdBatches.length > 0) {
+              console.log("💕💕💕💕💕 일치하는 사용자 없음! 빈 결과 조건 추가");
+              query = query.where("userId", "in", userIdBatches[0]);
+            }
+          } else {
+            // 일치하는 사용자가 없으면 빈 결과 반환을 위해 불가능한 조건 추가
+            query = query.where("userId", "==", "NO_MATCHING_USER");
+          }
         } else if (searchField === "taskKey") {
           query = query.where("taskKey", "==", search);
         } else if (searchField === "domain") {
@@ -105,39 +142,46 @@ export default async function handler(
 
       return query;
     }
-
     const baseQuery = adminDb.collection(audioCollectionName);
 
     // 1. 총 개수 구하기
-    const countQuery = buildFilterQuery(baseQuery);
+    const countQuery = await buildFilterQuery(baseQuery);
     const totalCount = (await countQuery.count().get()).data().count;
 
     // 2. 실제 데이터 가져오기
-    let dataQuery = buildFilterQuery(baseQuery);
+    const searchField = req.query.searchField as string;
+    const isUserNameSearch = search && searchField === "userName";
 
-    // // 정렬 처리 - 검색이 있을 때는 클라이언트 사이드 정렬 사용
-    // if (search && typeof search === "string") {
-    //   // 검색이 있을 때는 서버 정렬 없이 가져온 후 클라이언트에서 정렬
-    //   dataQuery = dataQuery.limit(limitNum).offset((pageNum - 1) * limitNum);
-    // } else {
-    //   // 검색이 없을 때는 서버에서 정렬
-    //   dataQuery = dataQuery
-    //     .orderBy("uploadedAt", "desc")
-    //     .limit(limitNum)
-    //     .offset((pageNum - 1) * limitNum);
-    // }
-    // 인덱스가 있으니 검색 시에도 서버에서 정렬 가능
-    dataQuery = dataQuery
-      .orderBy("uploadedAt", "desc")
-      .limit(limitNum)
-      .offset((pageNum - 1) * limitNum);
+    const dataQuery = await buildFilterQuery(baseQuery);
 
-    const snapshot = await dataQuery.get();
+    let snapshot;
 
+    if (isUserNameSearch) {
+      // 사용자 이름 검색일 때는 더 많은 데이터를 가져옴
+      snapshot = await dataQuery.orderBy("uploadedAt", "desc").limit(500).get();
+    } else {
+      // 일반 검색일 때는 기존대로 페이지네이션
+      snapshot = await dataQuery
+        .orderBy("uploadedAt", "desc")
+        .limit(limitNum)
+        .offset((pageNum - 1) * limitNum)
+        .get();
+    }
     const allRecordings = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as AudioRecording[];
+
+    // 사용자 이름 검색일 때 클라이언트에서 페이지네이션 적용
+    if (isUserNameSearch) {
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+      allRecordings.splice(
+        0,
+        allRecordings.length,
+        ...allRecordings.slice(startIndex, endIndex)
+      );
+    }
 
     // 클라이언트 사이드 정렬 (검색이 있는 경우 또는 다른 정렬 기준인 경우)
     if (search || sortBy !== "uploadedAt" || sortOrder !== "desc") {
@@ -218,7 +262,6 @@ export default async function handler(
       const v = rec.verificationStatus || "unknown";
       stats.byVerificationStatus[v] = (stats.byVerificationStatus[v] || 0) + 1;
     });
-
     return res.status(200).json({
       success: true,
       data: {

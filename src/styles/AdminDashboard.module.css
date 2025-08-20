@@ -721,6 +721,10 @@
   background: #fee2e2;
   color: #dc2626;
 }
+.statusYellow {
+  background: #fef3c7;
+  color: #d97706;
+}
 
 .typeBadge {
   padding: 2px 6px;
@@ -1272,6 +1276,653 @@
 .badgeUnknown {
   background-color: #6c757d; /* 회색 */
 }
+
+/* ========================================
+   LLM 검증 관련 스타일
+   AdminDashboard.module.css에 추가
+   ======================================== */
+
+/* 처리 로그 컨테이너 */
+.processingLogContainer {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+
+.logContent {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.logEntry {
+  padding: 2px 0;
+  color: #495057;
+}
+
+/* 검토 액션 섹션 */
+.reviewActionSection {
+  margin-top: 15px;
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.reviewButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reviewButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.reviewButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 업데이트 결과 컨테이너 */
+.updateResultContainer {
+  margin: 20px 0;
+  padding: 20px;
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 8px;
+}
+
+/* 에러 섹션 */
+.errorsSection {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+}
+
+.errorsList {
+  margin-top: 10px;
+}
+
+.errorItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5c6cb;
+}
+
+.errorItem:last-child {
+  border-bottom: none;
+}
+
+.errorRecordingId {
+  font-weight: 600;
+  color: #721c24;
+}
+
+.errorMessage {
+  color: #721c24;
+  font-size: 13px;
+}
+
+/* ========================================
+   모달 관련 스타일
+   ======================================== */
+
+/* 모달 오버레이 */
+.validationReviewOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* 모달 컨테이너 */
+.validationReviewModal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 모달 헤더 */
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* 검토 통계 */
+.reviewStats {
+  display: flex;
+  gap: 20px;
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 전체 선택 컨트롤 */
+.selectAllControl {
+  padding: 12px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* 검증 결과 목록 */
+.validationResultsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px;
+
+  /* 긴 단어/URL도 강제로 줄바꿈 */
+  word-break: break-word; /* 또는 break-all */
+  overflow-wrap: anywhere; /* 최신 브라우저용 */
+  white-space: pre-wrap; /* 줄바꿈 유지 + 필요시 개행 */
+}
+
+/* 텍스트 편집 섹션 */
+.textEditSection {
+  grid-column: 1 / -1; /* 전체 너비 사용 */
+  padding: 16px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.textComparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.textField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.textFieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.textArea {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.textArea.modified {
+  border-color: #28a745;
+  background: #f8fff9;
+}
+
+.expandButton {
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.expandButton:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.expandButton.expanded {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
+/* 개별 검증 결과 아이템 */
+.validationResultItem {
+  display: grid;
+  grid-template-columns: 40px 1fr 120px 80px 40px; /* 마지막에 확장 버튼 컬럼 추가 */
+  grid-template-rows: auto auto;
+  gap: 12px 16px;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+.validationResultItem.expanded {
+  grid-template-columns: 1fr;
+}
+.validationResultItem:hover {
+  background: #f9fafb;
+}
+
+.validationResultItem.unselected {
+  opacity: 0.9;
+  background: #f8f9fa;
+}
+
+.validationResultItem.userModified {
+  border-left: 4px solid #10b981;
+  background: #ecfdf5;
+}
+
+/* 선택 컨트롤 */
+.selectionControl {
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+/* 레코딩 ID 섹션 */
+.recordingIdSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recordingId {
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.modifiedBadge {
+  font-size: 12px;
+  title: "사용자가 수정함";
+}
+
+/* 승인/반려 컨트롤 */
+.approvalControl {
+  display: flex;
+  justify-content: center;
+}
+
+.approvalToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.approvalToggle.approved {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.approvalToggle.approved:hover {
+  background: #bbf7d0;
+}
+
+.approvalToggle.rejected {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.approvalToggle.rejected:hover {
+  background: #fee2e2;
+}
+
+.approvalToggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approvalIcon {
+  font-size: 14px;
+}
+
+.approvalText {
+  font-size: 12px;
+}
+
+/* 신뢰도 섹션 */
+.confidenceSection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.confidenceLabel {
+  color: #6b7280;
+}
+
+.confidenceValue {
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.confidenceValue.highConfidence {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.confidenceValue.mediumConfidence {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.confidenceValue.lowConfidence {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* 검증 이유 섹션 */
+.reasoningSection {
+  grid-column: 2 / 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reasoningLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.reasoningText {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+  margin: 0;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+/* 모달 액션 */
+.modalActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.cancelButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #4b5563;
+}
+
+.updateButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.updateButton:hover {
+  background: #059669;
+}
+
+.updateButton:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.updateButton.updating {
+  background: #3b82f6;
+}
+
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 도움말 섹션 */
+.helpSection {
+  padding: 16px 24px;
+  background: #f0f9ff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.helpSection h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #1e40af;
+}
+
+.helpSection ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: #1f2937;
+}
+
+.helpSection li {
+  margin-bottom: 4px;
+}
+
+/* 날짜 범위 관련 스타일 */
+.dateRangeGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.dateRangeSeparator {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.datePresetButton {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.datePresetButton:hover {
+  background: #e5e7eb;
+}
+
+/* 레코딩 ID 입력 */
+.recordingIdsInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.recordingIdsInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.loadDataButton {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loadDataButton:hover {
+  background: #138496;
+}
+
+.loadDataButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.loadDataButton.loading {
+  background: #17a2b8;
+}
+
+.reasoningTextArea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.reasoningTextArea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.reasoningTextArea.modified {
+  border-color: #059669;
+  background-color: #f0fdf4;
+}
+
+.reasoningTextArea:disabled {
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
 /* ===== 반응형 디자인 ===== */
 @media (max-width: 768px) {
   .container {

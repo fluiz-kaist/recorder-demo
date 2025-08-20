@@ -1,6 +1,7 @@
 // utils/timeCheck.ts
 import { getEnv } from "@/utils/envConfig";
 const { isDev, isPreview, isProduction } = getEnv();
+
 export const isRecordingAvailable = (): boolean => {
   // timeCheck 기능이 명시적으로 비활성화된 경우 항상 true 반환
   if (process.env.NEXT_PUBLIC_ENABLE_TIME_CHECK === "false") {
@@ -12,7 +13,7 @@ export const isRecordingAvailable = (): boolean => {
     (isDev || isPreview) &&
     process.env.NEXT_PUBLIC_TEST_TIME_RESTRICTION === "true"
   ) {
-    return checkWorkingHours();
+    return checkTimeRestriction();
   }
 
   // 로컬 환경에서는 기본적으로 항상 true 반환
@@ -21,13 +22,34 @@ export const isRecordingAvailable = (): boolean => {
   }
 
   // 운영 환경에서는 시간 체크
-  return checkWorkingHours();
+  return checkTimeRestriction();
 };
 
-const checkWorkingHours = (): boolean => {
+const checkTimeRestriction = (): boolean => {
+  // 한국 시간 기준으로 현재 시간 가져오기
   const now = new Date();
-  const currentDay = now.getDay(); // 0: 일요일, 1: 월요일, ..., 6: 토요일
-  const currentHour = now.getHours();
+  const koreaTime = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+
+  // 제한 해제 시점: 2025년 8월 20일 오후 1시 (13:00)
+  const restrictionEndTime = new Date("2025-08-20T13:00:00+09:00");
+
+  // 현재 시간이 제한 해제 시점 이후라면 항상 true
+  if (koreaTime >= restrictionEndTime) {
+    return true;
+  }
+
+  // 제한 시점 이전이라면 기존 평일 정오~오후6시 로직 적용
+  return checkWorkingHours(koreaTime);
+};
+
+const checkWorkingHours = (time: Date = new Date()): boolean => {
+  const koreaTime = new Date(
+    time.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+  const currentDay = koreaTime.getDay(); // 0: 일요일, 1: 월요일, ..., 6: 토요일
+  const currentHour = koreaTime.getHours();
 
   // 평일 체크 (월요일=1 ~ 금요일=5)
   const isWeekday = currentDay >= 1 && currentDay <= 5;
@@ -54,20 +76,34 @@ export const getRecordingStatusMessage = (): string => {
 };
 
 const getProductionMessage = (): string => {
+  // 한국 시간 기준으로 현재 시간 가져오기
   const now = new Date();
-  const currentDay = now.getDay();
-  const currentHour = now.getHours();
+  const koreaTime = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+
+  // 제한 해제 시점: 2025년 8월 20일 오후 1시 (13:00)
+  const restrictionEndTime = new Date("2025-08-20T13:00:00+09:00");
+
+  // 현재 시간이 제한 해제 시점 이후라면
+  if (koreaTime >= restrictionEndTime) {
+    return "음성 녹음 작업이 가능합니다.";
+  }
+
+  // 제한 시점 이전이라면 기존 로직 적용
+  const currentDay = koreaTime.getDay();
+  const currentHour = koreaTime.getHours();
 
   if (currentDay === 0 || currentDay === 6) {
-    return "음성 녹음 작업은 평일에만 가능합니다.";
+    return "음성 녹음 작업은 평일에만 가능합니다. (2025년 8월 20일 오후 1시 이후부터는 언제든지 가능)";
   }
 
   if (currentHour < 12) {
-    return "음성 녹음 작업은 평일 오후 12시부터 6시 사이에 할 수 있습니다.";
+    return "음성 녹음 작업은 평일 오후 12시부터 6시 사이에 할 수 있습니다. (2025년 8월 20일 오후 1시 이후부터는 언제든지 가능)";
   }
 
   if (currentHour >= 18) {
-    return "음성 녹음 작업은 평일 오후 12시부터 6시 사이에 할 수 있습니다.";
+    return "음성 녹음 작업은 평일 오후 12시부터 6시 사이에 할 수 있습니다. (2025년 8월 20일 오후 1시 이후부터는 언제든지 가능)";
   }
 
   return "음성 녹음 작업이 가능한 시간입니다.";
@@ -80,12 +116,19 @@ export const getDevelopmentInfo = () => {
   }
 
   const now = new Date();
+  const koreaTime = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+  const restrictionEndTime = new Date("2025-08-20T13:00:00+09:00");
+
   return {
-    currentTime: now.toLocaleString("ko-KR"),
-    currentDay: now.getDay(),
-    currentHour: now.getHours(),
-    isWeekday: now.getDay() >= 1 && now.getDay() <= 5,
-    isWorkingHours: now.getHours() >= 12 && now.getHours() < 18,
+    currentTime: koreaTime.toLocaleString("ko-KR"),
+    currentDay: koreaTime.getDay(),
+    currentHour: koreaTime.getHours(),
+    isWeekday: koreaTime.getDay() >= 1 && koreaTime.getDay() <= 5,
+    isWorkingHours: koreaTime.getHours() >= 12 && koreaTime.getHours() < 18,
+    restrictionEndTime: restrictionEndTime.toLocaleString("ko-KR"),
+    isAfterRestrictionEnd: koreaTime >= restrictionEndTime,
     nodeEnv: process.env.NODE_ENV,
     timeCheckDisabled: process.env.NEXT_PUBLIC_ENABLE_TIME_CHECK === "false",
   };

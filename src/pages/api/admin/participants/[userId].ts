@@ -11,7 +11,7 @@ import {
   RoundSummary,
   UserStatistics,
 } from "@/types/user";
-
+import { getDisplaySetId } from "@/utils/converter";
 export interface ParticipantDetail {
   id: string;
   profile: UserProfile;
@@ -36,7 +36,7 @@ export interface ParticipantDetail {
   // 세트별 상세 진행률
   setDetails: Array<{
     setNumber: number;
-    setId: number;
+    setId: number; // formalSetId 우선, 없으면 setId 사용한 값
     status: string;
     totalTasks: number;
     completedTasks: number;
@@ -143,7 +143,7 @@ export default async function handler(
     // 세트별 상세 진행률 계산
     const setDetails = roundsData.map((round: any) => ({
       setNumber: round.roundNumber,
-      setId: round.formalSetId,
+      setId: getDisplaySetId(round),
       status: round.status,
       totalTasks: round.progress.totalTasks,
       completedTasks: round.progress.completedTasks,

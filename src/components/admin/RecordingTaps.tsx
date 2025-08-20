@@ -132,6 +132,7 @@ const AdminRecordingsTab = () => {
     search: "",
     taskType: "" as "" | "situational" | "formal",
     domain: "",
+    searchField: "userName",
   });
 
   // 오디오 재생 상태
@@ -147,6 +148,7 @@ const AdminRecordingsTab = () => {
     search: appliedFilters.search || undefined,
     taskType: appliedFilters.taskType || undefined,
     domain: appliedFilters.domain || undefined,
+    searchField: appliedFilters.searchField || undefined, // 이 줄 추가
   });
 
   const recordingsData = recordingsQuery.data;
@@ -172,6 +174,8 @@ const AdminRecordingsTab = () => {
       setTimeout(sendData, 1000); // 1초 후
     }
   };
+
+  
 
   //  페이지 크기가 변경되면 첫 페이지로 리셋
   useEffect(() => {

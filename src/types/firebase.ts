@@ -357,10 +357,12 @@ export interface FormalScript {
 }
 
 // 정형발화 세트 맵핑 타입
-export type FormalScriptSets = {
-  [taskKey: string]: {
-    [setId: string]: FormalScript[];
-  };
-};
+export interface FormalScriptSets {
+  [taskKey: string]: FormalScript[]; // 기존: [taskKey: string]: { [setId: string]: FormalScript[] }
+}
+export interface SituationalScriptSets {
+  [setId: string]: SituationalScript[];
+}
+
 // 스크립트 원본 데이터 유니온 타입
 export type ScriptData = FormalScript | SituationalScript;

@@ -244,7 +244,8 @@ export const useUploadAudioMutation = (): UseMutationResult<
         /[^a-zA-Z0-9]/g,
         "_"
       )}_${Date.now()}`;
-      const fileName = `${recordingId}.${audioFormat}`;
+      const typePrefix = taskType === "formal" ? "f" : "s";
+      const fileName = `${typePrefix}_${recordingId}.${audioFormat}`;
       const enhancedFileName = `${recordingId}_enhanced.${audioFormat}`;
 
       // 2. 품질 분석

@@ -6,3 +6,11 @@ export const getEnv = () => {
     isDev: env === "development",
   };
 };
+
+export const isDevelopment = (): boolean => {
+  return getEnv().isDev;
+};
+
+export const canAccessProductionData = (): boolean => {
+  return getEnv().isDev && process.env.ENABLE_PRODUCTION_COPY === "true";
+};

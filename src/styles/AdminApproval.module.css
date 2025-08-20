@@ -1,0 +1,177 @@
+/* AdminApproval.module.css */
+
+/* 개별 승인 버튼 */
+.approvalButton {
+  padding: 2px 5px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  border: none;
+  background-color: #16a34a;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.approvalButton:hover {
+  background-color: #15803d;
+}
+
+.approvalButton.loading {
+  background-color: #9ca3af;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.approvalButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 일괄 승인 컨테이너 */
+.bulkApprovalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 일괄 선택 헤더 */
+.bulkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.selectAllSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selectAllText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+}
+
+/* 일괄 승인 버튼 */
+.bulkApprovalButton {
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  border: none;
+  background-color: #3b82f6;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bulkApprovalButton:hover {
+  background-color: #2563eb;
+}
+
+.bulkApprovalButton.disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* 사용자 목록 */
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: white;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.userName {
+  font-weight: 500;
+  color: #111827;
+}
+
+.roundInfo {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.approved {
+  background-color: #10b981;
+  color: white;
+}
+
+.approvedItem {
+  opacity: 0.7;
+  background-color: #f0f9ff;
+}
+
+.approvedBadge {
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.approvalStatus {
+  padding: 10px;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+/* 반응형 */
+@media (max-width: 768px) {
+  .bulkHeader {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .userItem {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .userInfo {
+    justify-content: flex-start;
+  }
+}
+/* 빈 상태 */
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  font-size: 14px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}

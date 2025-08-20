@@ -1,5 +1,5 @@
 // components/script/ScriptContainer.tsx - 작업 추적 통합 버전
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/ScriptRecording.module.css";
 import VoiceRecorder from "@/components/voiceRecorder";
@@ -16,7 +16,7 @@ import { getNextServiceSlug, ServiceName } from "@/lib/serviceMapping";
 import { User, ParticipationRound, Task, TaskStatus } from "@/types/user";
 import { useTaskTracking } from "@/hooks/useTaskTracking";
 import CompletionAllTasksBtn from "@/components/CompletionAllTasksBtn";
-
+import { getUniqueKey } from "@/utils/createUniqKeyForTaskKey";
 export interface MergedScript {
   scriptType: "situational" | "formal";
   situation?: SituationalScript;
@@ -37,8 +37,9 @@ interface ScriptContainerProps {
 export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   scripts,
 }) => {
+  console.log("컨테이너에서 받은 스크립트", scripts);
   const router = useRouter();
-  const [scriptIndex, setScriptIndex] = useState(0);
+  const [scriptIndex, setScriptIndex] = useState<number | undefined>(undefined);
   const [showRecorder, setShowRecorder] = useState(false);
   const [reRecordingScripts, setReRecordingScripts] = useState<Set<string>>(
     new Set()
@@ -78,7 +79,98 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return list;
   }, [scripts]);
 
-  const current = flatScriptList[scriptIndex];
+  // 통합 로딩 상태
+  const isLoading =
+    isUserLoading || isRoundLoading || scriptIndex === undefined;
+  const isScriptCompleted = useCallback(
+    (script: AnyScript, type: ScriptType): boolean => {
+      const uniqueKey = getUniqueKey(script, type);
+      const scriptKey = `${type}-${uniqueKey}`;
+
+      console.group(`isScriptCompleted Debug: ${scriptKey}`);
+      console.log("Unique Key:", uniqueKey);
+      console.log("Type:", type);
+
+      console.log("검사하는 script", script);
+
+      // 재녹음 모드 체크
+      if (reRecordingScripts.has(scriptKey)) {
+        console.log("재녹음 모드 감지됨 → false 반환");
+        console.groupEnd();
+        return false;
+      }
+
+      if (!currentRound?.tasks) {
+        console.log("currentRound.tasks 없음 → false 반환");
+        console.groupEnd();
+        return false;
+      }
+
+      const tasks =
+        type === ScriptType.SITUATIONAL
+          ? currentRound.tasks.situational || []
+          : currentRound.tasks.formal || [];
+
+      console.log("Tasks 개수:", tasks.length);
+
+      // uniqueKey로 매칭
+      const matchedTask = tasks.find(
+        (task) => String(task.taskKey) === uniqueKey
+      );
+
+      if (!matchedTask) {
+        console.log("매칭되는 task 없음 → false 반환");
+        console.groupEnd();
+        return false;
+      }
+
+      console.log("매칭된 Task:", matchedTask);
+
+      const completedStatuses = [
+        TaskStatus.COMPLETED,
+        TaskStatus.SUBMITTED,
+        TaskStatus.APPROVED,
+      ];
+
+      const result = completedStatuses.includes(matchedTask.status);
+      console.log("완료 여부:", result);
+      console.groupEnd();
+
+      return result;
+    },
+    [currentRound?.tasks, reRecordingScripts]
+  );
+
+  // 🎯 초기 scriptIndex 설정 - 완료되지 않은 첫 번째 스크립트로 이동
+  useEffect(() => {
+    if (
+      scriptIndex !== undefined ||
+      !currentRound?.tasks ||
+      flatScriptList.length === 0
+    ) {
+      return;
+    }
+
+    // 완료되지 않은 첫 번째 스크립트 찾기
+    let targetIndex = 0;
+    for (let i = 0; i < flatScriptList.length; i++) {
+      const { script, type } = flatScriptList[i];
+      if (!isScriptCompleted(script, type)) {
+        targetIndex = i;
+        break;
+      }
+      // 모든 스크립트가 완료된 경우 마지막 스크립트로
+      if (i === flatScriptList.length - 1) {
+        targetIndex = i;
+      }
+    }
+
+    console.log("🎯 자동 스킵: 시작 인덱스 설정", targetIndex);
+    setScriptIndex(targetIndex);
+  }, [scriptIndex, currentRound?.tasks, flatScriptList, isScriptCompleted]);
+
+  const current =
+    scriptIndex !== undefined ? flatScriptList[scriptIndex] : undefined;
 
   //  스크립트 변경 시 추적 시작
   // 🎯 스크립트 변경 시 추적 시작 - 디바운스 적용
@@ -92,29 +184,21 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
       return;
     }
 
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
+    const uniqueKey = getUniqueKey(current.script, current.type);
 
-    if (taskKey) {
-      // 렌더링 직후가 아니라 약간의 지연 후 추적 시작
+    if (uniqueKey) {
       const timer = setTimeout(() => {
         console.log("🎯 새 스크립트 추적 시작:", {
-          taskKey,
+          uniqueKey,
           type: current.type,
           index: scriptIndex,
         });
 
-        startTracking(taskKey, current.type);
-      }, 100); // 100ms 지연
+        startTracking(uniqueKey, current.type);
+      }, 100);
 
       return () => {
         clearTimeout(timer);
-        // 컴포넌트 언마운트 시에만 추적 종료
       };
     }
   }, [
@@ -125,7 +209,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     fullUser?.profile,
     startTracking,
   ]);
-
   // 페이지 이탈 시 미제출 데이터 처리
   // useEffect(() => {
   //   const handleRouteChange = () => {
@@ -140,47 +223,6 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   //     router.events.off("routeChangeStart", handleRouteChange);
   //   };
   // }, [router.events, endTracking, submitPendingData]);
-
-  // 통합 로딩 상태
-  const isLoading = isUserLoading || isRoundLoading;
-
-  const isScriptCompleted = (script: AnyScript, type: ScriptType): boolean => {
-    // 재녹음 모드 체크
-    const taskKey = String(
-      "task_key" in script && script.task_key
-        ? script.task_key
-        : "id" in script && script.id
-        ? script.id
-        : ""
-    );
-
-    const scriptKey = `${type}-${taskKey}`;
-    if (reRecordingScripts.has(scriptKey)) {
-      return false;
-    }
-
-    if (!currentRound?.tasks) {
-      return false;
-    }
-
-    const tasks =
-      type === ScriptType.SITUATIONAL
-        ? currentRound.tasks.situational || []
-        : currentRound.tasks.formal || [];
-
-    const matchedTask = tasks.find((task) => String(task.taskKey) === taskKey);
-
-    if (!matchedTask) {
-      return false;
-    }
-
-    const completedStatuses = [
-      TaskStatus.COMPLETED,
-      TaskStatus.SUBMITTED,
-      TaskStatus.APPROVED,
-    ];
-    return completedStatuses.includes(matchedTask.status);
-  };
 
   const getProgressPercentage = (): number => {
     if (flatScriptList.length === 0) {
@@ -207,7 +249,8 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingText}>
-          현재 진행 중인 라운드가 없습니다.
+          현재 작업 중인 회차가 없습니다. (작업 종료하기를 눌렀을 때 잠시 보일
+          수 있습니다)
         </div>
       </div>
     );
@@ -223,31 +266,27 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
     );
   }
 
+  if (!current) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingText}>
+          할당받은 과제를 초기화 하는 중...
+        </div>
+      </div>
+    );
+  }
+
   const completed = isScriptCompleted(current.script, current.type);
 
   const handleStartReRecording = () => {
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
-
-    const scriptKey = `${current.type}-${taskKey}`;
+    const uniqueKey = getUniqueKey(current.script, current.type);
+    const scriptKey = `${current.type}-${uniqueKey}`;
     setReRecordingScripts((prev) => new Set(prev.add(scriptKey)));
   };
 
   const handleRecordingComplete = () => {
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
-
-    const scriptKey = `${current.type}-${taskKey}`;
+    const uniqueKey = getUniqueKey(current.script, current.type);
+    const scriptKey = `${current.type}-${uniqueKey}`;
     setReRecordingScripts((prev) => {
       const newSet = new Set(prev);
       newSet.delete(scriptKey);
@@ -257,15 +296,8 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
   };
 
   const isInReRecordingMode = (): boolean => {
-    const taskKey = String(
-      "task_key" in current.script && current.script.task_key
-        ? current.script.task_key
-        : "id" in current.script && current.script.id
-        ? current.script.id
-        : ""
-    );
-
-    const scriptKey = `${current.type}-${taskKey}`;
+    const uniqueKey = getUniqueKey(current.script, current.type);
+    const scriptKey = `${current.type}-${uniqueKey}`;
     return reRecordingScripts.has(scriptKey);
   };
 
@@ -285,12 +317,12 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
   // 🎯 다음 스크립트로 이동 (추적 종료 및 새 추적 시작)
   const handleNextScript = () => {
-    if (scriptIndex < flatScriptList.length - 1) {
+    if (scriptIndex !== undefined && scriptIndex < flatScriptList.length - 1) {
       // 현재 추적 종료
       endTracking("next_button");
 
       // 다음 스크립트로 이동
-      setScriptIndex((prev) => prev + 1);
+      setScriptIndex((prev) => (prev !== undefined ? prev + 1 : 1));
       setShowRecorder(false);
       scrollToTop();
 
@@ -303,12 +335,12 @@ export const ScriptContainer: React.FC<ScriptContainerProps> = ({
 
   // 🎯 이전 스크립트로 이동
   const handlePrevScript = () => {
-    if (scriptIndex > 0) {
+    if (scriptIndex !== undefined && scriptIndex > 0) {
       // 현재 추적 종료
       endTracking("prev_button");
 
       // 이전 스크립트로 이동
-      setScriptIndex((prev) => prev - 1);
+      setScriptIndex((prev) => (prev !== undefined ? prev - 1 : 0));
       setShowRecorder(false);
       scrollToTop();
 

@@ -22,11 +22,12 @@ interface ParticipantsOverviewData {
     totalApplicants: number; // 참가 신청자 (화이트리스트)
     totalRegisteredUsers: number; // 가입 완료자 (users)
     activeParticipants: number; // 작업 참여자 (실제 작업 시작한 사람)
+    actualCompletedTasks: number; // 실제 작업 완료자 (새로 추가)
 
     // 기존 통계
     totalParticipants: number; // = totalRegisteredUsers와 동일
     startedParticipants: number;
-    completedParticipants: number;
+    completedParticipants: number; // 승인 대기자로 의미 변경
     activeInLast7Days: number;
   };
 }
@@ -193,28 +194,28 @@ export const useAdminProgressOverview = (): UseQueryResult<
 /**
  * 특정 사용자 진행 상황 상세 조회 훅
  */
-export const useAdminUserProgress = (
-  userId: string
-): UseQueryResult<ParticipantDetail, Error> => {
-  return useQuery({
-    queryKey: ["adminUserProgress", userId],
-    queryFn: async (): Promise<ParticipantDetail> => {
-      const response = await fetch(`/api/admin/progress/${userId}`);
-      const data = await response.json();
+// export const useAdminUserProgress = (
+//   userId: string
+// ): UseQueryResult<ParticipantDetail, Error> => {
+//   return useQuery({
+//     queryKey: ["adminUserProgress", userId],
+//     queryFn: async (): Promise<ParticipantDetail> => {
+//       const response = await fetch(`/api/admin/progress/${userId}`);
+//       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "사용자 진행 상황 조회에 실패했습니다."
-        );
-      }
+//       if (!response.ok) {
+//         throw new Error(
+//           data.message || "사용자 진행 상황 조회에 실패했습니다."
+//         );
+//       }
 
-      return data.data;
-    },
-    enabled: !!userId,
-    staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
-    retry: 1,
-  });
-};
+//       return data.data;
+//     },
+//     enabled: !!userId,
+//     staleTime: 2 * 60 * 1000, // 2분간 캐시 유지
+//     retry: 1,
+//   });
+// };
 
 // ===== 녹음 데이터 관리 훅 =====
 
@@ -233,6 +234,7 @@ interface UseAdminRecordingsParams {
   search?: string;
   targetUserId?: string; //검색대상유저아이디
   targetUserName?: string;
+  searchField?: string;
 }
 
 export const useAdminRecordings = (
@@ -267,6 +269,8 @@ export const useAdminRecordings = (
       if (quality) queryParams.append("quality", quality);
       if (search) queryParams.append("search", search);
 
+      console.log("여기 검색 파람?", queryParams);
+
       const response = await fetch(
         `/api/admin/recordings?${queryParams.toString()}`
       );
@@ -280,7 +284,7 @@ export const useAdminRecordings = (
 
       return data.data;
     },
-    staleTime: 3 * 60 * 1000, // 3분간 캐시 유지
+    // staleTime: search ? 0 : 3 * 60 * 1000, // 검색 시에는 캐시 무시
     retry: 1,
   });
 };
@@ -471,14 +475,16 @@ export const getParticipationStageColor = (
   }
 };
 
-/**
- * 참여 전환율 계산 함수
- */
 export const calculateConversionRates = (
   statistics: ParticipantsOverviewData["statistics"]
 ) => {
-  const { totalApplicants, totalRegisteredUsers, activeParticipants } =
-    statistics;
+  const {
+    totalApplicants,
+    totalRegisteredUsers,
+    activeParticipants,
+    actualCompletedTasks,
+    completedParticipants,
+  } = statistics;
 
   return {
     // 신청자 → 가입자 전환율
@@ -491,6 +497,20 @@ export const calculateConversionRates = (
     registeredToActive:
       totalRegisteredUsers > 0
         ? Math.round((activeParticipants / totalRegisteredUsers) * 100)
+        : 0,
+
+    // 활동자 → 작업완료자 전환율 (새로 추가)
+    activeToTaskCompleted:
+      activeParticipants > 0
+        ? Math.round(((actualCompletedTasks || 0) / activeParticipants) * 100)
+        : 0,
+
+    // 작업완료자 → 승인대기자 전환율 (새로 추가)
+    taskCompletedToApprovalWaiting:
+      (actualCompletedTasks || 0) > 0
+        ? Math.round(
+            (completedParticipants / (actualCompletedTasks || 1)) * 100
+          )
         : 0,
 
     // 신청자 → 활동자 전환율 (전체)
