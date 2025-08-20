@@ -82,15 +82,6 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
   }
 
   if (isError) return <div>에러 발생</div>;
-  if (!currentRound) {
-    console.log("여긴가?", currentRound);
-    return (
-      <>
-        <div>현재 진행 중인 라운드가 없습니다</div>
-        <ReAssignScript />
-      </>
-    );
-  }
 
   // allScripts가 없거나 빈 경우 (localStorage에 데이터가 없거나 일치하지 않는 경우)
   if (
@@ -99,7 +90,24 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
   ) {
     return (
       <>
-        <div>현재 진행 중인 라운드가 없습니다</div>
+        <div>
+          아래 버튼을 눌러주세요. 버튼을 누른 이후에도 화면에 반응이 없다면,
+          새로고침 혹은 상단의 작업 종료하기를 누르고 다시 로그인을 해주시기
+          바랍니다.
+        </div>
+        <ReAssignScript />
+      </>
+    );
+  }
+
+  if (!currentRound) {
+    console.log("여긴가?", currentRound);
+    return (
+      <>
+        <div>
+          현재 진행 중인 작업이 없습니다(이 문구는 로그아웃 중에 잠시 보일 수
+          있습니다. 그 경우 잠시 기다려주세요.)
+        </div>
         <ReAssignScript />
       </>
     );
