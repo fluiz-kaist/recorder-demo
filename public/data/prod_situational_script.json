@@ -154,7 +154,7 @@
       "id": 31
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "공과금 납부",
       "task_key": "은행-은행-1",
@@ -163,7 +163,7 @@
       "id": 34
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "송금하기",
       "task_key": "은행-은행-2",
@@ -172,7 +172,7 @@
       "id": 35
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "송금하기",
       "task_key": "은행-은행-3",
@@ -181,7 +181,7 @@
       "id": 36
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "계좌 잔액 조회",
       "task_key": "은행-은행-4",
@@ -190,7 +190,7 @@
       "id": 37
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "최근 거래 내역 조회",
       "task_key": "은행-은행-5",
@@ -669,7 +669,7 @@
       "id": 33
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "금리 확인",
       "task_key": "은행-은행-6",
@@ -678,7 +678,7 @@
       "id": 39
     },
     {
-      "service_name": "금융",
+      "service_name": "은행",
       "service_target": "은행",
       "task_name": "QR결제",
       "task_key": "은행-은행-7",
