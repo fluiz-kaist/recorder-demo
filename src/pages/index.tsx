@@ -533,6 +533,7 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
+            <p>⚠️현재 사이트 점검 중입니다. 오후 3시 이후부터 작업이 가능합니다.</p>
             {/* <p>
               {isAvailable
                 ? "지금 음성 녹음에 참여하실 수 있습니다."

@@ -48,7 +48,9 @@ export const ScriptRenderer: React.FC<ScriptRendererProps> = ({
 
         {/* 태스크 이름 */}
         {/* <h2 className={styles.taskName}>{script.task_name}</h2> */}
-
+        <div className={styles.formalInstruction}>
+          아래 문장을 따라 읽는 대신, 상황에 맞게 말씀해 주세요.
+        </div>
         {/* 메인 콘텐츠 */}
         <div
           className={`${styles.mainContent} ${

@@ -37,8 +37,8 @@ const checkTimeRestriction = (): boolean => {
     now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
   );
 
-  // 제한 해제 시점: 2025년 8월 20일 오후 1시 (13:00)
-  const restrictionEndTime = new Date("2025-08-20T13:00:00+09:00");
+  // 제한 해제 시점: 2025년 8월 21일 오후 3시 (13:00)
+  const restrictionEndTime = new Date("2025-08-21T15:00:00+09:00");
 
   // 현재 시간이 제한 해제 시점 이후라면 항상 true
   if (koreaTime >= restrictionEndTime) {
