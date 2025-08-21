@@ -129,6 +129,8 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     useState<PendingAuthData | null>(null);
   const [isConsentExpanded, setIsConsentExpanded] = useState<boolean>(false);
   const isAvailable = isRecordingAvailable(userInput.name);
+  const [redirectTimeout, setRedirectTimeout] = useState(false);
+
   // Temporarily hardcoded for the test period (4 PM to 10 PM)
   // const isAvailable = false;
 
@@ -158,6 +160,22 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     setUserInput((prev) => ({ ...prev, ...updates }));
     setError("");
   }, []);
+
+  // 3. 로딩 메시지 함수 수정 (기존 부분 교체)
+  const getLoadingMessage = () => {
+    if (verifyUserMutation.isPending) {
+      return "입력한 정보를 확인하고 있습니다...";
+    }
+
+    if (isRedirecting) {
+      if (redirectTimeout) {
+        return "문제가 발생하였습니다. 상단의 작업 종료하기를 눌러 로그아웃한 후 다시 로그인해주세요.";
+      }
+      return "페이지를 이동하고 있습니다...";
+    }
+
+    return "인증 상태를 확인하고 있습니다...";
+  };
 
   /**
    *  핵심 함수: Firebase 인증 플로우 완료
@@ -468,6 +486,27 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
     completeAuthFlow,
   ]);
 
+  // 방법 3: 더 빠른 테스트를 위해 타임아웃 시간 단축
+  useEffect(() => {
+    if (!isRedirecting) {
+      setRedirectTimeout(false);
+      return;
+    }
+
+    // 🧪 테스트용: 개발환경에서는 10초로 단축
+    // const timeoutDuration = process.env.NODE_ENV === "development" ? 50 : 60000;
+    const timeoutDuration = 60000;
+
+    // console.log("timeoutDuration?", timeoutDuration);
+
+    const timer = setTimeout(() => {
+      setRedirectTimeout(true);
+      // console.log("🧪 타임아웃 상태 활성화");
+    }, timeoutDuration);
+
+    return () => clearTimeout(timer);
+  }, [isRedirecting]);
+
   // =====================================
   // ========== UI states =============
   // =====================================
@@ -505,13 +544,30 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
         <div className={styles.container}>
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
-            <p>
-              {verifyUserMutation.isPending
-                ? "입력한 정보를 확인하고 있습니다..."
-                : isRedirecting
-                ? "페이지를 이동하고 있습니다..."
-                : "인증 상태를 확인하고 있습니다..."}
-            </p>
+            <p>{getLoadingMessage()}</p>
+
+            {/* 1분 후 추가 안내 및 재시도 버튼 */}
+            {redirectTimeout && (
+              <div style={{ marginTop: "20px", textAlign: "center" }}>
+                <button
+                  onClick={() => {
+                    // 페이지 새로고침
+                    window.location.reload();
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  페이지 새로고침
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </>
@@ -533,7 +589,9 @@ export default function ConsentPage({ consentText }: ConsentPageProps) {
           <div className={styles.infoSection}>
             <h2>신청자 확인</h2>
             <p>신청자 확인을 위해 이름과 주민번호 앞자리를 입력해주세요.</p>
-            <p>⚠️현재 사이트 점검 중입니다. 오후 3시 이후부터 작업이 가능합니다.</p>
+            <p>
+              ⚠️현재 사이트 점검 중입니다. 오후 3시 이후부터 작업이 가능합니다.
+            </p>
             {/* <p>
               {isAvailable
                 ? "지금 음성 녹음에 참여하실 수 있습니다."
