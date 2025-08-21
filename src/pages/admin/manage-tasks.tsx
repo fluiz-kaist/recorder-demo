@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 
 interface Task {
   id: string;
-  setIndex: number;
+  roundNumber: number; // ✅ setIndex → roundNumber 변경
   taskType: "situational" | "formal";
   taskIndex: number;
   taskKey: string;
@@ -146,7 +146,10 @@ const AdminTaskManager = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
+  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(
+    new Set([1])
+  ); // ✅ expandedSets → expandedRounds, 0 → 1
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   const goBack = () => {
@@ -173,7 +176,7 @@ const AdminTaskManager = () => {
 
       if (data.success) {
         setTaskData(data.data);
-        setExpandedSets(new Set([0])); // 첫 번째 세트만 펼쳐두기
+        setExpandedRounds(new Set([1])); // ✅ 첫 번째 회차만 펼쳐두기
         setSelectedTasks(new Set()); // 선택 초기화
       } else {
         setError(data.message || "태스크를 불러올 수 없습니다");
@@ -204,7 +207,7 @@ const AdminTaskManager = () => {
           userId: taskData.userId,
           updates: [
             {
-              setIndex: task.setIndex,
+              roundNumber: task.roundNumber, // ✅ setIndex → roundNumber
               taskType: task.taskType,
               taskIndex: task.taskIndex,
               status: newStatus,
@@ -237,7 +240,7 @@ const AdminTaskManager = () => {
       const updates = Array.from(selectedTasks).map((taskId) => {
         const task = taskData.tasks.find((t) => t.id === taskId);
         return {
-          setIndex: task!.setIndex,
+          roundNumber: task!.roundNumber, // ✅ setIndex → roundNumber
           taskType: task!.taskType,
           taskIndex: task!.taskIndex,
           status: newStatus,
@@ -298,13 +301,14 @@ const AdminTaskManager = () => {
   };
 
   // 선택한 태스크만 완료 처리하는 함수 (completeAllTasks 함수 아래에 추가)
-  const completeSelectedTasks = async (completeAllInSet = false) => {
+  const completeSelectedTasks = async (completeAllInRound = false) => {
+    // ✅ completeAllInSet → completeAllInRound
     if (!taskData || selectedTasks.size === 0) return;
 
     if (
       !confirm(
-        completeAllInSet
-          ? `선택한 태스크가 포함된 세트 전체를 완료하시겠습니까? (선택: ${selectedTasks.size}개)`
+        completeAllInRound
+          ? `선택한 태스크가 포함된 회차 전체를 완료하시겠습니까? (선택: ${selectedTasks.size}개)` // ✅ 세트 → 회차
           : `선택한 ${selectedTasks.size}개의 태스크만 완료하시겠습니까?`
       )
     )
@@ -319,7 +323,7 @@ const AdminTaskManager = () => {
         if (!task) throw new Error(`태스크를 찾을 수 없습니다: ${taskId}`);
 
         return {
-          setIndex: task.setIndex,
+          roundNumber: task.roundNumber, // ✅ setIndex → roundNumber
           taskType: task.taskType,
           taskIndex: task.taskIndex,
           taskKey: task.taskKey,
@@ -332,7 +336,7 @@ const AdminTaskManager = () => {
         body: JSON.stringify({
           userId: taskData.userId,
           selectedTasks: selectedTasksArray,
-          completeAllInSet,
+          completeAllInRound, // ✅ completeAllInSet → completeAllInRound
         }),
       });
 
@@ -341,8 +345,9 @@ const AdminTaskManager = () => {
       if (data.success) {
         setSelectedTasks(new Set());
         await fetchTasks();
+        // ✅ 응답 구조 변경에 맞춤
         alert(
-          `완료 처리 성공!\n완료된 태스크: ${data.data.completedTasks.length}개\n전체 진행률: ${data.data.overallProgress}%`
+          `완료 처리 성공!\n완료된 태스크: ${data.data.completedTasks.length}개\n현재 회차 진행률: ${data.data.currentRoundProgress.completedPercentage}%`
         );
       } else {
         setError(data.message || "선택 태스크 완료 처리에 실패했습니다");
@@ -354,45 +359,48 @@ const AdminTaskManager = () => {
       setLoading(false);
     }
   };
-  // 특정 세트의 특정 개수만큼 랜덤하게 완료하는 함수
+
+  // 특정 회차의 특정 개수만큼 랜덤하게 완료하는 함수
   const completeRandomTasks = async (
-    setIndex: number,
+    roundNumber: number, // ✅ setIndex → roundNumber
     count: number,
     taskType?: "situational" | "formal"
   ) => {
     if (!taskData) return;
 
-    const setTasks = taskData.tasks.filter((task) => {
-      const matchesSet = task.setIndex === setIndex;
+    const roundTasks = taskData.tasks.filter((task) => {
+      // ✅ setTasks → roundTasks
+      const matchesRound = task.roundNumber === roundNumber; // ✅ setIndex → roundNumber
       const matchesType = !taskType || task.taskType === taskType;
       const notCompleted = task.status !== "completed";
-      return matchesSet && matchesType && notCompleted;
+      return matchesRound && matchesType && notCompleted;
     });
 
-    if (setTasks.length === 0) {
+    if (roundTasks.length === 0) {
       alert("완료할 수 있는 태스크가 없습니다.");
       return;
     }
 
-    const actualCount = Math.min(count, setTasks.length);
+    const actualCount = Math.min(count, roundTasks.length);
 
     if (
       !confirm(
-        `세트 ${setIndex + 1}에서 ${
+        `회차 ${roundNumber}에서 ${
+          // ✅ 세트 → 회차
           taskType ? taskType + " " : ""
         }태스크 ${actualCount}개를 랜덤하게 완료하시겠습니까?`
       )
     )
       return;
 
-    const shuffled = [...setTasks].sort(() => Math.random() - 0.5);
+    const shuffled = [...roundTasks].sort(() => Math.random() - 0.5);
     const randomTasks = shuffled.slice(0, actualCount);
 
     setLoading(true);
 
     try {
       const selectedTasksArray = randomTasks.map((task) => ({
-        setIndex: task.setIndex,
+        roundNumber: task.roundNumber, // ✅ setIndex → roundNumber
         taskType: task.taskType,
         taskIndex: task.taskIndex,
         taskKey: task.taskKey,
@@ -404,7 +412,7 @@ const AdminTaskManager = () => {
         body: JSON.stringify({
           userId: taskData.userId,
           selectedTasks: selectedTasksArray,
-          completeAllInSet: false,
+          completeAllInRound: false, // ✅ completeAllInSet → completeAllInRound
         }),
       });
 
@@ -427,21 +435,23 @@ const AdminTaskManager = () => {
 
   // 프리셋 완료 패턴들
   const presetPatterns = {
-    // 첫 번째 세트 절반만
-    halfFirstSet: () => {
+    // 첫 번째 회차 절반만
+    halfFirstRound: () => {
+      // ✅ halfFirstSet → halfFirstRound
       if (!taskData) return;
-      const firstSetTasks = taskData.tasks.filter(
-        (t) => t.setIndex === 0 && t.status !== "completed"
+      const firstRoundTasks = taskData.tasks.filter(
+        // ✅ setTasks → roundTasks
+        (t) => t.roundNumber === 1 && t.status !== "completed" // ✅ setIndex → roundNumber, 0 → 1
       );
-      const halfCount = Math.ceil(firstSetTasks.length / 2);
-      completeRandomTasks(0, halfCount);
+      const halfCount = Math.ceil(firstRoundTasks.length / 2);
+      completeRandomTasks(1, halfCount); // ✅ 0 → 1
     },
 
-    // 각 세트에서 상황발화만 완료
+    // 각 회차에서 상황발화만 완료
     situationalOnly: async () => {
       if (!taskData) return;
 
-      if (!confirm("모든 세트의 상황발화 태스크만 완료하시겠습니까?")) return;
+      if (!confirm("모든 회차의 상황발화 태스크만 완료하시겠습니까?")) return; // ✅ 세트 → 회차
 
       const situationalTasks = taskData.tasks.filter(
         (task) => task.taskType === "situational" && task.status !== "completed"
@@ -456,7 +466,7 @@ const AdminTaskManager = () => {
 
       try {
         const selectedTasksArray = situationalTasks.map((task) => ({
-          setIndex: task.setIndex,
+          roundNumber: task.roundNumber, // ✅ setIndex → roundNumber
           taskType: task.taskType,
           taskIndex: task.taskIndex,
           taskKey: task.taskKey,
@@ -468,7 +478,7 @@ const AdminTaskManager = () => {
           body: JSON.stringify({
             userId: taskData.userId,
             selectedTasks: selectedTasksArray,
-            completeAllInSet: false,
+            completeAllInRound: false, // ✅ completeAllInSet → completeAllInRound
           }),
         });
 
@@ -489,23 +499,24 @@ const AdminTaskManager = () => {
       }
     },
 
-    // 각 세트별로 진행률 80% 달성
+    // 각 회차별로 진행률 80% 달성
     eightyPercent: async () => {
       if (!taskData) return;
 
-      if (!confirm("각 세트를 80% 진행률로 만드시겠습니까?")) return;
+      if (!confirm("각 회차를 80% 진행률로 만드시겠습니까?")) return; // ✅ 세트 → 회차
 
       const allSelectedTasks: any[] = [];
 
-      Object.entries(groupedTasks).forEach(([setIndex, setTasks]) => {
-        const setNum = parseInt(setIndex);
-        const allSetTasks = [...setTasks.situational, ...setTasks.formal];
-        const incompleteTasks = allSetTasks.filter(
+      Object.entries(groupedTasks).forEach(([roundNumber, roundTasks]) => {
+        // ✅ setIndex, setTasks → roundNumber, roundTasks
+        const roundNum = parseInt(roundNumber);
+        const allRoundTasks = [...roundTasks.situational, ...roundTasks.formal]; // ✅ setTasks → roundTasks
+        const incompleteTasks = allRoundTasks.filter(
           (task) => task.status !== "completed"
         );
         const targetCount =
-          Math.floor(allSetTasks.length * 0.8) -
-          (allSetTasks.length - incompleteTasks.length);
+          Math.floor(allRoundTasks.length * 0.8) -
+          (allRoundTasks.length - incompleteTasks.length);
 
         if (targetCount > 0 && incompleteTasks.length > 0) {
           const selectedCount = Math.min(targetCount, incompleteTasks.length);
@@ -514,7 +525,7 @@ const AdminTaskManager = () => {
 
           selected.forEach((task) => {
             allSelectedTasks.push({
-              setIndex: task.setIndex,
+              roundNumber: task.roundNumber, // ✅ setIndex → roundNumber
               taskType: task.taskType,
               taskIndex: task.taskIndex,
               taskKey: task.taskKey,
@@ -537,7 +548,7 @@ const AdminTaskManager = () => {
           body: JSON.stringify({
             userId: taskData.userId,
             selectedTasks: allSelectedTasks,
-            completeAllInSet: false,
+            completeAllInRound: false, // ✅ completeAllInSet → completeAllInRound
           }),
         });
 
@@ -570,13 +581,14 @@ const AdminTaskManager = () => {
     }
   };
 
-  // 태스크를 세트별로 그룹화
+  // 태스크를 회차별로 그룹화
   const groupedTasks = taskData
     ? taskData.tasks.reduce((acc, task) => {
-        if (!acc[task.setIndex]) {
-          acc[task.setIndex] = { situational: [], formal: [] };
+        if (!acc[task.roundNumber]) {
+          // ✅ setIndex → roundNumber
+          acc[task.roundNumber] = { situational: [], formal: [] };
         }
-        acc[task.setIndex][task.taskType].push(task);
+        acc[task.roundNumber][task.taskType].push(task);
         return acc;
       }, {} as Record<number, { situational: Task[]; formal: Task[] }>)
     : {};
@@ -587,6 +599,44 @@ const AdminTaskManager = () => {
       fetchTasks();
     }
   };
+
+
+// 서비스별로 태스크 그룹화
+const groupedByService = taskData
+  ? taskData.tasks.reduce((acc, task) => {
+      const serviceName = task.taskKey.split('-')[0] || 'Unknown';
+      if (!acc[serviceName]) {
+        acc[serviceName] = [];
+      }
+      acc[serviceName].push(task);
+      return acc;
+    }, {} as Record<string, Task[]>)
+  : {};
+
+// 서비스별 선택/해제 함수
+const toggleSelectService = (serviceName: string, selectAll: boolean) => {
+  const serviceTasks = groupedByService[serviceName] || [];
+  const updated = new Set(selectedTasks);
+  
+  serviceTasks.forEach(task => {
+    if (selectAll) {
+      updated.add(task.id);
+    } else {
+      updated.delete(task.id);
+    }
+  });
+  
+  setSelectedTasks(updated);
+};
+
+// 서비스별 통계 계산
+const getServiceStats = (serviceName: string) => {
+  const serviceTasks = groupedByService[serviceName] || [];
+  const completed = serviceTasks.filter(task => task.status === 'completed').length;
+  const total = serviceTasks.length;
+  const selected = serviceTasks.filter(task => selectedTasks.has(task.id)).length;
+  return { completed, total, selected };
+};
 
   console.log("여기서 테스트 데이터가?", taskData);
 
@@ -701,11 +751,11 @@ const AdminTaskManager = () => {
 
                 <div className={styles.taskCardActions}>
                   <button
-                    onClick={presetPatterns.halfFirstSet}
+                    onClick={presetPatterns.halfFirstRound} // ✅ halfFirstSet → halfFirstRound
                     disabled={loading}
                     className={styles.button}
                   >
-                    첫 세트 절반만
+                    첫 회차 절반만 {/* ✅ 세트 → 회차 */}
                   </button>
                   <button
                     onClick={presetPatterns.situationalOnly}
@@ -719,20 +769,20 @@ const AdminTaskManager = () => {
                     disabled={loading}
                     className={styles.button}
                   >
-                    각 세트 80%까지
+                    각 회차 80%까지
                   </button> */}
                 </div>
 
-                {/* 세트별 랜덤 완료 버튼들 */}
+                {/* 회차별 랜덤 완료 버튼들 */}
                 {/* <div style={{ marginTop: "10px" }}>
                   <h4 style={{ fontSize: "14px", marginBottom: "8px" }}>
-                    세트별 랜덤 완료:
+                    회차별 랜덤 완료:
                   </h4>
-                  {Object.keys(groupedTasks).map((setIndex) => {
-                    const setNum = parseInt(setIndex);
+                  {Object.keys(groupedTasks).map((roundNumber) => {
+                    const roundNum = parseInt(roundNumber);
                     return (
                       <div
-                        key={setIndex}
+                        key={roundNumber}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -741,11 +791,11 @@ const AdminTaskManager = () => {
                         }}
                       >
                         <span style={{ minWidth: "60px", fontSize: "13px" }}>
-                          세트 {setNum + 1}:
+                          회차 {roundNum}:
                         </span>
                         <button
                           onClick={() =>
-                            completeRandomTasks(setNum, 3, "situational")
+                            completeRandomTasks(roundNum, 3, "situational")
                           }
                           disabled={loading}
                           style={{ padding: "4px 8px", fontSize: "12px" }}
@@ -754,7 +804,7 @@ const AdminTaskManager = () => {
                         </button>
                         <button
                           onClick={() =>
-                            completeRandomTasks(setNum, 5, "formal")
+                            completeRandomTasks(roundNum, 5, "formal")
                           }
                           disabled={loading}
                           style={{ padding: "4px 8px", fontSize: "12px" }}
@@ -762,7 +812,7 @@ const AdminTaskManager = () => {
                           정형 5개
                         </button>
                         <button
-                          onClick={() => completeRandomTasks(setNum, 10)}
+                          onClick={() => completeRandomTasks(roundNum, 10)}
                           disabled={loading}
                           style={{ padding: "4px 8px", fontSize: "12px" }}
                         >
@@ -794,7 +844,7 @@ const AdminTaskManager = () => {
                   disabled={loading || selectedTasks.size === 0}
                   className={styles.button}
                 >
-                  선택+세트 완료
+                  선택+회차 완료 {/* ✅ 세트 → 회차 */}
                 </button>
 
                 <button
@@ -814,76 +864,160 @@ const AdminTaskManager = () => {
               </div>
             </div>
 
-            {Object.entries(groupedTasks).map(([setIndex, setTasks]) => {
-              const setNum = parseInt(setIndex);
-              const isExpanded = expandedSets.has(setNum);
-              const setTotal =
-                setTasks.situational.length + setTasks.formal.length;
-              const setCompleted = [
-                ...setTasks.situational,
-                ...setTasks.formal,
+            {/* 서비스별 선택 섹션 */}
+          <div className={styles.actionSection}>
+            <div className={styles.taskCardHeader}>
+              <h3>서비스별 빠른 선택</h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
+              {Object.entries(groupedByService).map(([serviceName, serviceTasks]) => {
+                const { completed, total, selected } = getServiceStats(serviceName);
+                const allSelected = selected === serviceTasks.length;
+
+                return (
+                  <div key={serviceName} style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    backgroundColor: selected > 0 ? '#f0f9ff' : '#ffffff'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>
+                          {serviceName}
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>
+                          완료: {completed}/{total} | 선택: {selected}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                      <button
+                        onClick={() => toggleSelectService(serviceName, !allSelected)}
+                        disabled={loading}
+                        style={{
+                          padding: '3px 6px',
+                          fontSize: '11px',
+                          backgroundColor: allSelected ? '#ef4444' : '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {allSelected ? '해제' : '선택'}
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const incompleteTasks = serviceTasks.filter(task => task.status !== 'completed');
+                          const updated = new Set(selectedTasks);
+                          incompleteTasks.forEach(task => updated.add(task.id));
+                          setSelectedTasks(updated);
+                        }}
+                        disabled={loading}
+                        style={{
+                          padding: '3px 6px',
+                          fontSize: '11px',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        미완료만
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+            {Object.entries(groupedTasks).map(([roundNumber, roundTasks]) => {
+              // ✅ setIndex, setTasks → roundNumber, roundTasks
+              const roundNum = parseInt(roundNumber);
+              const isExpanded = expandedRounds.has(roundNum); // ✅ expandedSets → expandedRounds
+              const roundTotal = // ✅ setTotal → roundTotal
+                roundTasks.situational.length + roundTasks.formal.length;
+              const roundCompleted = [
+                // ✅ setCompleted → roundCompleted
+                ...roundTasks.situational,
+                ...roundTasks.formal,
               ].filter((task) => task.status === "completed").length;
 
               return (
-                <div key={setIndex} className={styles.setContainer}>
+                <div key={roundNumber} className={styles.setContainer}>
                   <button
                     onClick={() => {
-                      const next = new Set(expandedSets);
+                      const next = new Set(expandedRounds); // ✅ expandedSets → expandedRounds
                       // ✅ 여기 부분을 if/else로 명확히
                       if (isExpanded) {
-                        next.delete(setNum);
+                        next.delete(roundNum);
                       } else {
-                        next.add(setNum);
+                        next.add(roundNum);
                       }
-                      setExpandedSets(next);
+                      setExpandedRounds(next); // ✅ setExpandedSets → setExpandedRounds
                     }}
                     className={styles.setHeader}
                   >
-                    세트 {setNum + 1} - {setCompleted}/{setTotal} 완료
+                    회차 {roundNum} - {roundCompleted}/{roundTotal} 완료{" "}
+                    {/* ✅ 세트 → 회차 */}
                   </button>
 
                   {isExpanded && (
                     <div className={styles.taskList}>
-                      {setTasks.situational.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          isSelected={selectedTasks.has(task.id)}
-                          onSelect={(selected) => {
-                            const updated = new Set(selectedTasks);
-                            if (selected) {
-                              updated.add(task.id);
-                            } else {
-                              updated.delete(task.id);
+                      {roundTasks.situational.map(
+                        (
+                          task // ✅ setTasks → roundTasks
+                        ) => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            isSelected={selectedTasks.has(task.id)}
+                            onSelect={(selected) => {
+                              const updated = new Set(selectedTasks);
+                              if (selected) {
+                                updated.add(task.id);
+                              } else {
+                                updated.delete(task.id);
+                              }
+                              setSelectedTasks(updated);
+                            }}
+                            onStatusChange={(status) =>
+                              updateTaskStatus(task.id, status)
                             }
-                            setSelectedTasks(updated);
-                          }}
-                          onStatusChange={(status) =>
-                            updateTaskStatus(task.id, status)
-                          }
-                          loading={loading}
-                        />
-                      ))}
-                      {setTasks.formal.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          isSelected={selectedTasks.has(task.id)}
-                          onSelect={(selected) => {
-                            const updated = new Set(selectedTasks);
-                            if (selected) {
-                              updated.add(task.id);
-                            } else {
-                              updated.delete(task.id);
+                            loading={loading}
+                          />
+                        )
+                      )}
+                      {roundTasks.formal.map(
+                        (
+                          task // ✅ setTasks → roundTasks
+                        ) => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            isSelected={selectedTasks.has(task.id)}
+                            onSelect={(selected) => {
+                              const updated = new Set(selectedTasks);
+                              if (selected) {
+                                updated.add(task.id);
+                              } else {
+                                updated.delete(task.id);
+                              }
+                              setSelectedTasks(updated);
+                            }}
+                            onStatusChange={(status) =>
+                              updateTaskStatus(task.id, status)
                             }
-                            setSelectedTasks(updated);
-                          }}
-                          onStatusChange={(status) =>
-                            updateTaskStatus(task.id, status)
-                          }
-                          loading={loading}
-                        />
-                      ))}
+                            loading={loading}
+                          />
+                        )
+                      )}
                     </div>
                   )}
                 </div>

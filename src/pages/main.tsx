@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/MainSelectionPage.module.css";
 import Head from "next/head";
@@ -43,6 +43,10 @@ const MainSelectionPage = () => {
   const { data: currentRound, isLoading: isRoundLoading } =
     useCurrentRoundQuery(authStatus?.userId, currentRoundNumber);
   const isTutorialCompleted = fullUser?.currentStatus?.isTutorialCompleted;
+
+  useEffect(() => {
+    ScriptDataManager.autoApplyServiceNamePatch();
+  }, []);
 
   console.log("fullUser?", fullUser);
   // console.log("🔍 완전한 상태 체크:", {

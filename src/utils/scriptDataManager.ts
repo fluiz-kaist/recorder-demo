@@ -258,4 +258,88 @@ export class ScriptDataManager {
     if (typeof window === "undefined") return; // SSR 체크
     localStorage.removeItem(this.STORAGE_KEY);
   }
+
+  // 패치 메서드
+
+  /**
+   * 로컬스토리지에 저장된 스크립트 데이터의 service_name을 '금융'에서 '은행'으로 패치하는 함수
+   * 일회성 패치용 메서드
+   */
+  static patchServiceNameFromFinanceToBank(): boolean {
+    if (typeof window === "undefined") return false; // SSR 체크
+
+    try {
+      const data = this.getScriptData();
+      if (!data) {
+        console.log("패치할 데이터가 없습니다.");
+        return false;
+      }
+
+      let hasChanges = false;
+
+      // situationalScripts 배열의 service_name 수정
+      data.situationalScripts.forEach((script) => {
+        if (script.service_name === "금융") {
+          script.service_name = "은행";
+          hasChanges = true;
+        }
+      });
+
+      // formalScripts 배열의 service_name 수정
+      data.formalScripts.forEach((script) => {
+        if (script.service_name === "금융") {
+          script.service_name = "은행";
+          hasChanges = true;
+        }
+      });
+
+      // 인덱스 재생성 (service_name이 변경되었으므로)
+      if (hasChanges) {
+        data.indexes = this.createArrayIndexes(
+          data.situationalScripts,
+          data.formalScripts
+        );
+
+        // 수정된 데이터를 다시 저장
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+
+        console.log("✅ 서비스명 패치 완료: '금융' → '은행'");
+        return true;
+      } else {
+        console.log("패치할 '금융' 서비스가 발견되지 않았습니다.");
+        return false;
+      }
+    } catch (error) {
+      console.error("서비스명 패치 중 오류 발생:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 애플리케이션 시작 시 자동으로 패치를 적용하는 함수
+   * 앱 초기화 시점에 한 번만 실행되도록 설계
+   */
+  static autoApplyServiceNamePatch(): void {
+    if (typeof window === "undefined") return;
+
+    // 패치 적용 여부를 체크하는 플래그
+    const PATCH_FLAG_KEY = "voice-recording-scripts-patch-applied";
+
+    try {
+      const patchApplied = localStorage.getItem(PATCH_FLAG_KEY);
+
+      if (!patchApplied) {
+        const patchResult = this.patchServiceNameFromFinanceToBank();
+
+        if (patchResult) {
+          console.log("🔧 자동 패치 적용됨: 서비스명 '금융' → '은행'");
+        }
+
+        // 패치 시도 완료 플래그 설정 (성공/실패 여부와 관계없이)
+        localStorage.setItem(PATCH_FLAG_KEY, "true");
+      }
+    } catch (error) {
+      console.error("자동 패치 적용 중 오류:", error);
+    }
+  }
 }

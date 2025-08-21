@@ -2,10 +2,16 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { User } from "@/types/firebase";
+import {
+  User,
+  ParticipationRound,
+  Task,
+  TaskStatus,
+  RoundStatus,
+} from "@/types/user";
 
 interface TaskSelection {
-  setIndex: number;
+  roundNumber: number;
   taskType: "situational" | "formal";
   taskIndex: number;
   taskKey?: string;
@@ -45,7 +51,7 @@ async function completeSelectedTasks(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { userId, selectedTasks, completeAllInSet = false } = req.body;
+  const { userId, selectedTasks, completeAllInRound = false } = req.body;
 
   if (!userId) {
     return res.status(400).json({
@@ -81,56 +87,148 @@ async function completeSelectedTasks(
 
   const userData = userSnap.data() as User;
 
-  if (!userData.participation?.sets?.length) {
+  if (
+    !userData.currentStatus?.currentRoundNumber ||
+    userData.currentStatus.currentRoundNumber === 0
+  ) {
     return res.status(400).json({
       success: false,
-      message: "할당된 세트가 없습니다.",
+      message: "할당된 회차가 없습니다.",
     });
   }
 
   const now = new Date().toISOString();
-  const updatedSets = [...userData.participation.sets];
   const completedTasks: string[] = [];
   const errors: string[] = [];
 
-  selectedTasks.forEach((selection: TaskSelection) => {
-    const { setIndex, taskType, taskIndex, taskKey } = selection;
+  // 각 선택된 태스크에 대해 회차별로 처리
+  const roundNumbers = [
+    ...new Set(selectedTasks.map((t: TaskSelection) => t.roundNumber)),
+  ];
 
-    if (setIndex < 0 || setIndex >= updatedSets.length) {
-      errors.push(`잘못된 setIndex: ${setIndex}`);
-      return;
+  for (const roundNumber of roundNumbers) {
+    const roundRef = userRef.collection("rounds").doc(roundNumber.toString());
+    const roundSnap = await roundRef.get();
+
+    if (!roundSnap.exists) {
+      errors.push(`회차 ${roundNumber}를 찾을 수 없습니다.`);
+      continue;
     }
 
-    const set = updatedSets[setIndex];
-    const tasksArray = set.tasks[taskType];
+    const roundData = roundSnap.data() as ParticipationRound;
+    const updatedRound = { ...roundData };
 
-    if (taskIndex < 0 || taskIndex >= tasksArray.length) {
-      errors.push(`잘못된 taskIndex: ${taskIndex} (${taskType})`);
-      return;
+    // 해당 회차의 선택된 태스크들 처리
+    const roundTasks = selectedTasks.filter(
+      (t: TaskSelection) => t.roundNumber === roundNumber
+    );
+
+    roundTasks.forEach((selection: TaskSelection) => {
+      const { taskType, taskIndex, taskKey } = selection;
+
+      const tasksArray = updatedRound.tasks[taskType];
+
+      if (taskIndex < 0 || taskIndex >= tasksArray.length) {
+        errors.push(
+          `잘못된 taskIndex: ${taskIndex} (${taskType}, 회차 ${roundNumber})`
+        );
+        return;
+      }
+
+      const task = tasksArray[taskIndex];
+      if (taskKey && task.taskKey !== taskKey) {
+        errors.push(`taskKey 불일치: ${task.taskKey} !== ${taskKey}`);
+        return;
+      }
+
+      if (task.status === TaskStatus.COMPLETED) return;
+
+      // 태스크 완료 처리
+      task.status = TaskStatus.COMPLETED;
+      task.completedAt = now;
+      task.recordingId =
+        task.recordingId || `test_${task.taskKey}_${Date.now()}`;
+      task.quality = task.quality || {
+        duration: Math.random() * 5 + 8,
+        volumeLevel: Math.random() * 0.3 + 0.7,
+        silenceRatio: Math.random() * 0.2,
+        isValidRecording: true,
+      };
+
+      completedTasks.push(
+        `Round${roundNumber}-${taskType}-${taskIndex}: ${task.taskKey}`
+      );
+    });
+
+    // completeAllInRound가 true면 해당 회차의 모든 태스크 완료
+    if (completeAllInRound) {
+      [...updatedRound.tasks.situational, ...updatedRound.tasks.formal].forEach(
+        (task) => {
+          if (task.status !== TaskStatus.COMPLETED) {
+            task.status = TaskStatus.COMPLETED;
+            task.completedAt = now;
+            task.recordingId =
+              task.recordingId || `test_${task.taskKey}_${Date.now()}`;
+            task.quality = task.quality || {
+              duration: Math.random() * 5 + 8,
+              volumeLevel: Math.random() * 0.3 + 0.7,
+              silenceRatio: Math.random() * 0.2,
+              isValidRecording: true,
+            };
+            completedTasks.push(`Auto-Round${roundNumber}: ${task.taskKey}`);
+          }
+        }
+      );
     }
 
-    const task = tasksArray[taskIndex];
-    if (taskKey && task.taskKey !== taskKey) {
-      errors.push(`taskKey 불일치: ${task.taskKey} !== ${taskKey}`);
-      return;
-    }
+    // 회차 진행률 업데이트
+    const sitCompleted = updatedRound.tasks.situational.filter(
+      (t) => t.status === TaskStatus.COMPLETED
+    ).length;
+    const forCompleted = updatedRound.tasks.formal.filter(
+      (t) => t.status === TaskStatus.COMPLETED
+    ).length;
+    const totalCompleted = sitCompleted + forCompleted;
+    const totalTasks =
+      updatedRound.tasks.situational.length + updatedRound.tasks.formal.length;
 
-    if (task.status === "completed") return;
-
-    task.status = "completed";
-    task.completedAt = now;
-    task.recordingId = task.recordingId || `test_${task.taskKey}_${Date.now()}`;
-    task.quality = task.quality || {
-      duration: Math.random() * 5 + 8,
-      volumeLevel: Math.random() * 0.3 + 0.7,
-      silenceRatio: Math.random() * 0.2,
-      isValidRecording: true,
+    updatedRound.progress = {
+      totalTasks,
+      completedTasks: totalCompleted,
+      submittedTasks: totalCompleted, // 테스트용으로 완료 = 제출
+      approvedTasks: totalCompleted, // 테스트용으로 완료 = 승인
+      byTaskType: {
+        situational: {
+          total: updatedRound.tasks.situational.length,
+          completed: sitCompleted,
+          submitted: sitCompleted,
+          approved: sitCompleted,
+        },
+        formal: {
+          total: updatedRound.tasks.formal.length,
+          completed: forCompleted,
+          submitted: forCompleted,
+          approved: forCompleted,
+        },
+      },
     };
 
-    completedTasks.push(
-      `Set${setIndex}-${taskType}-${taskIndex}: ${task.taskKey}`
-    );
-  });
+    // 회차 상태 업데이트
+    if (totalCompleted === totalTasks) {
+      updatedRound.status = RoundStatus.COMPLETED;
+      updatedRound.completedAt = now;
+      updatedRound.submittedAt = now;
+      updatedRound.approvedAt = now;
+    } else if (totalCompleted > 0) {
+      updatedRound.status = RoundStatus.IN_PROGRESS;
+      if (!updatedRound.startedAt) {
+        updatedRound.startedAt = now;
+      }
+    }
+
+    // 회차 문서 업데이트
+    await roundRef.update(updatedRound);
+  }
 
   if (errors.length > 0) {
     return res.status(400).json({
@@ -140,139 +238,129 @@ async function completeSelectedTasks(
     });
   }
 
-  if (completeAllInSet) {
-    const affectedSets = new Set(
-      selectedTasks.map((t: TaskSelection) => t.setIndex)
+  // 사용자 메인 문서의 요약 정보 업데이트
+  const updatedRoundSummaries = [...userData.roundSummaries];
+
+  for (const roundNumber of roundNumbers) {
+    const roundRef = userRef.collection("rounds").doc(roundNumber.toString());
+    const roundSnap = await roundRef.get();
+    const roundData = roundSnap.data() as ParticipationRound;
+
+    const summaryIndex = updatedRoundSummaries.findIndex(
+      (s) => s.roundNumber === roundNumber
     );
+    if (summaryIndex >= 0) {
+      // 수정된 코드 (undefined 값 제거)
+      const summaryUpdate: any = {
+        roundNumber,
+        status: roundData.status,
+        assignedAt: roundData.assignedAt,
+        progressSummary: {
+          totalTasks: roundData.progress.totalTasks,
+          approvedTasks: roundData.progress.approvedTasks,
+          approvalRate:
+            roundData.progress.totalTasks > 0
+              ? Math.round(
+                  (roundData.progress.approvedTasks /
+                    roundData.progress.totalTasks) *
+                    100
+                )
+              : 0,
+        },
+      };
 
-    affectedSets.forEach((setIndex) => {
-      const set = updatedSets[setIndex];
+      // undefined가 아닌 경우에만 추가
+      if (roundData.setId !== undefined) {
+        summaryUpdate.setId = roundData.setId;
+      }
+      if (roundData.formalSetId !== undefined) {
+        summaryUpdate.formalSetId = roundData.formalSetId;
+      }
+      if (roundData.completedAt !== undefined) {
+        summaryUpdate.completedAt = roundData.completedAt;
+      }
+      if (roundData.approvedAt !== undefined) {
+        summaryUpdate.approvedAt = roundData.approvedAt;
+      }
 
-      set.tasks.situational.forEach((task) => {
-        if (task.status !== "completed") {
-          task.status = "completed";
-          task.completedAt = now;
-          task.recordingId =
-            task.recordingId || `test_${task.taskKey}_${Date.now()}`;
-          task.quality = task.quality || {
-            duration: Math.random() * 5 + 8,
-            volumeLevel: Math.random() * 0.3 + 0.7,
-            silenceRatio: Math.random() * 0.2,
-            isValidRecording: true,
-          };
-          completedTasks.push(
-            `Auto-Set${setIndex}-situational: ${task.taskKey}`
-          );
-        }
-      });
-
-      set.tasks.formal.forEach((task) => {
-        if (task.status !== "completed") {
-          task.status = "completed";
-          task.completedAt = now;
-          task.recordingId =
-            task.recordingId || `test_${task.taskKey}_${Date.now()}`;
-          task.quality = task.quality || {
-            duration: Math.random() * 3 + 6,
-            volumeLevel: Math.random() * 0.3 + 0.7,
-            silenceRatio: Math.random() * 0.2,
-            isValidRecording: true,
-          };
-          completedTasks.push(`Auto-Set${setIndex}-formal: ${task.taskKey}`);
-        }
-      });
-    });
+      updatedRoundSummaries[summaryIndex] = summaryUpdate;
+    }
   }
 
-  updatedSets.forEach((set) => {
-    const sitComp = set.tasks.situational.filter(
-      (t) => t.status === "completed"
-    ).length;
-    const forComp = set.tasks.formal.filter(
-      (t) => t.status === "completed"
-    ).length;
-    const totalComp = sitComp + forComp;
-    const totalTasks = set.tasks.situational.length + set.tasks.formal.length;
-
-    set.progress = {
-      ...set.progress,
-      totalTasks,
-      completedTasks: totalComp,
-      submittedTasks: totalComp,
-      approvedTasks: totalComp,
-      situational: {
-        total: set.tasks.situational.length,
-        completed: sitComp,
-        submitted: sitComp,
-        approved: sitComp,
-      },
-      formal: {
-        total: set.tasks.formal.length,
-        completed: forComp,
-        submitted: forComp,
-        approved: forComp,
-      },
-    };
-
-    if (totalComp === totalTasks) {
-      set.status = "completed";
-      set.completedAt = now;
-      set.submittedAt = now;
-      set.approvedAt = now;
-    } else if (totalComp > 0) {
-      set.status = "in_progress";
-    } else {
-      set.status = "assigned";
-    }
-  });
-
-  const totalCompletedSets = updatedSets.filter(
-    (set) => set.status === "completed"
+  // 전체 통계 계산
+  const totalCompletedRounds = updatedRoundSummaries.filter(
+    (s) => s.status === RoundStatus.COMPLETED
   ).length;
-  const totalRecordings = updatedSets.reduce(
-    (sum, s) => sum + s.progress.completedTasks,
+  const totalRecordings = updatedRoundSummaries.reduce(
+    (sum, s) => sum + s.progressSummary.approvedTasks,
     0
   );
-  const totalPossible = updatedSets.reduce(
-    (sum, s) => sum + s.progress.totalTasks,
-    0
-  );
-  const overallProgress =
-    totalPossible > 0 ? Math.round((totalRecordings / totalPossible) * 100) : 0;
 
-  const isAllCompleted = totalRecordings === totalPossible;
+  // 현재 상태 업데이트
+  const currentRound = updatedRoundSummaries.find(
+    (s) => s.roundNumber === userData.currentStatus.currentRoundNumber
+  );
+  const isCurrentRoundCompleted =
+    currentRound?.status === RoundStatus.COMPLETED;
 
   const updatedCurrentStatus = {
-    isTutorialCompleted: true,
-    canStartRecording: !isAllCompleted,
-    progress: {
-      completedPercentage: overallProgress,
-      submittedPercentage: overallProgress,
-      approvedPercentage: overallProgress,
+    ...userData.currentStatus,
+    canStartRecording: !isCurrentRoundCompleted,
+    canStartNextRound:
+      isCurrentRoundCompleted &&
+      totalCompletedRounds < (userData.settings.maxAllowedRounds || 1),
+    currentRoundProgress: {
+      completedPercentage: currentRound
+        ? currentRound.progressSummary.approvalRate
+        : 0,
+      submittedPercentage: currentRound
+        ? currentRound.progressSummary.approvalRate
+        : 0,
+      approvedPercentage: currentRound
+        ? currentRound.progressSummary.approvalRate
+        : 0,
     },
-    pendingApproval: false,
-    canStartNextSet:
-      totalCompletedSets < (userData.participation.maxAllowedSets || 1),
   };
 
+  // 통계 업데이트
+  const updatedStatistics = {
+    ...userData.statistics,
+    current: {
+      roundNumber: userData.currentStatus.currentRoundNumber,
+      totalTasks: currentRound?.progressSummary.totalTasks || 0,
+      completedTasks: currentRound?.progressSummary.approvedTasks || 0,
+      submittedTasks: currentRound?.progressSummary.approvedTasks || 0,
+      approvedTasks: currentRound?.progressSummary.approvedTasks || 0,
+      recordingTime: 0, // 실제 구현에서는 계산 필요
+      completedPercentage: currentRound?.progressSummary.approvalRate || 0,
+      approvedPercentage: currentRound?.progressSummary.approvalRate || 0,
+      lastUpdatedAt: now,
+    },
+    overall: {
+      ...userData.statistics.overall,
+      totalParticipationRounds: totalCompletedRounds,
+      totalTasksCompleted: totalRecordings,
+      totalTasksApproved: totalRecordings,
+      lastParticipationAt: now,
+    },
+  };
+
+  // 사용자 메인 문서 업데이트
   const updateData: any = {
-    "participation.sets": updatedSets,
-    "participation.totalCompletedSets": totalCompletedSets,
-    "participation.stats.totalRecordings": totalRecordings,
-    "participation.stats.totalApprovedRecordings": totalRecordings,
-    "participation.stats.averageQualityScore": Math.random() * 15 + 80,
-    "participation.stats.lastParticipationAt": now,
+    roundSummaries: updatedRoundSummaries,
     currentStatus: updatedCurrentStatus,
+    statistics: updatedStatistics,
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (isAllCompleted) {
+  // 레거시 호환용 필드 업데이트
+  if (isCurrentRoundCompleted) {
     updateData["recordingStatus.isAllRecordingCompleted"] = true;
     updateData["recordingStatus.allRecordingCompletedAt"] = now;
     updateData["recordingStatus.progress.mainSituationalCompleted"] =
-      updatedSets.reduce((sum, set) => sum + set.tasks.situational.length, 0);
+      totalRecordings;
     updateData["recordingStatus.progress.mainFormalCompleted"] =
-      updatedSets.reduce((sum, set) => sum + set.tasks.formal.length, 0);
+      totalRecordings;
     updateData["recordingStatus.progress.lastRecordedAt"] = now;
   }
 
@@ -288,11 +376,11 @@ async function completeSelectedTasks(
     data: {
       userId,
       completedTasks,
-      totalSets: updatedSets.length,
-      completedSets: totalCompletedSets,
+      totalRounds: updatedRoundSummaries.length,
+      completedRounds: totalCompletedRounds,
       totalRecordings,
-      overallProgress,
-      isAllCompleted,
+      currentRoundProgress: updatedCurrentStatus.currentRoundProgress,
+      isCurrentRoundCompleted,
       completedAt: now,
     },
   });
@@ -306,37 +394,37 @@ Body: {
   "userId": "user123",
   "selectedTasks": [
     {
-      "setIndex": 0,
+      "roundNumber": 1,
       "taskType": "situational",
       "taskIndex": 2,
       "taskKey": "TASK_001_S_003" // 확인용 (선택사항)
     },
     {
-      "setIndex": 0,
+      "roundNumber": 1,
       "taskType": "formal",
       "taskIndex": 0,
       "taskKey": "TASK_001_F_001"
     },
     {
-      "setIndex": 1,
+      "roundNumber": 2,
       "taskType": "situational",
       "taskIndex": 1
     }
   ],
-  "completeAllInSet": false // true면 해당 세트의 나머지 태스크들도 자동 완료
+  "completeAllInRound": false // true면 해당 회차의 나머지 태스크들도 자동 완료
 }
 
-특정 세트 전체 완료 (일부 태스크만 선택해도):
+특정 회차 전체 완료 (일부 태스크만 선택해도):
 POST /api/test/complete-selected-tasks  
 Body: {
   "userId": "user123",
   "selectedTasks": [
     {
-      "setIndex": 0,
+      "roundNumber": 1,
       "taskType": "situational", 
       "taskIndex": 0
     }
   ],
-  "completeAllInSet": true // 세트 0의 모든 태스크가 완료됨
+  "completeAllInRound": true // 회차 1의 모든 태스크가 완료됨
 }
 */

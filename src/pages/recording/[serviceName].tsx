@@ -5,6 +5,7 @@ import { GetStaticPaths, GetStaticProps } from "next";
 import Head from "next/head";
 import { fromSlug } from "@/lib/serviceMapping"; // 한글 ↔ 슬러그 변환
 import { ScriptContainer } from "@/components/script/ScriptContainer";
+import { ScriptDataManager } from "@/utils/scriptDataManager";
 import {
   useUserQuery,
   useCurrentRoundQuery,
@@ -83,6 +84,16 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
 
   if (isError) return <div>에러 발생</div>;
 
+  const handleServiceNamePatch = () => {
+    const patchResult = ScriptDataManager.patchServiceNameFromFinanceToBank();
+    if (patchResult) {
+      alert("패치가 완료되었습니다. 페이지를 새로고침합니다.");
+      window.location.reload();
+    } else {
+      alert("패치할 데이터가 없거나 이미 패치되었습니다.");
+    }
+  };
+
   // allScripts가 없거나 빈 경우 (localStorage에 데이터가 없거나 일치하지 않는 경우)
   if (
     !allScripts ||
@@ -90,12 +101,82 @@ export default function ScriptPage({ serviceName }: ScriptPageProps) {
   ) {
     return (
       <>
-        <div>
-          아래 버튼을 눌러주세요. 버튼을 누른 이후에도 화면에 반응이 없다면,
-          새로고침 혹은 상단의 작업 종료하기를 누르고 다시 로그인을 해주시기
-          바랍니다.
+        <div
+          style={{
+            padding: "20px",
+            textAlign: "center",
+            fontSize: "18px",
+            lineHeight: "1.6",
+          }}
+        >
+          이 화면이 보이신다면 아래 대본 다시 받기 버튼을 눌러주세요. <br />
+          버튼을 누른 이후에도 화면이 동일하다면 새로고침 버튼을 눌러주세요.
+          {/* 은행 서비스일 때만 패치 안내 및 버튼 표시 */}
+          {serviceName === "은행" && (
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "15px",
+                backgroundColor: "#fff3cd",
+                border: "1px solid #ffeaa7",
+                borderRadius: "8px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "16px",
+                  color: "#856404",
+                  margin: "0 0 10px 0",
+                }}
+              >
+                💡 [은행] 항목을 진행하러 들어오셨나요?
+                <br />
+                아래 버튼을 눌러주세요.
+              </p>
+              <button
+                onClick={handleServiceNamePatch}
+                style={{
+                  width: "200px",
+                  height: "50px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  backgroundColor: "#ff9f43",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                  touchAction: "manipulation",
+                }}
+              >
+                [은행] 정상 진행하기
+              </button>
+            </div>
+          )}
+          <div style={{ marginTop: "30px" }}>
+            <ReAssignScript />
+            <div style={{ marginTop: "20px" }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  width: "200px",
+                  height: "60px",
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                  touchAction: "manipulation",
+                }}
+              >
+                🔄 새로고침
+              </button>
+            </div>
+          </div>
         </div>
-        <ReAssignScript />
       </>
     );
   }
