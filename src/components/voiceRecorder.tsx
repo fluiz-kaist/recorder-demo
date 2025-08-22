@@ -1073,7 +1073,9 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
           {isTutorial ? (
             <p className={styles.guidanceBox}>
               녹음한 음성을 자동으로 글자로 바꾸어 보여줍니다. 만약 이상한
-              내용이 나온다면 음성 녹음을 다시 진행해주세요.
+              내용이 나온다면 음성 녹음을 다시 진행해주세요. 문장이 반복되거나
+              말씀 뒤에 이상한 내용이 있어도, 말씀하신 부분이 있다면 걱정하지
+              마시고 그대로 제출하셔도 괜찮습니다.
             </p>
           ) : (
             <></>
@@ -1101,6 +1103,11 @@ const RecorderComponent: React.FC<VoiceRecorderProps> = ({
                 <br />
                 <span className={styles.retryButtonRef}>새로 녹음하기</span>
                 버튼을 눌러서 다시 녹음해 주세요.
+              </p>
+              <p className={styles.guidanceText}>
+                <u>만약 내가 말한 내용이 들어가 있다면,</u> 문장이 반복되거나
+                말씀 뒤에 이상한 내용이 추가되더라도 걱정하지 마시고 그대로
+                제출하셔도 괜찮습니다.
               </p>
               <p className={styles.guidanceSubText}>
                 💡 조용한 곳에서 전화하듯이 말씀하시면 정확하게 인식할 수
