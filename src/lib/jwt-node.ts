@@ -1,7 +1,10 @@
 // src/lib/jwt-node.ts (API Routes용)
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "my-super-secret-key";
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("JWT_SECRET environment variable must be set in production");
+}
+const JWT_SECRET = process.env.JWT_SECRET || "dev-only-insecure-secret";
 
 export interface AdminTokenPayload {
   adminId: string;
