@@ -27,6 +27,9 @@
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
   },
+  "overrides": {
+    "protobufjs": "^7.5.8"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
